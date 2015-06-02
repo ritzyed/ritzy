@@ -1,0 +1,20 @@
+!.gitkeep
+*.iws
+# Exclude until http://youtrack.jetbrains.com/issue/IDEA-89905 is resolved
+.idea/encodings.xml
+# End temporary for IDEA-89905
+.idea/artifacts/
+.idea/dictionaries/
+.idea/tasks.xml
+.idea/workspace.xml
+.idea/qaplug_profiles.xml
+.gradle
+build/
+# Mac meta-data files
+ __MACOSX/
+.DS_Store/
+# NodeJS
+node_modules/
+npm-debug.log
+tmp
+.swarm

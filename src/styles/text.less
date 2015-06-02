@@ -1,0 +1,139 @@
+@import url(http://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,700,400);
+
+body {
+  //noinspection CssNoGenericFontName
+  font-family: 'Open Sans';
+  font-size: 14px;
+  font-variant: normal;
+  text-decoration: none;
+  vertical-align: baseline;
+}
+
+@media print {
+  .ui-unprintable {
+    display: none!important;
+  }
+}
+
+.text-content-wrapper {
+  cursor: text;
+  overflow: hidden;
+  position: relative;
+  white-space: normal;
+  tap-highlight-color: initial;
+  z-index: 22;
+}
+
+.text-inputarea {
+  outline: none;
+}
+
+.text-paragraph {
+  position: relative;
+}
+
+.text-lineview {
+  position: relative;
+  border: 1px solid red;
+}
+
+.text-lineview-content {
+  white-space: nowrap;
+  position: absolute;
+  z-index: 15;
+}
+
+.text-lineview-text-block {
+  white-space: nowrap;
+}
+
+.text-lineview-debug {
+  white-space: nowrap;
+  position: absolute;
+  z-index: 15;
+}
+
+.text-cursor {
+  cursor: text;
+  position: absolute;
+  z-index: 24;
+}
+
+.text-cursor-caret {
+  position: absolute;
+  width: 0;
+  border-left: 2px solid;
+  font-size: 0;
+  pointer-events: none;
+}
+
+.text-cursor-top {
+  position: absolute;
+  width: 6px;
+  left: -2px;
+  top: -2px;
+  height: 6px;
+  font-size: 0;
+}
+
+.text-cursor-name {
+  position: absolute;
+  font-size: 10px;
+  color: #fff;
+  top: -14px;
+  left: -2px;
+  padding: 2px;
+  white-space: nowrap;
+}
+
+.text-cursor-italic {
+  display: inline;
+  transform: rotate(13deg);
+}
+
+.text-cursor-blink {
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+  animation-name: text-cursor-fadeoutin;
+}
+
+@keyframes text-cursor-fadeoutin {
+  from {
+    opacity: 1;
+  }
+  13% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+  63% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.text-selection-overlay {
+  background-color: #76a7fa;
+  border-top: 1px solid #76a7fa;
+  border-bottom: 1px solid #76a7fa;
+  opacity: 0.50;
+  z-index: 20;
+}
+
+.text-selection-overlay.text-htmloverlay-under-text {
+  z-index: 12;
+}
+
+.text-htmloverlay {
+  position: absolute;
+  z-index: 17;
+  top: 0;
+}
+
+.editor-inline-block {
+  position: relative;
+  display: inline-block;
+}

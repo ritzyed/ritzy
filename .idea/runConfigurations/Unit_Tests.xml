@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Unit Tests" type="mocha-javascript-test-runner" factoryName="Mocha">
+    <node-options />
+    <working-directory>$PROJECT_DIR$</working-directory>
+    <pass-parent-env>true</pass-parent-env>
+    <envs />
+    <ui>bdd</ui>
+    <extra-mocha-options>--compilers js:compiler.js /home/raman/source/ritzy-editor/src/**/*-test.js</extra-mocha-options>
+    <test-directory>.</test-directory>
+    <recursive>false</recursive>
+    <method />
+  </configuration>
+</component>

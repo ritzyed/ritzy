@@ -1,0 +1,45 @@
+{
+  // temporary until https://github.com/eslint/espree/issues/116
+  "parser": "babel-eslint",
+  "env": {
+    "browser": true,
+    "node": true,
+    "es6": true
+  },
+  "ecmaFeatures": {
+    "modules": true,
+    "jsx": true
+  },
+  "sourceType": "module",
+  "globals": {
+    "__DEV__": true,
+    "__SERVER__": true
+  },
+  "plugins": [
+    "react"
+  ],
+  "rules": {
+    // Strict mode
+    "strict": [2, "global"],
+
+    // React (eslint-plugin-react)
+    "react/jsx-no-undef": 1,
+    "react/jsx-uses-react": 1,
+    "react/jsx-uses-vars": 1,
+    "react/no-did-mount-set-state": 1,
+    "react/no-did-update-set-state": 1,
+    "react/no-unknown-property": 1,
+    "react/prop-types": 1,
+    "react/react-in-jsx-scope": 1,
+    "react/self-closing-comp": 1,
+    "react/wrap-multilines": 1,
+
+    // Code style,  0=off, 1=warning, 2=error
+    "indent": [1, 2],
+    "quotes": [1, "single"],
+    "curly": [1, "multi-line"],
+    "semi": [1, "never"],
+    "space-unary-ops": [1, { "words": true, "nonwords": false }],
+    "no-underscore-dangle": [0]  // leading underscore is useful inside React components
+  }
+}

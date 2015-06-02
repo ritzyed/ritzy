@@ -1,0 +1,20 @@
+= Font Assets README
+Raman Gupta <raman@vivosys.com>
+v1.0, 2015-05-02
+:toc:
+
+== Purpose ==
+
+These font assets are loaded by
+http://nodebox.github.io/opentype.js/[OpenType.js] for calculating font metrics.
+OpenType.js requires OpenType (.otf) or TrueType (.ttf) font files.
+
+== Google Fonts ==
+
+Truetype files for Google fonts can be found on the
+https://github.com/google/fonts[Google Fonts GitHub repository]. To get subsets of font
+files (e.g. latin script only) use Google Fonts online to determine the CSS URL e.g.
+http://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,700,400
+
+Using a user-agent switcher, select Safari for Windows, and visit the URL above. The fonts
+chosen will be presented in TrueType format suitable for use by OpenType.js.

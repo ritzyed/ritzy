@@ -1,0 +1,5 @@
+*.jar binary
+*.cmd eol=crlf
+*.bat eol=crlf
+*.sh eol=lf
+* text=auto

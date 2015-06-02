@@ -1,0 +1,4 @@
+// http://babeljs.io/docs/usage/experimental/
+{
+  "optional": ["es7.objectRestSpread"]
+}
