@@ -13,6 +13,12 @@ TODO
 The source is on GitHub: https://github.com/ritzy/ritzy. Documentation and
 issue management is also managed there.
 
+=== Commit Message Style
+
+All git commits should conform to idiomatic git commit message style
+http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html[described
+by Tim Pope] and http://chris.beams.io/posts/git-commit/[expanded on by others].
+
 [[cla]]
 == Submitting Changes
 
