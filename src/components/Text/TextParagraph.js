@@ -197,6 +197,10 @@ export default React.createClass({
         this.chars.push(c)
       },
 
+      popChar() {
+        return this.chars.pop()
+      },
+
       pushChunks() {
         if(this.chars.length > 0) {
           this.pendingChunks.push({
@@ -252,10 +256,8 @@ export default React.createClass({
     }
 
     let lineWidth = this.props.width - (this.props.margin * 2)
-    let contentIterator = this.replica.getTextRange(BASE_CHAR)[Symbol.iterator]()
-    let e
-    while(!(e = contentIterator.next()).done) {
-      let c = e.value
+
+    let processChar = (c) => {
       if (!attributesEqual(currentWord.attributes, c.attributes)) {
         currentWord.pushChunks()
       }
@@ -269,9 +271,22 @@ export default React.createClass({
       currentWord.pushChar(c, this)
 
       // check for line wrap
-      if(currentLine.advance + currentWord.advance > lineWidth) {
+      if(currentLine.advance === 0 && currentWord.advance > lineWidth) {
+        // word longer than a line, here we need to remove the last char to get us back under the line width
+        let lastChar = currentWord.popChar()
+        currentWord.pushChunks()
+        currentLine.pushWord(currentWord)
+        pushLine(currentLine)
+        processChar(lastChar)
+      } else if (currentLine.advance + currentWord.advance > lineWidth) {
         pushLine(currentLine)
       }
+    }
+
+    let contentIterator = this.replica.getTextRange(BASE_CHAR)[Symbol.iterator]()
+    let e
+    while(!(e = contentIterator.next()).done) {
+      processChar(e.value)
     }
 
     currentWord.pushChunks()

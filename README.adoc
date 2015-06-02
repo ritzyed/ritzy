@@ -84,6 +84,8 @@ real-time character-by-character collaborative editing.
 
 Beyond basic text editing, some other features implemented by Ritzy:
 
+* Paragraph flow control, including wrapping support for long words/URLs.
+
 * Selection and keyboard navigation behavior mimicking Microsoft Word.
 
 * Cursor blink control simulating browser function (blink while waiting, no
@@ -180,7 +182,6 @@ can then use that text replica for any purpose.
 == TODOs
 
 * Basic features:
-** long word (longer than a line) support
 ** multi-paragraph (hard returns)
 ** cut/copy/paste
 ** undo/redo
