@@ -40,6 +40,7 @@ export default React.createClass({
 
   getInitialState() {
     return {
+      position: BASE_CHAR,
       cursorMotion: false,
       selectionActive: false
     }
@@ -936,6 +937,7 @@ export default React.createClass({
   _reset() {
     this.replica.set('123456789')
     this.resetPosition()
+    this.refs.input.focus()
   },
 
   /** For debugging */
@@ -970,6 +972,11 @@ export default React.createClass({
       console.log('No active selection')
     }
     this.refs.input.focus()
+  },
+
+  /** For debugging */
+  _forceRender() {
+    this.forceUpdate(() => console.log('Render done.'))
   },
 
   _renderSelectionOverlay(lineIndex, lineHeight) {
@@ -1057,7 +1064,7 @@ export default React.createClass({
     )
   },
 
-  _renderParagraph() {
+  _splitIntoLines() {
     if(!this.state.lines) return []
 
     let chunkToStyledText = chunk => this._renderStyledText(chunk.text[0].id,
@@ -1089,7 +1096,8 @@ export default React.createClass({
       return null
     }
 
-    if (!this.state.position) {
+    // the initial render before the component is mounted has no position or lines
+    if (!this.state.position || !this.state.lines) {
       return null
     }
 
@@ -1104,7 +1112,7 @@ export default React.createClass({
     let cursorStyle = {opacity: 1}
 
     let {line, index, endOfLine} = this._lineContainingChar(this.state.position, this.state.positionEolStart)
-    let previousLineHeights = lineHeight * index
+    let previousLineHeights = line ? lineHeight * index : 0
 
     // The cursor position is relative to the first parent of the paragraph container with position=relative that is
     // a common parent with the cursor div we are rendering --> it should be the text-content-wrapper
@@ -1112,7 +1120,7 @@ export default React.createClass({
       (elem) => elem.className.indexOf('text-content-wrapper') >= 0)
     let cursorAdvanceX
 
-    if(endOfLine && this.state.positionEolStart && index < this.state.lines.length - 1) {
+    if(!line || (endOfLine && this.state.positionEolStart && index < this.state.lines.length - 1)) {
       cursorAdvanceX = 0
     } else {
       let positionChars = this.replica.getTextRange(line.start, this.state.position)
@@ -1143,14 +1151,16 @@ export default React.createClass({
     let id = this.props.id
 
     let lineHeight = this.lineHeight(this.props.fontSize)
-    let lines = this._renderParagraph()
+    let lines = this._splitIntoLines()
 
     return (
       <div ref="paragraphContainer">
         <div onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
           <TextInput id={id} ref="input" {...this.inputFunctions}/>
           <div className="text-paragraph">
-            { lines.map((line, index) =>this._renderLine(line, index, lineHeight) )}
+            { lines.length > 0 ?
+              lines.map((line, index) =>this._renderLine(line, index, lineHeight) ) :
+              this._renderLine(nbsp, 0, lineHeight)}
           </div>
           {this._renderCursor(lineHeight)}
         </div>
@@ -1160,6 +1170,7 @@ export default React.createClass({
           <button onClick={this._dumpReplica}>Dump Replica</button>&nbsp;
           <button onClick={this._dumpPosition}>Dump Position</button>&nbsp;
           <button onClick={this._dumpSelection}>Dump Selection</button>&nbsp;
+          <button onClick={this._forceRender}>Force Render</button>&nbsp;
         </div>
         */}
       </div>
