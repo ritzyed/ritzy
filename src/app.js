@@ -45,6 +45,6 @@ Promise.all([
   }, fonts[0].unitsPerEm, detectMinFontSize())
 }).catch(function(err) {
   // TODO handle error with some type of oops screen
-  console.error('Font loading failed.', err)
-  document.getElementById('content').innerHTML = 'Oops, I couldn\'t load all the resources needed.'
+  console.error('Editor loading failed.', err)
+  document.getElementById('content').innerHTML = 'Oops, I couldn\'t load the editor.'
 })
