@@ -1058,8 +1058,8 @@ export default React.createClass({
   /** For debugging */
   _dumpReplica() {
     let text = this.replica.getTextRange(BASE_CHAR)
-    console.log('Current replica text: [' + text.map(c => c.char).join('') + ']')
-    console.log('Current replica contents:')
+    console.debug('Current replica text: [' + text.map(c => c.char).join('') + ']')
+    console.debug('Current replica contents:')
     console.dir(text)
     this.refs.input.focus()
   },
@@ -1067,31 +1067,57 @@ export default React.createClass({
   /** For debugging */
   _dumpPosition() {
     if(this.state.position) {
-      console.log('Current position:', this.state.position)
+      console.debug('Current position:', this.state.position, 'positionEolStart:', this.state.positionEolStart)
     } else {
-      console.log('No active position')
+      console.debug('No active position')
     }
-    console.log('Current position eol start:', this.state.positionEolStart)
+    this.refs.input.focus()
+  },
+
+  /** For debugging */
+  _dumpLines() {
+    if(this.state.lines) {
+      console.debug('Current lines:', this.state.lines)
+    } else {
+      console.debug('No lines')
+    }
     this.refs.input.focus()
   },
 
   /** For debugging */
   _dumpSelection() {
     if(this.state.selectionActive) {
-      console.log('Current selection contents: [' + this.replica.getTextRange(
+      console.debug('Current selection contents: [' + this.replica.getTextRange(
         this.state.selectionLeftChar, this.state.selectionRightChar).map(c => c.char).join('') + ']')
-      console.log('Left=', this.state.selectionLeftChar)
-      console.log('Right=', this.state.selectionRightChar)
-      console.log('Anchor=', this.state.selectionAnchorChar)
+      console.debug('Left=', this.state.selectionLeftChar)
+      console.debug('Right=', this.state.selectionRightChar)
+      console.debug('Anchor=', this.state.selectionAnchorChar)
     } else {
-      console.log('No active selection')
+      console.debug('No active selection')
     }
     this.refs.input.focus()
   },
 
   /** For debugging */
+  _forceFlow() {
+    this.flow()
+    this.refs.input.focus()
+  },
+
+  /** For debugging */
   _forceRender() {
-    this.forceUpdate(() => console.log('Render done.'))
+    this.forceUpdate(() => console.debug('Render done.'))
+    this.refs.input.focus()
+  },
+
+  /** For debugging */
+  _togglePositionEolStart() {
+    this.setState(previousState => {
+      let previous = previousState.positionEolStart
+      console.debug('Toggling positionEolStart from ' + previous + ' to ' + !previous)
+      return { positionEolStart: !previous }
+    })
+    this.refs.input.focus()
   },
 
   _renderSelectionOverlay(lineIndex, lineHeight) {
@@ -1297,11 +1323,14 @@ export default React.createClass({
         </div>
         {/*
         <div className="text-lineview-debug">
-          <button onClick={this._reset}>Reset</button>&nbsp;
+          <button onClick={this._reset}>Reset</button><br/>
           <button onClick={this._dumpReplica}>Dump Replica</button>&nbsp;
           <button onClick={this._dumpPosition}>Dump Position</button>&nbsp;
-          <button onClick={this._dumpSelection}>Dump Selection</button>&nbsp;
+          <button onClick={this._dumpLines}>Dump Lines</button>&nbsp;
+          <button onClick={this._dumpSelection}>Dump Selection</button><br/>
           <button onClick={this._forceRender}>Force Render</button>&nbsp;
+          <button onClick={this._forceFlow}>Force Flow</button><br/>
+          <button onClick={this._togglePositionEolStart}>Toggle Position EOL Start</button>&nbsp;
         </div>
         */}
       </div>
