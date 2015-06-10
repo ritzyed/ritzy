@@ -187,6 +187,9 @@ can then use that text replica for any purpose.
 
 * Tests (many, see GitHub issue xx) (hard!).
 
+* Once tests are in place, refactoring to make the editor code more modular /
+easier to understand (hard).
+
 * A skinnable toolbar (medium).
 
 * Make Ritzy work apart from a shared replica and server implementation. Create
