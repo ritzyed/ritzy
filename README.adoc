@@ -182,7 +182,6 @@ can then use that text replica for any purpose.
 == TODOs
 
 * Basic features:
-** multi-paragraph (hard returns)
 ** cut/copy/paste
 ** undo/redo
 

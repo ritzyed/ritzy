@@ -66,6 +66,14 @@ export default {
   },
 
   /**
+   * Returns the advance width in pixels for a space character in the normal style.
+   */
+  advanceXForSpace(fontSize) {
+    let glyph = this.props.fonts.regular.charToGlyph(' ')
+    return glyph.advanceWidth * this.fontScale(fontSize)
+  },
+
+  /**
    * Obtain an Object with the char id and cursor position for a given pixel value. This is used to
    * set the current character and position the cursor correctly on a mouse click. If the target position
    * is past the last character, the index of the last character is returned.
@@ -80,24 +88,27 @@ export default {
     let unitsPerEm = this.props.unitsPerEm
     fontSize = fontSize > minFontSize ? fontSize : minFontSize
     let currentWidthPx = 0
+    let index = 0
     for(let i = 0; i < chars.length; i++) {
       let style = charFontStyle(chars[i])
       let glyph = this.props.fonts[style].charToGlyph(chars[i].char)
-      let glyphAdvancePx = glyph.advanceWidth * charScale(chars[i], fontSize, unitsPerEm, minFontSize)
+      let glyphAdvancePx = 0
+      if(glyph.unicode) {
+        glyphAdvancePx = glyph.advanceWidth * charScale(chars[i], fontSize, unitsPerEm, minFontSize)
+      }
       if(pixelValue < currentWidthPx + glyphAdvancePx / 2) {
         return {
           cursorX: currentWidthPx,
-          index: i,
-          end: false
+          index: index
         }
       } else {
         currentWidthPx += glyphAdvancePx
+        if(glyph.unicode) index++
       }
     }
     return {
       cursorX: currentWidthPx,
-      index: chars.length,
-      end: true
+      index: index
     }
   },
 
@@ -116,14 +127,16 @@ export default {
       for(let i = 0; i < chars.length; i++) {
         let style = charFontStyle(chars[i])
         let glyph = this.props.fonts[style].charToGlyph(chars[i].char)
-        // no kerning for now, to support kerning use this.props.fonts[style].getKerningValue(leftGlyph, rightGlyph)
-        currentWidthPx += glyph.advanceWidth * charScale(chars[i], fontSize, unitsPerEm, minFontSize)
+        if(glyph.unicode) {
+          // no kerning for now, to support kerning use this.props.fonts[style].getKerningValue(leftGlyph, rightGlyph)
+          currentWidthPx += glyph.advanceWidth * charScale(chars[i], fontSize, unitsPerEm, minFontSize)
+        }
       }
       return currentWidthPx
     } else {
       let style = charFontStyle(chars)
-      return this.props.fonts[style].charToGlyph(chars.char).advanceWidth *
-        charScale(chars, fontSize, unitsPerEm, minFontSize)
+      let glyph = this.props.fonts[style].charToGlyph(chars.char)
+      return glyph.unicode ? glyph.advanceWidth * charScale(chars, fontSize, unitsPerEm, minFontSize) : 0
     }
   },
 

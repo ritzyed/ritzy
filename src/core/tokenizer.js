@@ -6,7 +6,7 @@ import _ from 'lodash'
 
 const DEFAULT_WORD_OPTIONS = {
   en: {
-    wordRegex: /[a-z0-9_-]+('[a-z0-9_-]+)*/gi,
+    wordRegex: /([a-z0-9_-]+('[a-z0-9_-]+)*|\n)/gi,
     includeLeadingSpace: false,
     includeTrailingSpace: true
   }
@@ -27,7 +27,7 @@ export default function tokenizer(chars, wordOptions) {
   if(wordOptions && wordOptions.includeLeadingSpace && !wordOptions.includeTrailingSpace) {
     wordOptions.includeTrailingSpace = false
   }
-  wordOptions = _.merge(DEFAULT_WORD_OPTIONS.en, wordOptions)
+  wordOptions = _.merge({}, DEFAULT_WORD_OPTIONS.en, wordOptions)
 
   let createTokenRange = function(start, end, isWord) {
     tokenRanges.push({start: start, end: end, isWord: isWord})

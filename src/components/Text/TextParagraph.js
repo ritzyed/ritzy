@@ -19,6 +19,7 @@ require('text.less')
 
 const T = React.PropTypes
 const nbsp = String.fromCharCode(160)
+const EOF = -1
 
 export default React.createClass({
   propTypes: {
@@ -91,6 +92,7 @@ export default React.createClass({
     this.upDownPositionEolStart = null
     this.paragraphContainer = React.findDOMNode(this.refs.paragraphContainer)
 
+    this.refs.input.focus()
     this.flow()
   },
 
@@ -109,10 +111,16 @@ export default React.createClass({
    *   determines the cursor position when the character position is at a line end: whether to place
    *   the cursor at the start of the next line (positionEolStart = true), or at the end of the
    *   current one (positionEolStart = false). If the cursor position is not at a line end, this state
-   *   is ignored by the renderer.
+   *   is ignored by the renderer. Since this state is often "left over" from previous calls to setPosition
+   *   it should not be trusted other than for rendering.
+   * @param resetUpDown {boolean} [resetUpDown = true] resetUpDown Whether to reset the up/down advance
+   *   and position values.
    */
-  setPosition(position, positionEolStart) {
-    if(_.isUndefined(positionEolStart)) positionEolStart = true
+  setPosition(position, positionEolStart, resetUpDown) {
+    if(_.isUndefined(positionEolStart)) positionEolStart = this.state.positionEolStart
+    if(_.isUndefined(resetUpDown)) resetUpDown = true
+
+    //console.debug('position', position, 'positionEolStart', positionEolStart, 'resetUpDown', resetUpDown)
 
     this.setState({
       position: position,
@@ -121,8 +129,10 @@ export default React.createClass({
     })
 
     this.activeAttributes = null
-    this.upDownAdvanceX = null
-    this.upDownPositionEolStart = null
+    if(resetUpDown) {
+      this.upDownAdvanceX = null
+      this.upDownPositionEolStart = null
+    }
     this.refs.input.focus()
     this._delayedCursorBlink()
   },
@@ -206,10 +216,14 @@ export default React.createClass({
     let currentLine = {
       chunks: [],
       advance: 0,
+      start: BASE_CHAR,
+      end: null,
 
       reset() {
         this.chunks = []
         this.advance = 0
+        this.start = lines.length > 0 ? lines[lines.length - 1].end : BASE_CHAR
+        this.end = null
       },
 
       pushWord(word) {
@@ -223,22 +237,35 @@ export default React.createClass({
           }
 
           pushArray(this.chunks, word.pendingChunks)
+          let lastChunk = this.chunks[this.chunks.length - 1]
+          this.end = lastChunk.text[lastChunk.text.length - 1]
         }
         this.advance += word.lineAdvance
         word.reset()
+      },
+
+      pushNewline(c) {
+        invariant(c.char === '\n', 'pushNewline can only be called with a newline char.')
+        this.end = c
+      },
+
+      pushEof() {
+        this.end = EOF
       }
     }
 
     let pushLine = (line) => {
-      if(line.chunks.length > 0) {
-        // the "start" of a line is the last character of the previous line, or the BASE_CHAR if the first line
-        let start = lines.length > 0 ? lines[lines.length - 1].end : BASE_CHAR
-        let lastChunk = line.chunks[line.chunks.length - 1]
-        let end = lastChunk.text[lastChunk.text.length - 1]
+      if(line.end) {
         lines.push({
+          isHard() {
+            return this.end.char === '\n'
+          },
+          isEof() {
+            return this.end === EOF
+          },
           chunks: line.chunks,
-          start: start,
-          end: end
+          start: line.start,
+          end: line.end
         })
       }
       line.reset()
@@ -255,9 +282,16 @@ export default React.createClass({
         // new word
         currentWord.pushChunks()
         currentLine.pushWord(currentWord)
+        currentWord.pushChar(c, this)
+      } else if(c.char === '\n') {
+        // new line
+        currentWord.pushChunks()
+        currentLine.pushWord(currentWord)
+        currentLine.pushNewline(c)
+        pushLine(currentLine)
+      } else {
+        currentWord.pushChar(c, this)
       }
-
-      currentWord.pushChar(c, this)
 
       // check for line wrap
       if(currentLine.advance === 0 && currentWord.advance > lineWidth) {
@@ -282,11 +316,22 @@ export default React.createClass({
     currentLine.pushWord(currentWord)
     pushLine(currentLine)
 
+    // add an empty last line if the last line ended with a newline
+    if(lines.length > 0 && lines[lines.length - 1].isHard()) {
+      currentLine.pushEof()
+      pushLine(currentLine)
+    }
+
     this.setState({lines: lines})
   },
 
   insertChars(value) {
     let position = this.state.position
+    let positionEolStart = false
+    if(value.slice(-1) === '\n') {
+      // if the last char is a newline, then we want to position on the start of the next line
+      positionEolStart = true
+    }
 
     if(this.state.selectionActive) {
       position = this.state.selectionLeftChar
@@ -302,7 +347,7 @@ export default React.createClass({
     this.replica.insertCharsAt(position, value, attributes)
 
     let relativeMove = value.length
-    this.setPosition(this.relativeChar(position, relativeMove), false)
+    this.setPosition(this.relativeChar(position, relativeMove), positionEolStart)
     this.flow()
   },
 
@@ -323,21 +368,35 @@ export default React.createClass({
   },
 
   navigateStart() {
-    this.setPosition(BASE_CHAR)
+    this.setPosition(BASE_CHAR, true)
   },
 
   navigateStartLine() {
     let {line} = this._lineContainingChar(this.state.position, this.state.positionEolStart)
-    this.setPosition(line.start)
+    this.setPosition(line.start, true)
   },
 
   navigateEnd() {
-    this.setPosition(this.relativeChar(BASE_CHAR, -1), false)
+    let positionEolStart = false
+    if(this.state.lines && this.state.lines[this.state.lines.length - 1].isEof()) {
+      positionEolStart = true
+    }
+    this.setPosition(this.relativeChar(BASE_CHAR, -1), positionEolStart)
   },
 
   navigateEndLine() {
     let {line} = this._lineContainingChar(this.state.position, this.state.positionEolStart)
-    this.setPosition(line.end, false)
+    let position
+    let positionEolStart = false
+    if(line.isEof() || line.chunks.length === 0) {
+      position = this.state.position
+      positionEolStart = true
+    } else if (line.isHard()) {
+      position = this.relativeChar(line.end, -1, 'limit')
+    } else {
+      position = line.end
+    }
+    this.setPosition(position, positionEolStart)
   },
 
   navigateWordLeft() {
@@ -363,11 +422,11 @@ export default React.createClass({
   },
 
   selectionLeft() {
-    this._modifySelection(this.relativeChar(this.state.position, -1, 'limit'))
+    this._selectionLeftRight(-1)
   },
 
   selectionRight() {
-    this._modifySelection(this.relativeChar(this.state.position, 1, 'limit'))
+    this._selectionLeftRight(1)
   },
 
   selectionUp() {
@@ -379,29 +438,40 @@ export default React.createClass({
   },
 
   selectionStart() {
-    this._modifySelection(BASE_CHAR)
+    this._modifySelection(BASE_CHAR, true)
   },
 
   selectionStartLine() {
     let {line} = this._lineContainingChar(this.state.position, this.state.positionEolStart)
-    this._modifySelection(line.start)
+    this._modifySelection(line.start, true)
   },
 
   selectionEnd() {
-    this._modifySelection(this.relativeChar(BASE_CHAR, -1))
+    var toChar = this.relativeChar(BASE_CHAR, -1)
+    this._modifySelection(toChar, toChar.char === '\n')
   },
 
   selectionEndLine() {
     let {line} = this._lineContainingChar(this.state.position, this.state.positionEolStart)
-    this._modifySelection(line.end, false)
+    let toChar
+    let positionEolStart = false
+    if(line.isEof() || line.chunks.length === 0) {
+      toChar = this.state.position
+      positionEolStart = true
+    } else if (line.isHard()) {
+      toChar = this.relativeChar(line.end, -1, 'limit')
+    } else {
+      toChar = line.end
+    }
+    this._modifySelection(toChar, positionEolStart)
   },
 
   selectionWordLeft() {
-    this._modifySelection(this._wordStartRelativeTo(this.state.position))
+    this._modifySelection(this._wordStartRelativeTo(this.state.position), true)
   },
 
   selectionWordRight() {
-    this._modifySelection(this._wordEndRelativeTo(this.state.position))
+    this._modifySelection(this._wordEndRelativeTo(this.state.position), false)
   },
 
   eraseCharBack() {
@@ -539,8 +609,9 @@ export default React.createClass({
     }, 1000)
   },
 
-  _modifySelection(toChar, positionEolStart) {
+  _modifySelection(toChar, positionEolStart, resetUpDown) {
     if(!toChar) return
+    if(_.isUndefined(resetUpDown)) resetUpDown = true
 
     this.setState((previousState) => {
       if(previousState.selectionActive) {
@@ -551,13 +622,13 @@ export default React.createClass({
               selectionRightChar: previousState.selectionAnchorChar,
               selectionLeftChar: toChar,
               position: toChar,
-              positionEolStart: true
+              positionEolStart: positionEolStart
             }
           } else if(compareAnchorPos > 0) {
             return {
               selectionRightChar: toChar,
               position: toChar,
-              positionEolStart: false
+              positionEolStart: positionEolStart
             }
           } else {
             this.setPosition(previousState.selectionAnchorChar, positionEolStart)
@@ -569,13 +640,13 @@ export default React.createClass({
               selectionRightChar: toChar,
               selectionLeftChar: previousState.selectionAnchorChar,
               position: toChar,
-              positionEolStart: false
+              positionEolStart: positionEolStart
             }
           } else if(compareAnchorPos > 0) {
             return {
               selectionLeftChar: toChar,
               position: toChar,
-              positionEolStart: true
+              positionEolStart: positionEolStart
             }
           } else {
             this.setPosition(previousState.selectionAnchorChar, positionEolStart)
@@ -590,13 +661,15 @@ export default React.createClass({
           selectionLeftChar: comparePos < 0 ? previousState.position : toChar,
           selectionRightChar: comparePos > 0 ? previousState.position : toChar,
           position: toChar,
-          positionEolStart: comparePos > 0
+          positionEolStart: positionEolStart
         }
       }
       // TODO toolbar state based on common rich text attributes of selection
     })
-    this.upDownAdvanceX = null
-    this.upDownPositionEolStart = null
+    if(resetUpDown) {
+      this.upDownAdvanceX = null
+      this.upDownPositionEolStart = null
+    }
   },
 
   _charPositionRelativeToIndex(charIndex, textChars) {
@@ -667,10 +740,6 @@ export default React.createClass({
     }
   },
 
-  _mouseEventToPosition(e) {
-    return this._mouseEventToPositionAndCursorX(e).position
-  },
-
   _doOnSingleClick(e) {
     // hack: if the user clicks on their own cursor sometimes that becomes the target element
     // this is for browsers that don't support pointer-events: none, like IE < 11
@@ -683,7 +752,7 @@ export default React.createClass({
     this.savedPosition = position
 
     if(e.shiftKey) {
-      this._modifySelection(position)
+      this._modifySelection(position, cursorX === 0)
     } else {
       // set the position and selection anchor if the user continues the selection later
       position = position ? position : BASE_CHAR
@@ -743,10 +812,10 @@ export default React.createClass({
       return
     }
 
-    let position = this._mouseEventToPosition(e)
+    let {position, cursorX} = this._mouseEventToPositionAndCursorX(e)
 
     if(position) {
-      this._modifySelection(position)
+      this._modifySelection(position, cursorX === 0)
     }
 
     e.preventDefault()
@@ -763,95 +832,120 @@ export default React.createClass({
   _navigateLeftRight(charCount) {
     let position
     if(this.state.selectionActive && charCount < 0) {
-      // left from left anchor
+      // left from left char
       position = this.state.selectionLeftChar
     } else if(this.state.selectionActive) {
-      // right from right anchor
+      // right from right char
       position = this.state.selectionRightChar
     } else {
       position = this.relativeChar(this.state.position, charCount, 'limit')
     }
-    this.setPosition(position)
+    let endOfLine = this._lineContainingChar(position).endOfLine
+    this.setPosition(position, endOfLine)
   },
 
   _navigateUpDown(lineCount) {
-    let position
-    let positionEolStart = this.state.positionEolStart
-    if(this.state.selectionActive && lineCount < 0) {
-      // up from left char
-      position = this.state.selectionLeftChar
-      positionEolStart = true
-    } else if(this.state.selectionActive) {
-      // down from right char
-      position = this.state.selectionRightChar
-      positionEolStart = false
-    } else {
-      position = this.state.position
-    }
-
-    let {line, index, endOfLine} = this._lineContainingChar(position, positionEolStart)
-    let upDownAdvanceX = this.upDownAdvanceX
-    if(upDownAdvanceX == null) {
-      if(position.id === BASE_CHAR.id || (endOfLine && positionEolStart)) {
-        upDownAdvanceX = 0
+    if(this.state.selectionActive) {
+      // collapse the selection and position the cursor relative to the left (if up) or right (if down)
+      let position
+      let positionEolStart
+      if(lineCount < 0) {
+        position = this.state.selectionLeftChar
         positionEolStart = true
-      } else {
-        let chars = this.replica.getTextRange(line.start, position)
-        upDownAdvanceX = this.advanceXForChars(this.props.fontSize, chars)
+      } else if(this.state.selectionActive) {
+        position = this.state.selectionRightChar
         positionEolStart = false
       }
+      this.setPosition(position, positionEolStart)
     }
+
+    let upDownAdvanceX = this.upDownAdvanceX
+    let positionEolStart = this.upDownPositionEolStart
+    let currentLineAndAdvance = this._lineAndAdvanceAtPosition(this.state.position, this.state.positionEolStart)
+    let index = currentLineAndAdvance.index
+
+    if(this.upDownAdvanceX == null || this.upDownPositionEolStart == null) {
+      upDownAdvanceX = currentLineAndAdvance.advanceX
+      positionEolStart = this.state.positionEolStart
+
+      // save the advance and positionEolStart in case the user navigates up or down again
+      this.upDownAdvanceX = upDownAdvanceX
+      this.upDownPositionEolStart = positionEolStart
+    }
+
     if(index + lineCount < 0 || index + lineCount > this.state.lines.length - 1) {
       // nowhere to go, just unblink for a second to indicate to the user input was received
       this._delayedCursorBlink()
     } else {
       let targetLine = this.state.lines[index + lineCount]
-      let chars = this.replica.getTextRange(targetLine.start, targetLine.end)
-      let indexAndCursor = this.indexAndCursorForXValue(this.props.fontSize, upDownAdvanceX, chars)
-      let newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
-      this.setPosition(newPosition, positionEolStart)
+      let newPosition
+      if(targetLine.isEof()) {
+        newPosition = targetLine.start
+        positionEolStart = true
+      } else {
+        let chars = this.replica.getTextRange(targetLine.start, targetLine.end)
+        let indexAndCursor = this.indexAndCursorForXValue(this.props.fontSize, upDownAdvanceX, chars)
+        newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
+
+        // if the new position is the start of the line, position the cursor at the start of the line
+        positionEolStart = newPosition.id === targetLine.start.id
+      }
+      this.setPosition(newPosition, positionEolStart, false)
     }
-    // save the advance in case the user navigates up or down again
-    this.upDownAdvanceX = upDownAdvanceX
+  },
+
+  _selectionLeftRight(charCount) {
+    let endOfLine = this._lineContainingChar(this.state.position).endOfLine
+    this._modifySelection(this.relativeChar(this.state.position, charCount, 'limit'), !endOfLine)
   },
 
   _selectionUpDown(lineCount) {
-    let position = this.state.position
-    let positionEolStart = this.upDownPositionEolStart ? this.upDownPositionEolStart : this.state.positionEolStart
-
-    let {line, index, endOfLine} = this._lineContainingChar(position, positionEolStart)
-
     let upDownAdvanceX = this.upDownAdvanceX
-    if(upDownAdvanceX == null) {
-      if(position.id === BASE_CHAR.id || (endOfLine && positionEolStart)) {
-        upDownAdvanceX = 0
-        positionEolStart = true
-      } else {
-        let chars = this.replica.getTextRange(line.start, position)
-        upDownAdvanceX = this.advanceXForChars(this.props.fontSize, chars)
-        positionEolStart = false
-      }
+    let positionEolStart = this.upDownPositionEolStart
+    let currentLineAndAdvance = this._lineAndAdvanceAtPosition(this.state.position, this.state.positionEolStart)
+    let line = currentLineAndAdvance.line
+    let index = currentLineAndAdvance.index
+
+    if(this.upDownAdvanceX == null || this.upDownPositionEolStart == null) {
+      upDownAdvanceX = currentLineAndAdvance.advanceX
+      positionEolStart = this.state.positionEolStart
+
+      // save the advance and positionEolStart in case the user navigates up or down again
+      this.upDownAdvanceX = upDownAdvanceX
+      this.upDownPositionEolStart = positionEolStart
     }
+
     if(index + lineCount < 0) {
-      this._modifySelection(BASE_CHAR)
+      this._modifySelection(BASE_CHAR, true)
       // at start of first line, reset the advanceX, and positionEolStart is now true
-      upDownAdvanceX = 0
-      positionEolStart = true
+      this.upDownAdvanceX = 0
+      this.upDownPositionEolStart = true
     } else if(index + lineCount > this.state.lines.length - 1) {
-      this._modifySelection(this.relativeChar(BASE_CHAR, -1))
-      // at end of last line, reset the advanceX, and positionEolStart is now false
-      upDownAdvanceX = null
-      positionEolStart = false
+      // trying to navigate past the end, if last line is eof do nothing, otherwise position at end of line
+      if(!this.state.lines[this.state.lines.length - 1].isEof()) {
+        var toChar = this.relativeChar(BASE_CHAR, -1)
+        this._modifySelection(toChar, false)
+        // at end of last line, reset the advanceX to the end of the line, and positionEolStart is now false
+        let chars = this.replica.getTextRange(line.start, line.end)
+        this.upDownAdvanceX = this.advanceXForChars(this.props.fontSize, chars)
+        this.upDownPositionEolStart = false
+      }
     } else {
       let targetLine = this.state.lines[index + lineCount]
-      let chars = this.replica.getTextRange(targetLine.start, targetLine.end)
-      let indexAndCursor = this.indexAndCursorForXValue(this.props.fontSize, upDownAdvanceX, chars)
-      let newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
-      this._modifySelection(newPosition, positionEolStart)
+      let newPosition
+      if(targetLine.isEof()) {
+        newPosition = targetLine.start
+        positionEolStart = true
+      } else {
+        let chars = this.replica.getTextRange(targetLine.start, targetLine.end)
+        let indexAndCursor = this.indexAndCursorForXValue(this.props.fontSize, upDownAdvanceX, chars)
+        newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
+
+        // if the new position is the start of the line, position the cursor at the start of the line
+        positionEolStart = newPosition.id === targetLine.start.id
+      }
+      this._modifySelection(newPosition, positionEolStart, false)
     }
-    // save the advance in case the user navigates up or down again
-    this.upDownAdvanceX = upDownAdvanceX
-    this.upDownPositionEolStart = positionEolStart
   },
 
   _toggleAttribute(attribute, exclusiveWith) {
@@ -909,12 +1003,14 @@ export default React.createClass({
     invariant(this.state.lines, 'Lines must be defined in the state.')
     if(_.isUndefined(nextIfEol)) nextIfEol = false
     for(let i = 0; i < this.state.lines.length; i++) {
+      let end = this.state.lines[i].isEof() ? this.state.lines[i].start : this.state.lines[i].end
+
       // make this a binary search for performance with large paragraphs?
-      let compareCharPos = this.replica.compareCharPos(char, this.state.lines[i].end)
+      let compareCharPos = this.replica.compareCharPos(char, end)
       if(compareCharPos <= 0) {
         let endOfLine = compareCharPos === 0
         let index = i
-        if(nextIfEol && endOfLine) {
+        if(nextIfEol && endOfLine && !this.state.lines[i].isEof()) {
           index = this.state.lines.length - 1 > index ? index + 1 : index
         }
         return {
@@ -930,6 +1026,25 @@ export default React.createClass({
       line: this.state.lines[last],
       index: last,
       endOfLine: true
+    }
+  },
+
+  _lineAndAdvanceAtPosition(position, positionEolStart) {
+    let {line, index, endOfLine} = this._lineContainingChar(position, positionEolStart)
+    let advanceX
+
+    if(position.id === BASE_CHAR.id || (endOfLine && positionEolStart)) {
+      advanceX = 0
+    } else {
+      let chars = this.replica.getTextRange(line.start, position)
+      advanceX = this.advanceXForChars(this.props.fontSize, chars)
+    }
+
+    return {
+      advanceX: advanceX,
+      line: line,
+      index: index,
+      endOfLine: endOfLine
     }
   },
 
@@ -984,9 +1099,23 @@ export default React.createClass({
       return null
     }
 
-    let line = this.state.lines[lineIndex]
+    let selectionDiv = (leftX, widthX, height) => {
+      return (
+        <div className="text-selection-overlay text-htmloverlay ui-unprintable text-htmloverlay-under-text"
+          style={{top: 0, left: leftX, width: widthX, height: height}}></div>
+      )
+    }
 
-    if(this.replica.compareCharPos(this.state.selectionLeftChar, line.end) > 0
+    let line = this.state.lines[lineIndex]
+    let selectionHeight = Math.round(lineHeight * 10) / 10
+
+    if(line && line.isEof() && this.state.selectionRightChar.id === line.start.id) {
+      return selectionDiv(0, this.advanceXForSpace(this.props.fontSize), selectionHeight)
+    }
+
+    if(!line
+      || line.isEof()
+      || this.replica.compareCharPos(this.state.selectionLeftChar, line.end) > 0
       || this.replica.compareCharPos(this.state.selectionRightChar, line.start) < 0) {
       return null
     }
@@ -1011,14 +1140,16 @@ export default React.createClass({
     let selectionLeftX = this.advanceXForChars(this.props.fontSize, leftChars)
 
     let selectionChars = this.replica.getTextRange(left, right)
+    if(selectionChars.length === 0) {
+      return null
+    }
+
     let selectionWidthX = this.advanceXForChars(this.props.fontSize, selectionChars)
+    if(selectionChars[selectionChars.length - 1].char === '\n') {
+      selectionWidthX += this.advanceXForSpace(this.props.fontSize)
+    }
 
-    let selectionHeight = Math.round(lineHeight * 10) / 10
-
-    return (
-      <div className="text-selection-overlay text-htmloverlay ui-unprintable text-htmloverlay-under-text"
-        style={{top: 0, left: selectionLeftX, width: selectionWidthX, height: selectionHeight}}></div>
-    )
+    return selectionDiv(selectionLeftX, selectionWidthX, selectionHeight)
   },
 
   _renderStyledText(id, text, attributes) {

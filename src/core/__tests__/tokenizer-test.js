@@ -107,4 +107,35 @@ describe('word tokenizer', () => {
     assert.equal(true, ranges[5].isWord)
     assert.equal(false, ranges[6].isWord)
   })
+
+  it('tokenizes newlines as words', () => {
+    let text = 'A few   \nwords,\nwith newlines.\n'
+    let ranges = tokenizer(text)
+    let sub = rangeSub_(text, ranges)
+
+    //assert.equal(ranges.length, 7)
+    assert.equal(sub(0), 'A ')
+    assert.equal(sub(1), 'few   ')
+    assert.equal(sub(2), '\n')
+    assert.equal(sub(3), 'words')
+    assert.equal(sub(4), ',')
+    assert.equal(sub(5), '\n')
+    assert.equal(sub(6), 'with ')
+    assert.equal(sub(7), 'newlines')
+    assert.equal(sub(8), '.')
+    assert.equal(sub(9), '\n')
+
+    assert.equal(true, ranges[0].isWord)
+    assert.equal(true, ranges[1].isWord)
+    assert.equal(true, ranges[2].isWord)
+    console.dir(ranges[2])
+    assert.equal(true, ranges[3].isWord)
+    assert.equal(false, ranges[4].isWord)
+    assert.equal(true, ranges[5].isWord)
+    assert.equal(true, ranges[6].isWord)
+    assert.equal(true, ranges[7].isWord)
+    assert.equal(false, ranges[8].isWord)
+    assert.equal(true, ranges[9].isWord)
+  })
+
 })

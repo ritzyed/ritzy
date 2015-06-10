@@ -189,7 +189,7 @@ export default React.createClass({
   _handleKeyEnter() {
     this._checkEmptyValue()
 
-    console.log('Enter doesn\'t do anything yet!')
+    this.props.insertChars('\n')
     return false
   },
 
