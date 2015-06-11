@@ -90,21 +90,20 @@ export default React.createClass({
     this.activeAttributes = null
     this.upDownAdvanceX = null
     this.upDownPositionEolStart = null
-    this.paragraphContainer = React.findDOMNode(this.refs.paragraphContainer)
+    this.editorContentsContainer = React.findDOMNode(this.refs.editorContentsContainer)
 
     this.refs.input.focus()
     this.flow()
   },
 
   /**
-   * Sets the character and cursor position within the paragraph text. The position
-   * is relative to an existing character given by its replica id. The cursor position is
-   * calculated based on the character position. This is generally straightforward except when
-   * the character position is the last character of a line. In this situation, there are two
-   * possible cursor positions: at the end of the line, or at the beginning of the next line. The
-   * desired cursor location depends on how one got there e.g. hitting "end" on a line should keep
-   * you on the same line, hitting "home" on the next line takes you to the same character position,
-   * except at the beginning of that line.
+   * Sets the character and cursor position within the text. The position is relative to an existing
+   * character given by its replica id. The cursor position is calculated based on the character
+   * position. This is generally straightforward except when the character position is the last
+   * character of a line. In this situation, there are two possible cursor positions: at the end of
+   * the line, or at the beginning of the next line. The desired cursor location depends on how one
+   * got there e.g. hitting "end" on a line should keep you on the same line, hitting "home" on the
+   * next line takes you to the same character position, except at the beginning of that line.
    *
    * @param {object} position The character position to set.
    * @param {boolean} [positionEolStart = true] positionEolStart When rendering the cursor, this state
@@ -142,10 +141,10 @@ export default React.createClass({
   },
 
   /**
-   * Flows the paragraph i.e. wraps the text into multiple lines, splits each line into chunks with the same
+   * Flows the content i.e. wraps the text into multiple lines, splits each line into chunks with the same
    * attributes, and sets the component state based on the result. This state is then used for rendering the
    * editor surface during the next render cycle. This should be called after any operation that may change
-   * the paragraph flow, such as inserting or deleting text.
+   * the content flow, such as inserting or deleting text.
    *
    * One or more spaces at the end of a word are not "counted" for wrapping purposes because that would cause the
    * space to show up at the beginning of the next line. Instead, these spaces are included on the prior line
@@ -1005,7 +1004,7 @@ export default React.createClass({
     for(let i = 0; i < this.state.lines.length; i++) {
       let end = this.state.lines[i].isEof() ? this.state.lines[i].start : this.state.lines[i].end
 
-      // make this a binary search for performance with large paragraphs?
+      // make this a binary search for performance with large numbers of lines?
       let compareCharPos = this.replica.compareCharPos(char, end)
       if(compareCharPos <= 0) {
         let endOfLine = compareCharPos === 0
@@ -1271,9 +1270,9 @@ export default React.createClass({
     let {line, index, endOfLine} = this._lineContainingChar(this.state.position, this.state.positionEolStart)
     let previousLineHeights = line ? lineHeight * index : 0
 
-    // The cursor position is relative to the first parent of the paragraph container with position=relative that is
+    // The cursor position is relative to the first parent of the contents container with position=relative that is
     // a common parent with the cursor div we are rendering --> it should be the text-content-wrapper
-    let paragraphContainerPosition = elementPosition(this.paragraphContainer,
+    let contentsContainerPosition = elementPosition(this.editorContentsContainer,
       (elem) => elem.className.indexOf('text-content-wrapper') >= 0)
     let cursorAdvanceX
 
@@ -1284,8 +1283,8 @@ export default React.createClass({
       cursorAdvanceX = this.advanceXForChars(this.props.fontSize, positionChars)
     }
 
-    cursorStyle.left = paragraphContainerPosition.x + cursorAdvanceX
-    cursorStyle.top = paragraphContainerPosition.y + previousLineHeights
+    cursorStyle.left = contentsContainerPosition.x + cursorAdvanceX
+    cursorStyle.top = contentsContainerPosition.y + previousLineHeights
 /*
     cursorStyle.opacity = 0
     cursorStyle.display = 'none'
@@ -1311,10 +1310,10 @@ export default React.createClass({
     let lines = this._splitIntoLines()
 
     return (
-      <div ref="paragraphContainer">
+      <div ref="editorContentsContainer">
         <div onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
           <TextInput id={id} ref="input" {...this.inputFunctions}/>
-          <div className="text-paragraph">
+          <div className="text-contents">
             { lines.length > 0 ?
               lines.map((line, index) =>this._renderLine(line, index, lineHeight) ) :
               this._renderLine(nbsp, 0, lineHeight)}

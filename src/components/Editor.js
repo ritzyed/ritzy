@@ -1,5 +1,5 @@
 import React from 'react/addons'
-import TextParagraph from './Text/TextParagraph'
+import EditorContents from './EditorContents'
 
 const T = React.PropTypes
 
@@ -28,7 +28,7 @@ export default React.createClass({
     return (
       <div className="text-content-wrapper" style={{width: width, height: height, backgroundColor: 'rgb(255, 255, 255)'}}>
         <div style={{padding: '0px ' + margin + 'px'}}>
-          <TextParagraph id={id} fontSize={18} margin={margin} width={width} {...other} />
+          <EditorContents id={id} fontSize={18} margin={margin} width={width} {...other} />
         </div>
       </div>
     )
