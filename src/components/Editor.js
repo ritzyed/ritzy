@@ -23,7 +23,7 @@ export default React.createClass({
     const { id, ...other } = this.props    // eslint-disable-line no-unused-vars
     const margin = 20
     const width = 600
-    const height = 300
+    const height = 800
 
     return (
       <div className="text-content-wrapper" style={{width: width, height: height, backgroundColor: 'rgb(255, 255, 255)'}}>

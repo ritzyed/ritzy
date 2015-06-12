@@ -722,20 +722,58 @@ export default React.createClass({
   },
 
   _mouseEventToPositionAndCursorX(e) {
-    // the entire target span is a particular weight and style, so we can calculate our font metrics relative to it
-    let mouseX = e.pageX - elementPosition(e.target).x
-    // TODO handle mouse position outside elements containing text (could be before or after) with the whole text
-    // TODO do we still need id or can we use the lines state?
-    let textChars = e.target.id ?
-      this.replica.getTextRange(this.relativeChar(e.target.id, -1, 'limit')) :
-      this.replica.getTextRange(BASE_CHAR)
+    // target is the particular element within the editor clicked on, current target is the entire editor div
+    let mouseX = e.pageX - elementPosition(e.currentTarget).x
+    let mouseY = e.pageY - elementPosition(e.currentTarget).y
 
-    let indexAndCursor = this.indexAndCursorForXValue(this.props.fontSize, mouseX, textChars)
-    let position = this._charPositionRelativeToIndex(indexAndCursor.index, textChars)
-    // note that the cursorX is relative to the target span, not the beginning of the text
+    // TODO this works for now since all line heights are the same, but get the heights of each line dynamically
+    let lineHeight = this.lineHeight(this.props.fontSize)
+    let lineIndex = Math.floor(mouseY / lineHeight)
+
+    if(lineIndex > this.state.lines.length - 1) {
+      // clicked after the last line, set cursor on the last line
+      lineIndex = this.state.lines.length - 1
+    }
+
+    let position
+    let positionEolStart
+    let line = this.state.lines[lineIndex]
+    let traversedX = 0
+    for(let chunk of line.chunks) {
+      let advanceX = this.advanceXForChars(this.props.fontSize, chunk.text)
+      if(traversedX + advanceX >= mouseX) {
+        let indexAndCursor = this.indexAndCursorForXValue(this.props.fontSize, mouseX - traversedX, chunk.text)
+        position = this._charPositionRelativeToIndex(indexAndCursor.index, chunk.text)
+
+        // if clicked a line beginning (char position is end of last line) then position beginning of clicked line
+        let cursorX = traversedX + indexAndCursor.cursorX
+        positionEolStart = cursorX === 0 || line.isEof()
+
+        // note that the cursorX is relative to the beginning of the line
+        return {
+          position: position,
+          positionEolStart: positionEolStart
+        }
+      } else {
+        traversedX += advanceX
+      }
+    }
+
+    if(line.isEof()) {
+      position = line.start
+      positionEolStart = true
+    } else if(line.isHard() && (line.chunks.length > 0 || line.start.id !== line.end.id)) {
+      // position just before the end newline
+      position = this.relativeChar(line.end, -1, 'limit')
+      positionEolStart = true
+    } else {
+      position = line.end
+      positionEolStart = false
+    }
+
     return {
       position: position,
-      cursorX: indexAndCursor.cursorX
+      positionEolStart: positionEolStart
     }
   },
 
@@ -747,17 +785,15 @@ export default React.createClass({
     }
 
     // save the position for a potential double-click
-    let {position, cursorX} = this._mouseEventToPositionAndCursorX(e)
+    let {position, positionEolStart} = this._mouseEventToPositionAndCursorX(e)
     this.savedPosition = position
 
     if(e.shiftKey) {
-      this._modifySelection(position, cursorX === 0)
+      this._modifySelection(position, positionEolStart)
     } else {
       // set the position and selection anchor if the user continues the selection later
       position = position ? position : BASE_CHAR
 
-      // if clicked a line beginning (char position is end of last line) then position beginning of clicked line
-      let positionEolStart = cursorX === 0
       this.setPosition(position, positionEolStart)
       this.setState({
         selectionAnchorChar: position
@@ -811,10 +847,10 @@ export default React.createClass({
       return
     }
 
-    let {position, cursorX} = this._mouseEventToPositionAndCursorX(e)
+    let {position, positionEolStart} = this._mouseEventToPositionAndCursorX(e)
 
     if(position) {
-      this._modifySelection(position, cursorX === 0)
+      this._modifySelection(position, positionEolStart)
     }
 
     e.preventDefault()
@@ -1216,7 +1252,7 @@ export default React.createClass({
     }
 
     return (
-      <span style={style} key={id} id={id}>{text}</span>
+      <span style={style} key={id}>{text}</span>
     )
   },
 
