@@ -277,7 +277,7 @@ export default React.createClass({
         currentWord.pushChunks()
       }
 
-      if(c.char !== ' ' && currentWord.lastCharSpace) {
+      if(c.char !== '\n' && c.char !== ' ' && currentWord.lastCharSpace) {
         // new word
         currentWord.pushChunks()
         currentLine.pushWord(currentWord)
@@ -399,25 +399,11 @@ export default React.createClass({
   },
 
   navigateWordLeft() {
-    let position
-    if(this.state.selectionActive) {
-      // start from one character into the selection left char so that relative to the left selected word
-      position = this.relativeChar(this.state.selectionLeftChar, 1, 'limit')
-    } else {
-      position = this.state.position
-    }
-    this.setPosition(this._wordStartRelativeTo(position))
+    this._navigateWordLeftRight(-1)
   },
 
   navigateWordRight() {
-    let position
-    if(this.state.selectionActive) {
-      // start from one character before the selection right char so that relative to the right selected word
-      position = this.relativeChar(this.state.selectionRightChar, -1, 'limit')
-    } else {
-      position = this.state.position
-    }
-    this.setPosition(this._wordEndRelativeTo(position))
+    this._navigateWordLeftRight(1)
   },
 
   selectionLeft() {
@@ -466,45 +452,50 @@ export default React.createClass({
   },
 
   selectionWordLeft() {
-    this._modifySelection(this._wordStartRelativeTo(this.state.position), true)
+    let position = this._wordStartRelativeTo(this.state.position)
+    let endOfLine = this._lineContainingChar(this.state.position).endOfLine
+
+    this._modifySelection(position, !endOfLine)
   },
 
   selectionWordRight() {
-    this._modifySelection(this._wordEndRelativeTo(this.state.position), false)
+    let position = this._wordEndRelativeTo(this.state.position)
+    let endOfLine = this._lineContainingChar(this.state.position).endOfLine
+
+    this._modifySelection(position, !endOfLine)
   },
 
   eraseCharBack() {
-    let position = this.state.position
     if(this.state.selectionActive) {
-      position = this.state.selectionLeftChar
       this._eraseSelection()
-      this.setPosition(position)
     } else {
-      position = this.relativeChar(position, -1)
+      let position = this.relativeChar(this.state.position, -1)
       this.replica.rmChars(this.state.position)
+      this.flow()
+
+      let endOfLine = this._lineContainingChar(position).endOfLine
+      this.setPosition(position, endOfLine)
     }
-    this.flow()
   },
 
   eraseCharForward() {
     if(this.state.selectionActive) {
-      let position = this.state.selectionLeftChar
       this._eraseSelection()
-      this.setPosition(position)
     } else {
       let next = this.relativeChar(this.state.position, 1)
       this.replica.rmChars(next)
+      this.flow()
+
+      let endOfLine = this._lineContainingChar(next).endOfLine
+      this.setPosition(next, endOfLine)
     }
-    this.flow()
   },
 
   eraseWordBack() {
-    let position = this.state.position
     if(this.state.selectionActive) {
-      position = this.state.selectionLeftChar
       this._eraseSelection()
-      this.setPosition(position)
     } else {
+      let position = this.state.position
       let start = this._wordStartRelativeTo(position)
       let end = position
       if(start.id === position.id) {
@@ -519,17 +510,18 @@ export default React.createClass({
 
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
+      this.flow()
+
+      let endOfLine = this._lineContainingChar(position).endOfLine
+      this.setPosition(position, endOfLine)
     }
-    this.flow()
   },
 
   eraseWordForward() {
-    let position = this.state.position
     if(this.state.selectionActive) {
-      position = this.state.selectionLeftChar
       this._eraseSelection()
-      this.setPosition(position)
     } else {
+      let position = this.state.position
       let options
       if(isWhitespace(this.relativeChar(position, 1, 'limit').char)) {
         options = { includeLeadingSpace: true }
@@ -548,8 +540,11 @@ export default React.createClass({
 
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
+      this.flow()
+
+      let endOfLine = this._lineContainingChar(position).endOfLine
+      this.setPosition(position, endOfLine)
     }
-    this.flow()
   },
 
   toggleBold() {
@@ -859,9 +854,14 @@ export default React.createClass({
 
   _eraseSelection() {
     invariant(this.state.selectionActive, 'Selection must be active to erase it.')
+    let position = this.state.selectionLeftChar
+
     let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
     this.replica.rmChars(selectionChars)
-    this.setState({selectionActive: false})
+    this.flow()
+
+    let endOfLine = this._lineContainingChar(position).endOfLine
+    this.setPosition(position, endOfLine)
   },
 
   _navigateLeftRight(charCount) {
@@ -927,6 +927,23 @@ export default React.createClass({
       }
       this.setPosition(newPosition, positionEolStart, false)
     }
+  },
+
+  _navigateWordLeftRight(wordCount) {
+    let position
+    if(this.state.selectionActive && wordCount < 0) {
+      // start from one character into the selection left char so that relative to the left selected word
+      position = this.relativeChar(this.state.selectionLeftChar, 1, 'limit')
+    } else if(this.state.selectionActive) {
+      // start from one character before the selection right char so that relative to the right selected word
+      position = this.relativeChar(this.state.selectionRightChar, -1, 'limit')
+    } else {
+      position = this.state.position
+    }
+    let relativeTo = wordCount < 0 ? this._wordStartRelativeTo : this._wordEndRelativeTo
+    position = relativeTo(position)
+    let endOfLine = this._lineContainingChar(position).endOfLine
+    this.setPosition(position, endOfLine)
   },
 
   _selectionLeftRight(charCount) {
