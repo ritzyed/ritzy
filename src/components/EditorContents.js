@@ -1004,17 +1004,16 @@ export default React.createClass({
     if(this.state.selectionActive) {
       let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
       let charsWithAttrNotSet = selectionChars.filter(c => !c.attributes || !c.attributes[attribute])
-      let attrNeedsSet = charsWithAttrNotSet && charsWithAttrNotSet.length > 0
 
       let setAttr = {}
 
-      if(attrNeedsSet) {
+      if(charsWithAttrNotSet && charsWithAttrNotSet.length > 0) {
         let attr = {}
         attr[attribute] = true
-        attr[exclusiveWith] = false
 
         for(let i = 0; i < charsWithAttrNotSet.length; i++) {
           let currentAttrs = charsWithAttrNotSet[i].attributes
+          if(exclusiveWith && currentAttrs && currentAttrs[exclusiveWith]) delete currentAttrs[exclusiveWith]
           setAttr[charsWithAttrNotSet[i].id] = currentAttrs ? _.merge(currentAttrs, attr) : attr
         }
       } else {
@@ -1032,7 +1031,7 @@ export default React.createClass({
       // no selection so we are either toggling the explicitly set state, or setting the state explicitly
       if(this.activeAttributes) {
         this.activeAttributes[attribute] = !this.activeAttributes[attribute]
-        if(this.activeAttributes[attribute] && this.activeAttributes[exclusiveWith]) {
+        if(this.activeAttributes[attribute] && exclusiveWith && this.activeAttributes[exclusiveWith]) {
           this.activeAttributes[exclusiveWith] = false
         }
       } else if(this.state.position) {
@@ -1040,7 +1039,7 @@ export default React.createClass({
         if(currentAttrs) {
           currentAttrs[attribute] = !currentAttrs[attribute]
           this.activeAttributes = currentAttrs
-          if(this.activeAttributes[attribute] && this.activeAttributes[exclusiveWith]) {
+          if(this.activeAttributes[attribute] && exclusiveWith && this.activeAttributes[exclusiveWith]) {
             this.activeAttributes[exclusiveWith] = false
           }
         } else {
@@ -1104,6 +1103,7 @@ export default React.createClass({
   _reset() {
     this.replica.set('123456789')
     this.resetPosition()
+    this.flow()
     this.refs.input.focus()
   },
 
