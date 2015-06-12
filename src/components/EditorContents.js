@@ -87,7 +87,6 @@ export default React.createClass({
 
   componentDidMount() {
     this.clickCount = 0
-    this.activeAttributes = null
     this.upDownAdvanceX = null
     this.upDownPositionEolStart = null
     this.editorContentsContainer = React.findDOMNode(this.refs.editorContentsContainer)
@@ -124,10 +123,10 @@ export default React.createClass({
     this.setState({
       position: position,
       positionEolStart: positionEolStart,
-      selectionActive: false
+      selectionActive: false,
+      activeAttributes: null
     })
 
-    this.activeAttributes = null
     if(resetUpDown) {
       this.upDownAdvanceX = null
       this.upDownPositionEolStart = null
@@ -332,21 +331,23 @@ export default React.createClass({
       positionEolStart = true
     }
 
+    let activeAttributes
     if(this.state.selectionActive) {
       position = this.state.selectionLeftChar
       // if selection, then activeAttributes (set by command or toolbar) are set by the first selected char
-      this.activeAttributes = this.relativeChar(position, 1, 'limit').attributes || {}
+      activeAttributes = this.relativeChar(position, 1, 'limit').attributes
       this._eraseSelection()
+    } else {
+      activeAttributes = this.state.activeAttributes ?
+        this.state.activeAttributes :
+        this.relativeChar(position, 0).attributes // reload attributes from the replica in case they have changed
     }
 
-    let attributes = this.activeAttributes ?
-      this.activeAttributes :
-      this.relativeChar(position, 0).attributes // reload attributes from the replica in case they have changed
-
-    this.replica.insertCharsAt(position, value, attributes)
+    this.replica.insertCharsAt(position, value, activeAttributes)
 
     let relativeMove = value.length
     this.setPosition(this.relativeChar(position, relativeMove), positionEolStart)
+    this.setState({activeAttributes: activeAttributes})
     this.flow()
   },
 
@@ -1029,24 +1030,26 @@ export default React.createClass({
     } else {
       // TODO set the state of the toolbar so the toolbar button can be rendered accordingly
       // no selection so we are either toggling the explicitly set state, or setting the state explicitly
-      if(this.activeAttributes) {
-        this.activeAttributes[attribute] = !this.activeAttributes[attribute]
-        if(this.activeAttributes[attribute] && exclusiveWith && this.activeAttributes[exclusiveWith]) {
-          this.activeAttributes[exclusiveWith] = false
+      let activeAttributes = this.state.activeAttributes
+      if(activeAttributes) {
+        activeAttributes[attribute] = !activeAttributes[attribute]
+        if(activeAttributes[attribute] && exclusiveWith && activeAttributes[exclusiveWith]) {
+          activeAttributes[exclusiveWith] = false
         }
       } else if(this.state.position) {
         let currentAttrs = this.relativeChar(this.state.position, 0, 'limit').attributes
         if(currentAttrs) {
           currentAttrs[attribute] = !currentAttrs[attribute]
-          this.activeAttributes = currentAttrs
-          if(this.activeAttributes[attribute] && exclusiveWith && this.activeAttributes[exclusiveWith]) {
-            this.activeAttributes[exclusiveWith] = false
+          activeAttributes = currentAttrs
+          if(activeAttributes[attribute] && exclusiveWith && activeAttributes[exclusiveWith]) {
+            activeAttributes[exclusiveWith] = false
           }
         } else {
-          this.activeAttributes = {}
-          this.activeAttributes[attribute] = true
+          activeAttributes = {}
+          activeAttributes[attribute] = true
         }
       }
+      this.setState({activeAttributes: activeAttributes})
     }
   },
 
@@ -1139,11 +1142,12 @@ export default React.createClass({
   /** For debugging */
   _dumpSelection() {
     if(this.state.selectionActive) {
-      console.debug('Current selection contents: [' + this.replica.getTextRange(
-        this.state.selectionLeftChar, this.state.selectionRightChar).map(c => c.char).join('') + ']')
+      var selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
+      console.debug('Current selection contents: [' + selectionChars.map(c => c.char).join('') + ']')
       console.debug('Left=', this.state.selectionLeftChar)
       console.debug('Right=', this.state.selectionRightChar)
       console.debug('Anchor=', this.state.selectionAnchorChar)
+      console.debug('Chars=', selectionChars)
     } else {
       console.debug('No active selection')
     }
@@ -1314,8 +1318,12 @@ export default React.createClass({
       'text-cursor-blink': !this.state.cursorMotion
     })
 
+    let italicAtPosition = this.state.position.attributes && this.state.position.attributes[ATTR.ITALIC]
+    let italicActive = this.state.activeAttributes && this.state.activeAttributes[ATTR.ITALIC]
+    let italicInactive = this.state.activeAttributes && !this.state.activeAttributes[ATTR.ITALIC]
+
     let caretClasses = classNames('text-cursor-caret', {
-      'text-cursor-italic': this.state.position.attributes && this.state.position.attributes[ATTR.ITALIC]
+      'text-cursor-italic': italicActive || (italicAtPosition && !italicInactive)
     })
 
     let cursorStyle = {opacity: 1}

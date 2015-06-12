@@ -49,10 +49,9 @@ class TextData {
     this.deletedIds.splice(pos, 0, null)
     let attrs = null
     if(attributes) {
-      attrs = attributes
+      attrs = _.clone(attributes)
     }
     this.attributes.splice(pos, 0, attrs)
-    this.currentId = id
   }
 
   deleteChar(pos) {
@@ -69,7 +68,6 @@ class TextData {
         this.deletedIds[pos - 1].push(this.deletedIds[pos][i])
       }
     }
-    this.currentId = this.ids[pos]
     this.deletedIds.splice(pos, 1)
     this.ids.splice(pos, 1)
     this.attributes.splice(pos, 1)
@@ -79,7 +77,7 @@ class TextData {
     invariant(pos !== 0, 'Cannot set attributes of position 0.')
     invariant(pos < this.len(), 'Index ' + pos + ' out of bounds.')
 
-    this.attributes[pos] = attributes
+    this.attributes[pos] = _.clone(attributes)
   }
 
   matches(pos, ids, includeDeleted) {
@@ -308,7 +306,9 @@ let Text = Syncable.extend('Text', {
    * Insert chars with optional attributes at a given position.
    * @param {object} char The position at which to insert.
    * @param {string} value The string value to insert.
-   * @param {object} [attributes] Attributes to set, or no attributes if not set.
+   * @param {object} [attributes] Attributes to set, or no attributes if not set. The attributes are
+   *   cloned before setting so that they cannot be modified by simply changing the object reference.
+   *   This type of change would not propagate through the replica.
    */
   insertCharsAt(char, value, attributes) {
     let ins = {}

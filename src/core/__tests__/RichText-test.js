@@ -340,6 +340,24 @@ describe('RichText', () => {
     assert.isUndefined(text.getCharAt(4).attributes)
   })
 
+  it('inserted character attributes are not modifiable by reference', () => {
+    let text = new Text('/Text#1')
+    text.reset()
+    text.set('abcdef')
+
+    let attributes = { bold: true }
+    let charOfB = text.getCharAt(2)
+    let ins = {}
+    ins[charOfB.id] = { value: 'B', attributes: attributes }
+    text.insert(ins)
+
+    assert.deepEqual(text.getCharAt(3).attributes, { bold: true })
+
+    attributes.italic = true
+    assert.deepEqual(attributes, { bold: true, italic: true })
+    assert.deepEqual(text.getCharAt(3).attributes, { bold: true })
+  })
+
   it('inserts multiple characters', () => {
     let text = new Text('/Text#1')
     text.reset()
@@ -550,6 +568,24 @@ describe('RichText', () => {
       'One or both chars were not found.')
   })
 
+  it('attributes of chars are not modifiable by reference', () => {
+    let text = new Text('/Text#1')
+    text.reset()
+    text.set('abcdef')
+    let charAt = charAt_(text)
+
+    let charOfB = charAt(2)
+    let attrs = {}
+    attrs[charOfB.id] = { bold: true }
+    text.setAttributes(attrs)
+
+    var char2Attrs = charAt(2).attributes
+    assert.deepEqual(char2Attrs, { bold: true })
+    char2Attrs.italic = true
+    assert.deepEqual(char2Attrs, { bold: true, italic: true })
+    assert.deepEqual(charAt(2).attributes, { bold: true })
+  })
+
   it('can set attributes of chars', () => {
     let text = new Text('/Text#1')
     text.reset()
@@ -571,5 +607,24 @@ describe('RichText', () => {
     assert.deepEqual(charAt(4).attributes, { bold: true })
     assert.isUndefined(charAt(5).attributes)
     assert.isUndefined(charAt(6).attributes)
+  })
+
+  it('set character attributes are not modifiable by reference', () => {
+    let text = new Text('/Text#1')
+    text.reset()
+    text.set('abcdef')
+    let charAt = charAt_(text)
+
+    let charOfB = charAt(2)
+    let attrs = {}
+    let attrsOfB = { bold: true }
+    attrs[charOfB.id] = attrsOfB
+    text.setAttributes(attrs)
+
+    assert.deepEqual(charAt(2).attributes, { bold: true })
+
+    attrsOfB.italic = true
+    assert.deepEqual(attrsOfB, { bold: true, italic: true })
+    assert.deepEqual(charAt(2).attributes, { bold: true })
   })
 })
