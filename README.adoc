@@ -159,7 +159,7 @@ responsible for receiving changes from all editors and transmitting them back to
 other editors. A default server implementation is provided as part of the Ritzy
 project.
 
-Currently, Ritzy does not operate stand-alone (see <<todos>>).
+Currently, Ritzy does not operate stand-alone (see <<roadmap>>).
 
 The causal trees approach is highly amenable to offline editing, therefore
 offline editing is a supported use case for Ritzy.
@@ -178,19 +178,33 @@ be to create a Ritzy swarm.js peer within their server-side application, which
 will be responsible for receiving all updates to text replicas. The application
 can then use that text replica for any purpose.
 
-[[todos]]
-== TODOs
+[[roadmap]]
+== Roadmap
+
+The following is a tentative list of features and capabilities that will be
+added over time. http://TODO[Contributions] are welcome.
 
 * Basic features:
 ** cut/copy/paste
 ** undo/redo
+
+* Multiple colored/labeled cursors.
+
+* Dynamic editor height based on content (easy).
 
 * Tests (many, see GitHub issue xx) (hard!).
 
 * Once tests are in place, refactoring to make the editor code more modular /
 easier to understand (hard).
 
-* A skinnable toolbar (medium).
+* Expose an API for programmatic access to the editor and contents (medium):
+** Get/set contents using the native data model for proper concurrency control
+** Get contents as HTML
+** Insert HTML at a particular position specified by the native data model
+** Event callbacks for inserts, deletions, changes, and selections
+** Command and status support for text attributes e.g. to support a toolbar
+
+* A skinnable toolbar that leverages the editor API (medium).
 
 * Make Ritzy work apart from a shared replica and server implementation. Create
 a local-only replica with the same API (medium).
@@ -199,7 +213,8 @@ a local-only replica with the same API (medium).
 
 * Handle font size as a character attribute (medium).
 
-* Separate CSS and make it easier to skin and integrate (easy).
+* Separate CSS (internal vs user editable) to make skinning and integration
+simpler (easy).
 
 == Support
 
