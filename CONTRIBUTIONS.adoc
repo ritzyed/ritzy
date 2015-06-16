@@ -64,6 +64,11 @@ project.
  ./nodew node ...
  ./nodew gulp ...
 
+
+WARNING: Under Windows Cygwin, the platform and architecture detection in
+`nodew` is unlikely to work correctly. Set NODE_HOME to override it, and check
+the settings are correct with `./nodew npm version`.
+
 Shell function definitions for node, npm, gulp, etc. similar to the following
 may be useful:
 

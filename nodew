@@ -9,8 +9,8 @@ NODE_VERSION_DEFAULT=0.12.2
 #NODE=iojs
 #NODE_VERSION_DEFAULT=1.7.1
 
+# This probably won't work on Windows/Cygwin. Set NODE_HOME explicitly.
 platform=$(uname -s | tr '[:upper:]' '[:lower:]')
-
 typeset -A arches=([x86_64]=x64 [x86]=x86) # not sure about the x86
 arch=$(uname -m | tr '[:upper:]' '[:lower:]')
 nodearch=${arches[$arch]}

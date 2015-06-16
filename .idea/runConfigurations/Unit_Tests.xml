@@ -5,7 +5,7 @@
     <pass-parent-env>true</pass-parent-env>
     <envs />
     <ui>bdd</ui>
-    <extra-mocha-options>--compilers js:compiler.js /home/raman/source/ritzy-editor/src/**/*-test.js</extra-mocha-options>
+    <extra-mocha-options>--compilers js:compiler.js ./src/**/*-test.js</extra-mocha-options>
     <test-directory>.</test-directory>
     <recursive>false</recursive>
     <method />
