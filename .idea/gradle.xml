@@ -6,7 +6,7 @@
         <option name="createEmptyContentRootDirectories" value="true" />
         <option name="distributionType" value="LOCAL" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="gradleHome" value="$OPTDIR$/gradle-2" />
+        <option name="gradleHome" value="$OPTDIR$/gradle-2.4" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
@@ -16,4 +16,3 @@
     </option>
   </component>
 </project>
-

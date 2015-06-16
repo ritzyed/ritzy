@@ -1,7 +1,7 @@
 //noinspection GroovyAssignabilityCheck
 plugins {
-  id "com.moowork.node" version "0.9"
-  id "com.moowork.gulp" version "0.9"
+  id "com.moowork.node" version "0.10"
+  id "com.moowork.gulp" version "0.10"
 }
 
 apply plugin: 'base'
@@ -28,5 +28,5 @@ task gulp_build_release(type: GulpTask) {
 defaultTasks 'gulp_default'
 
 task wrapper(type: Wrapper) {
-  gradleVersion = '2.3'
+  gradleVersion = '2.4'
 }
