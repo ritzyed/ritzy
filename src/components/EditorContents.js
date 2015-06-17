@@ -731,6 +731,13 @@ export default React.createClass({
       lineIndex = this.state.lines.length - 1
     }
 
+    if(lineIndex < 0) {
+      return {
+        position: BASE_CHAR,
+        positionEolStart: true
+      }
+    }
+
     let position
     let positionEolStart
     let line = this.state.lines[lineIndex]
