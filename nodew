@@ -5,7 +5,7 @@ DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 # This should match the "workDir" setting in build.gradle
 NODEJS=$DIR/build/gradle/nodejs
 NODE=node
-NODE_VERSION_DEFAULT=0.12.2
+NODE_VERSION_DEFAULT=0.12.4
 #NODE=iojs
 #NODE_VERSION_DEFAULT=1.7.1
 

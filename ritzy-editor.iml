@@ -8,7 +8,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.gradle" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Node.js v0.12.2 Core Modules" level="application" />
     <orderEntry type="library" name="ritzy-editor node_modules" level="project" />
+    <orderEntry type="library" name="Node.js v0.12.4 Core Modules" level="application" />
   </component>
 </module>

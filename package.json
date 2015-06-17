@@ -66,7 +66,7 @@
     "less-loader": "^2.2.0",
     "minimist": "^1.1.1",
     "mocha": "^2.2.4",
-    "npm": "^2.7.5",
+    "npm": "^2.11.3",
     "npm-check-updates": "^1.5.1",
     "protractor": "^2.0.0",
     "psi": "^1.0.6",

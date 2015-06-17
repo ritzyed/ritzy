@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Spyjs" type="JavaScriptTraceType" factoryName="Spy-js" node="$PROJECT_DIR$/build/gradle/nodejs/node-v0.12.2-linux-x64/bin/node" config="http://localhost:3000" has-config="false" system-proxy="false" proxy-port="3546" open-browser="false" browser="" limits="1,3,3,50">
+  <configuration default="false" name="Spyjs" type="JavaScriptTraceType" factoryName="Spy-js" node="$PROJECT_DIR$/build/gradle/nodejs/node-v0.12.4-linux-x64/bin/node" config="http://localhost:5000" has-config="false" system-proxy="false" proxy-port="3546" open-browser="false" browser="" limits="1,3,3,50">
     <RunnerSettings RunnerId="JavaScriptTraceRunner" />
     <ConfigurationWrapper RunnerId="JavaScriptTraceRunner" />
     <method />
