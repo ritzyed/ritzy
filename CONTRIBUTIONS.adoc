@@ -1,6 +1,6 @@
 = Ritzy Editor Contributor Guide
 Raman Gupta <raman@vivosys.com>
-v1.0, 2015-03-11
+v1.0, 2015-06-15
 :toc:
 
 TODO: example: https://github.com/puppetlabs/puppet/blob/master/CONTRIBUTING.md
@@ -10,8 +10,8 @@ TODO: example: https://github.com/puppetlabs/puppet/blob/master/CONTRIBUTING.md
 
 TODO
 
-The source is on GitHub: https://github.com/ritzy/ritzy. Documentation and
-issue management is also managed there.
+The source is on GitHub: https://github.com/rocketraman/ritzy-editor.
+Documentation and issues are also managed there.
 
 === Commit Message Style
 
@@ -35,6 +35,9 @@ Gradle pulls in the appropriate npm dependencies, and can be used to execute npm
 in a platform-independent way. Gradle can bootstrap using the `gradlew` script.
 The gradle https://github.com/srs/gradle-node-plugin[node-plugin] is used to
 run programs such as `npm`.
+
+Alternatively, skip Gradle all together and install NodeJS / io.js, npm, in the
+normal way.
 
 === NPM
 

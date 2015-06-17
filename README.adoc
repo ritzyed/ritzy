@@ -186,7 +186,9 @@ See also <<commercial_features>>.
 == Roadmap
 
 The following is a tentative list of features and capabilities that will be
-added over time. http://TODO[Contributions] are welcome.
+added over time.
+https://github.com/rocketraman/ritzy-editor/blob/master/CONTRIBUTIONS.adoc[Contributions]
+are welcome.
 
 * Basic features:
 ** cut/copy/paste
@@ -267,7 +269,8 @@ know] if your company or startup may be interested in such a service.
 
 == Support
 
-Support is provided on an as-available basis via the GitHub issues system.
+Support is provided on an as-available basis via
+https://github.com/rocketraman/ritzy-editor/issues[GitHub issues].
 
-Contact raman@vivosys.com @ http://vivosys.com[VIVO Systems] for paid support
-or enhancements.
+Contact mailto:raman@vivosys.com[raman@vivosys.com] @
+http://vivosys.com[VIVO Systems] for paid support or enhancements.
