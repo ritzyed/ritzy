@@ -1,6 +1,6 @@
 = Ritzy Editor
 Raman Gupta <raman@vivosys.com>
-v1.0, 2015-03-11
+v1.0, 2015-06-15
 :toc:
 :sectanchors:
 
@@ -178,6 +178,8 @@ be to create a Ritzy swarm.js peer within their server-side application, which
 will be responsible for receiving all updates to text replicas. The application
 can then use that text replica for any purpose.
 
+See also <<commercial_features>>.
+
 [[roadmap]]
 == Roadmap
 
@@ -215,6 +217,46 @@ a local-only replica with the same API (medium).
 
 * Separate CSS (internal vs user editable) to make skinning and integration
 simpler (easy).
+
+[[commercial_features]]
+== Commercial Features
+
+In addition to the editor which will remain free and open source,
+http://vivosys.com[VIVO Systems], the organization behind Ritzy, is considering
+offering the Ritzy editor as a service. Because it is intended for real-time
+collaboration, a server-side component is required by Ritzy.
+
+NOTE: A simple but working server-side component is bundled with the free and
+open source Ritzy editor. See <<integration_ss>>.
+
+The commercial server-side solution will handle storage, communications,
+security, availability, and provide a simple but powerful server-side API for
+developers to interact with the editors under their control, and the data they
+contain. Some of the features of this API may include:
+
+* Create, archive, and destroy text replicas.
+
+* User identification and specification of authoring labels.
+
+* Set and modify access control.
+
+* Get editor contents (snapshot + real-time bidirectional push).
+** Integration with various server-side libraries e.g. Akka, Vert.X, RxJava,
+Kafka, etc.
+
+* Set or modify editor contents.
+
+* Show server feedback on editor surface e.g. comments/errors/word highlights.
+
+* Get revision history.
+
+* Get editing statistics e.g. authors, character count overall and by author,
+word count overall and by author, time spent editing overall and by author, and
+so forth.
+
+Please
+mailto:sales@vivosys.com?subject=Interested%20in%20the%20Ritzy%20Service[let us
+know] if your company or startup may be interested in such a service.
 
 == Support
 
