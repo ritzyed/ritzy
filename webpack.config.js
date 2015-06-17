@@ -89,10 +89,7 @@ module.exports = function(options) {
           test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
           loader: "file-loader"
         }
-      ],
-
-      // quill is already minified/processed from upstream
-      noParse: /quill\.js$/
+      ]
     },
 
     eslint: {
