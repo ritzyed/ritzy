@@ -167,10 +167,12 @@ offline editing is a supported use case for Ritzy.
 [[integration]]
 == Ritzy Integration ==
 
+[[integration_cs]]
 === Client-Side ===
 
 TODO
 
+[[integration_ss]]
 === Server-Side ===
 
 The server-side integration mechanism for most applications employing Ritzy will
@@ -189,15 +191,20 @@ added over time. http://TODO[Contributions] are welcome.
 * Basic features:
 ** cut/copy/paste
 ** undo/redo
+** search/replace
 
-* Multiple colored/labeled cursors.
+* Multiple colored/labeled cursors (medium).
 
 * Dynamic editor height based on content (easy).
+
+* Right-click menu support (medium).
 
 * Tests (many, see GitHub issue xx) (hard!).
 
 * Once tests are in place, refactoring to make the editor code more modular /
 easier to understand (hard).
+
+* Module loader support i.e. inclusion via Browserify, Webpack, etc. (medium).
 
 * Expose an API for programmatic access to the editor and contents (medium):
 ** Get/set contents using the native data model for proper concurrency control
