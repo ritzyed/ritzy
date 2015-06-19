@@ -40,9 +40,8 @@ is "easy" and performs very well, but is https://vimeo.com/76219173[limited] and
 https://medium.com/medium-eng/why-contenteditable-is-terrible-122d8a40e480[broken]
 by browser capabilities and incompatibilities in `contentEditable`
 implementations, and by the underlying HTML data model which is not suited for
-collaborative editing.
-
-Instead, Ritzy implements a custom surface and layout engine like Google Docs:
+collaborative editing. Instead, Ritzy implements a custom surface and layout
+engine like Google Docs:
 
 [quote, Jeff Harris (Google Docs Product Manager),http://googledrive.blogspot.ca/2010/05/whats-different-about-new-google-docs.html]
 Let’s start by talking about the editing surface, which processes all user input
@@ -86,7 +85,8 @@ Beyond basic text editing, some other features implemented by Ritzy:
 
 * Paragraph flow control, including wrapping support for long words/URLs.
 
-* Selection and keyboard navigation behavior mimicking Microsoft Word.
+* Selection and keyboard navigation behavior mimicking common platforms like
+Microsoft Word and Google Docs.
 
 * Cursor blink control simulating browser function (blink while waiting, no
   blink during operations).
@@ -157,9 +157,7 @@ Ritzy requires a NodeJS or io.js server running and bidirectionally connected to
 each editor client via WebSockets or a long-polling mechanism. The server is
 responsible for receiving changes from all editors and transmitting them back to
 other editors. A default server implementation is provided as part of the Ritzy
-project.
-
-Currently, Ritzy does not operate stand-alone (see <<roadmap>>).
+project. Currently, Ritzy does not operate stand-alone (see <<roadmap>>).
 
 The causal trees approach is highly amenable to offline editing, therefore
 offline editing is a supported use case for Ritzy.
