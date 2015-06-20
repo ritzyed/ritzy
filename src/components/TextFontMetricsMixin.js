@@ -28,20 +28,27 @@ function charFontStyle(char) {
   else return 'regular'
 }
 
-function charScale(char, fontSize, unitsPerEm, minFontSize) {
-  let attrs = char.attributes
-  if(!attrs) return calcFontScale(fontSize, unitsPerEm)
+function calcFontSizeFromAttributes(fontSize, minFontSize, attributes) {
+  let hasAttribute = hasAttributeFor(attributes)
 
-  let superscript = false
-  let subscript = false
-  if(!_.isUndefined(attrs[ATTR.SUPERSCRIPT])) superscript = attrs[ATTR.SUPERSCRIPT]
-  if(!_.isUndefined(attrs[ATTR.SUBSCRIPT])) subscript = attrs[ATTR.SUBSCRIPT]
+  // superscript and subscript affect the font size
+  let superscript = hasAttribute(ATTR.SUPERSCRIPT)
+  let subscript = hasAttribute(ATTR.SUBSCRIPT)
 
-  if(superscript || subscript) {
-    return calcFontScale(calcSuperSubFontSize(fontSize, minFontSize), unitsPerEm)
-  } else {
-    return calcFontScale(fontSize, unitsPerEm)
-  }
+  return superscript || subscript ? calcSuperSubFontSize(fontSize, minFontSize) : fontSize
+}
+
+function calcCharAdvance(char, fontSize, font, unitsPerEm) {
+  let glyph = font.charToGlyph(char)
+  return glyph.unicode ?
+    glyph.advanceWidth * calcFontScale(fontSize, unitsPerEm) :
+    0
+}
+
+function calcReplicaCharAdvance(replicaChar, fontSize, fonts, minFontSize, unitsPerEm) {
+  let style = charFontStyle(replicaChar)
+  let charFontSize = calcFontSizeFromAttributes(fontSize, minFontSize, replicaChar.attributes)
+  return calcCharAdvance(replicaChar.char, charFontSize, fonts[style], unitsPerEm)
 }
 
 export default {
@@ -55,22 +62,37 @@ export default {
   },
 
   /**
-   * Determines the superscript and subscript font size given a regular font size. The size will be the
-   * regular font size times the defined ratio value, rounded to the nearest pixel, and then brought
-   * up the minimum font size allowed by the browser.
+   * Return the font size given the default font size and current attributes.
+   * @param fontSize
+   * @param attributes
+   */
+  fontSizeFromAttributes(fontSize, attributes) {
+    return calcFontSizeFromAttributes(fontSize, this.props.minFontSize, attributes)
+  },
+
+  /**
+   * Determines the advance for a given replica char.
+   * @param char The replica char object.
    * @param fontSize
    * @return {number}
    */
-  superSubFontSize(fontSize) {
-    return calcSuperSubFontSize(fontSize, this.props.minFontSize)
+  replicaCharAdvance(char, fontSize) {
+    return calcReplicaCharAdvance(char, fontSize, this.props.fonts, this.props.minFontSize, this.props.unitsPerEm)
+  },
+
+  /**
+   * Determines the advance for a given char. Since it is not a replica char, the font style and other attribute
+   * information cannot be determined. A normal weight, non-decorated font with no special attributes is assumed.
+   */
+  charAdvance(char, fontSize, font) {
+    return calcCharAdvance(char, fontSize, font, this.props.unitsPerEm)
   },
 
   /**
    * Returns the advance width in pixels for a space character in the normal style.
    */
   advanceXForSpace(fontSize) {
-    let glyph = this.props.fonts.regular.charToGlyph(' ')
-    return glyph.advanceWidth * this.fontScale(fontSize)
+    return this.charAdvance(' ', fontSize, this.props.fonts.regular)
   },
 
   /**
@@ -85,17 +107,11 @@ export default {
    */
   indexAndCursorForXValue(fontSize, pixelValue, chars) {
     let minFontSize = this.props.minFontSize
-    let unitsPerEm = this.props.unitsPerEm
     fontSize = fontSize > minFontSize ? fontSize : minFontSize
     let currentWidthPx = 0
     let index = 0
     for(let i = 0; i < chars.length; i++) {
-      let style = charFontStyle(chars[i])
-      let glyph = this.props.fonts[style].charToGlyph(chars[i].char)
-      let glyphAdvancePx = 0
-      if(glyph.unicode) {
-        glyphAdvancePx = glyph.advanceWidth * charScale(chars[i], fontSize, unitsPerEm, minFontSize)
-      }
+      let glyphAdvancePx = this.replicaCharAdvance(chars[i], fontSize)
       if(pixelValue < currentWidthPx + glyphAdvancePx / 2) {
         return {
           cursorX: currentWidthPx,
@@ -103,7 +119,7 @@ export default {
         }
       } else {
         currentWidthPx += glyphAdvancePx
-        if(glyph.unicode) index++
+        if(glyphAdvancePx > 0) index++
       }
     }
     return {
@@ -120,23 +136,15 @@ export default {
    */
   advanceXForChars(fontSize, chars) {
     let minFontSize = this.props.minFontSize
-    let unitsPerEm = this.props.unitsPerEm
     fontSize = fontSize > minFontSize ? fontSize : minFontSize
     if(_.isArray(chars)) {
       let currentWidthPx = 0
       for(let i = 0; i < chars.length; i++) {
-        let style = charFontStyle(chars[i])
-        let glyph = this.props.fonts[style].charToGlyph(chars[i].char)
-        if(glyph.unicode) {
-          // no kerning for now, to support kerning use this.props.fonts[style].getKerningValue(leftGlyph, rightGlyph)
-          currentWidthPx += glyph.advanceWidth * charScale(chars[i], fontSize, unitsPerEm, minFontSize)
-        }
+        currentWidthPx += this.replicaCharAdvance(chars[i], fontSize)
       }
       return currentWidthPx
     } else {
-      let style = charFontStyle(chars)
-      let glyph = this.props.fonts[style].charToGlyph(chars.char)
-      return glyph.unicode ? glyph.advanceWidth * charScale(chars, fontSize, unitsPerEm, minFontSize) : 0
+      return this.replicaCharAdvance(chars, fontSize)
     }
   },
 
@@ -154,20 +162,5 @@ export default {
   top(fontSize) {
     var fontHeader = this.props.fonts.bold.tables.head
     return fontHeader.yMax * this.fontScale(fontSize)
-  },
-
-  /**
-   * Return the font size given the default font size and current attributes.
-   * @param fontSize
-   * @param attributes
-   */
-  fontSizeFromAttributes(fontSize, attributes) {
-    let hasAttribute = hasAttributeFor(attributes)
-
-    // superscript and subscript affect the font size
-    let superscript = hasAttribute(ATTR.SUPERSCRIPT)
-    let subscript = hasAttribute(ATTR.SUBSCRIPT)
-
-    return superscript || subscript ? this.superSubFontSize(fontSize) : fontSize
   }
 }
