@@ -170,7 +170,6 @@ export default React.createClass({
         this.advance = 0
         this.lineAdvance = 0
         this.attributes = null
-        this.fontSize = null
         this.lastCharSpace = false
       },
 
@@ -178,10 +177,7 @@ export default React.createClass({
         if(!this.attributes) {
           this.attributes = c.attributes
         }
-        if(!this.fontSize) {
-          this.fontSize = thisRef.fontSizeFromAttributes(thisRef.props.fontSize, this.attributes)
-        }
-        let charAdvance = thisRef.advanceXForChars(this.fontSize, c)
+        let charAdvance = thisRef.advanceXForChars(thisRef.props.fontSize, c)
 
         // don't count spaces in the word in the advance, but include it in the line advance
         if(c.char === ' ') {
@@ -206,7 +202,6 @@ export default React.createClass({
         }
         this.chars = []
         this.attributes = null
-        this.fontSize = null
       }
     }
 
