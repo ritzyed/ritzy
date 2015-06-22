@@ -55,10 +55,6 @@ cursor at that position. This lets us do basic things like slanting the cursor
 for italicized text, and it also allows more powerful capabilities like showing
 multiple collaborators’ cursors simultaneously, in the same document.
 
-The layout engine uses font metrics to calculate the width of characters, and
-with this information along with the line width, is able to place characters,
-words, and lines onto the editing surface in the correct positions.
-
 Though more complex, this approach is more flexible than `contentEditable`. In
 addition, this logic is consistent across browsers. Therefore it should be much
 easier to continue adding advanced capabilities to this editor relative to
@@ -122,16 +118,21 @@ Managing the layout in JavaScript requires knowledge of the x-y positions of
 individual characters, for example to position the cursor when the user clicks
 on text, or to wrap text within the editor's bounding box.
 
-Ritzy uses http://nodebox.github.io/opentype.js/[Opentype.js] to obtain the
-required text metrics from the underlying font, such as
+Ritzy prefers using http://nodebox.github.io/opentype.js/[Opentype.js] to obtain
+the required text metrics from the underlying font, such as
 http://www.freetype.org/freetype2/docs/glyphs/glyphs-3.html[advance widths] for
-the glyphs that represent each character. Ritzy assumes that the browser
-faithfully follows the font's instructions for it's own text rendering,
-therefore the font metrics are sufficient to calculate x-y positions. This
-appears to be true for all modern web browsers (TODO, check this!).
+the glyphs that represent each character.
 
-One limitation of this approach is that all fonts displayed by Ritzy must be
-available as TrueType or OpenType font files. Note that Opentype.js does not
+When the browser/OS platform supports linear subpixel positioning and faithfully
+follows the font's instructions for it's text rendering, the font metrics are
+sufficient to calculate x-y positions. However, on some browsers on some
+platforms at some font sizes, for various complicated reasons the font metrics
+are ignored in favor of http://goo.gl/yf3M7[hinting or other mechanisms]. In
+these situations, the layout engine falls back to a slower but reliable
+mechanism using the canvas `measureText` function.
+
+To use the Opentype.js mechanism, all fonts displayed by Ritzy must be available
+as TrueType or OpenType font files. Note that Opentype.js does not
 https://github.com/nodebox/opentype.js/issues/43[currently support] WOFF font
 files, but usually TrueType or OpenType equivalents are available. In addition,
 the font is loaded into memory twice: by the browser and by Ritzy.
