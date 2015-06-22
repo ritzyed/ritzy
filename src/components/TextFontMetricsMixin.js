@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import {ATTR, hasAttributeFor} from './attributes'
 
-let SUPER_SUB_FONT_RATIO = 0.65  // matches MS word according to http://en.wikipedia.org/wiki/Subscript_and_superscript
+const SUPER_SUB_FONT_RATIO = 0.65  // matches MS word according to http://en.wikipedia.org/wiki/Subscript_and_superscript
 
 function calcFontScale(fontSize, unitsPerEm) {
   return 1 / unitsPerEm * fontSize
@@ -238,11 +238,9 @@ export default {
     let minFontSize = this.props.minFontSize
     fontSize = fontSize > minFontSize ? fontSize : minFontSize
     if(_.isArray(chars)) {
-      let currentWidthPx = 0
-      for(let i = 0; i < chars.length; i++) {
-        currentWidthPx += this.replicaCharAdvance(chars[i], fontSize)
-      }
-      return currentWidthPx
+      return chars.reduce((currentWidthPx, char) => {
+        return currentWidthPx + this.replicaCharAdvance(char, fontSize)
+      }, 0)
     } else {
       return this.replicaCharAdvance(chars, fontSize)
     }
@@ -252,7 +250,7 @@ export default {
    * Gets the line height in pixels for a given font size, using the bold font.
    */
   lineHeight(fontSize) {
-    var fontHeader = this.props.fonts.bold.tables.head
+    let fontHeader = this.props.fonts.bold.tables.head
     return (fontHeader.yMax - fontHeader.yMin) * this.fontScale(fontSize)
   },
 
@@ -260,7 +258,7 @@ export default {
    * Gets the height in pixels of the top of the font, relative to the baseline, using the bold font.
    */
   top(fontSize) {
-    var fontHeader = this.props.fonts.bold.tables.head
+    let fontHeader = this.props.fonts.bold.tables.head
     return fontHeader.yMax * this.fontScale(fontSize)
   }
 }
