@@ -5,7 +5,7 @@ import invariant from 'react/lib/invariant'
 import _ from 'lodash'
 import classNames from 'classnames'
 
-import { BASE_CHAR } from 'RichText'
+import { BASE_CHAR, EOF } from 'RichText'
 import { elementPosition } from 'dom'
 import { pushArray } from 'utils'
 import { default as tokenizer, isWhitespace } from 'tokenizer'
@@ -19,7 +19,6 @@ require('text.less')
 
 const T = React.PropTypes
 const nbsp = String.fromCharCode(160)
-const EOF = -1
 
 export default React.createClass({
   propTypes: {
@@ -263,7 +262,8 @@ export default React.createClass({
           },
           chunks: line.chunks,
           start: line.start,
-          end: line.end
+          end: line.end,
+          advance: line.advance
         })
       }
       line.reset()
@@ -325,12 +325,8 @@ export default React.createClass({
 
   insertChars(value) {
     let position = this.state.position
-    let positionEolStart = false
-    if(value.slice(-1) === '\n') {
-      // if the last char is a newline, then we want to position on the start of the next line
-      positionEolStart = true
-    }
-
+    // if the last char is a newline, then we want to position on the start of the next line
+    let positionEolStart = value.slice(-1) === '\n'
     let activeAttributes
     if(this.state.selectionActive) {
       position = this.state.selectionLeftChar
@@ -346,9 +342,9 @@ export default React.createClass({
     this.replica.insertCharsAt(position, value, activeAttributes)
 
     let relativeMove = value.length
+    this.flow()
     this.setPosition(this.relativeChar(position, relativeMove), positionEolStart)
     this.setState({activeAttributes: activeAttributes})
-    this.flow()
   },
 
   navigateLeft() {
@@ -378,7 +374,7 @@ export default React.createClass({
 
   navigateEnd() {
     let positionEolStart = false
-    if(this.state.lines && this.state.lines[this.state.lines.length - 1].isEof()) {
+    if(this.state.lines && this._lastLine().isEof()) {
       positionEolStart = true
     }
     this.setPosition(this.relativeChar(BASE_CHAR, -1), positionEolStart)
@@ -433,15 +429,28 @@ export default React.createClass({
   },
 
   selectionEnd() {
-    var toChar = this.relativeChar(BASE_CHAR, -1)
-    this._modifySelection(toChar, toChar.char === '\n')
+    let toChar = this._lastLine().isEof() ? EOF : this.relativeChar(BASE_CHAR, -1)
+    this._modifySelection(toChar, toChar === EOF)
   },
 
+  /**
+   * Google docs behavior (as of 2015-06-22) is:
+   * - line with soft return, select line with space at end
+   * - line with hard return, select line without selecting the hard return (no action on empty lines)
+   * - EOF line, no action
+   *
+   * Word 2010 behavior is:
+   * - line with soft return, select line with space at end
+   * - line with hard return, select line including the hard return (same on empty lines)
+   * - EOF line, show "space" selection at EOF containing a newline
+   *
+   * We implement the Google docs behavior here, which seems a bit more intuitive.
+   */
   selectionEndLine() {
     let {line} = this._lineContainingChar(this.state.position, this.state.positionEolStart)
     let toChar
     let positionEolStart = false
-    if(line.isEof() || line.chunks.length === 0) {
+    if(line.isEof()) {
       toChar = this.state.position
       positionEolStart = true
     } else if (line.isHard()) {
@@ -453,10 +462,16 @@ export default React.createClass({
   },
 
   selectionWordLeft() {
-    let position = this._wordStartRelativeTo(this.state.position)
-    let endOfLine = this._lineContainingChar(this.state.position).endOfLine
-
-    this._modifySelection(position, !endOfLine)
+    let position
+    let positionEolStart
+    if(this.state.position === EOF) {
+      position = this._lastLine().start
+      positionEolStart = true
+    } else {
+      position = this._wordStartRelativeTo(this.state.position)
+      positionEolStart = !this._lineContainingChar(this.state.position).endOfLine
+    }
+    this._modifySelection(position, positionEolStart)
   },
 
   selectionWordRight() {
@@ -604,6 +619,10 @@ export default React.createClass({
     }, 1000)
   },
 
+  _lastLine() {
+    return this.state.lines[this.state.lines.length - 1]
+  },
+
   _modifySelection(toChar, positionEolStart, resetUpDown) {
     if(!toChar) return
     if(_.isUndefined(resetUpDown)) resetUpDown = true
@@ -713,7 +732,7 @@ export default React.createClass({
       let end = tokenRanges[0].end
       return textChars[end - 1]
     } else {
-      return this.relativeChar(BASE_CHAR, -1)
+      return this._lastLine().isEof() ? EOF : this.relativeChar(BASE_CHAR, -1)
     }
   },
 
@@ -956,7 +975,11 @@ export default React.createClass({
 
   _selectionLeftRight(charCount) {
     let endOfLine = this._lineContainingChar(this.state.position).endOfLine
-    this._modifySelection(this.relativeChar(this.state.position, charCount, 'limit'), !endOfLine)
+    var toChar = this.relativeChar(this.state.position, charCount, 'eof')
+    if(toChar === EOF && !this._lastLine().isEof()) {
+      toChar = this._lastLine().end
+    }
+    this._modifySelection(toChar, (this.state.position === EOF && charCount === -1) || !endOfLine)
   },
 
   _selectionUpDown(lineCount) {
@@ -980,16 +1003,16 @@ export default React.createClass({
       // at start of first line, reset the advanceX, and positionEolStart is now true
       this.upDownAdvanceX = 0
       this.upDownPositionEolStart = true
-    } else if(index + lineCount > this.state.lines.length - 1) {
-      // trying to navigate past the end, if last line is eof do nothing, otherwise position at end of line
-      if(!this.state.lines[this.state.lines.length - 1].isEof()) {
-        var toChar = this.relativeChar(BASE_CHAR, -1)
-        this._modifySelection(toChar, false)
-        // at end of last line, reset the advanceX to the end of the line, and positionEolStart is now false
-        let chars = this.replica.getTextRange(line.start, line.end)
-        this.upDownAdvanceX = this.advanceXForChars(this.props.fontSize, chars)
-        this.upDownPositionEolStart = false
-      }
+    } else if(index + lineCount > this.state.lines.length - 1 && !this._lastLine().isEof()) {
+      // trying to navigate past the last line (and last line does not have an EOF), position at end of line
+      let toChar = this.relativeChar(BASE_CHAR, -1)
+      this._modifySelection(toChar, false)
+      // at end of last line, reset the advanceX to the end of the line, and positionEolStart is now false
+      let chars = this.replica.getTextRange(line.start, line.end)
+      this.upDownAdvanceX = this.advanceXForChars(this.props.fontSize, chars)
+      this.upDownPositionEolStart = false
+    } else if(index + lineCount >= this.state.lines.length - 1 && this._lastLine().isEof()) {
+      this._modifySelection(EOF, true, false)
     } else {
       let targetLine = this.state.lines[index + lineCount]
       let newPosition
@@ -1063,6 +1086,16 @@ export default React.createClass({
   _lineContainingChar(char, nextIfEol) {
     invariant(this.state.lines, 'Lines must be defined in the state.')
     if(_.isUndefined(nextIfEol)) nextIfEol = false
+
+    if(char === EOF) {
+      let last = this._lastLine()
+      return {
+        line: last,
+        index: this.state.lines.length - 1,
+        endOfLine: true
+      }
+    }
+
     for(let i = 0; i < this.state.lines.length; i++) {
       let end = this.state.lines[i].isEof() ? this.state.lines[i].start : this.state.lines[i].end
 
@@ -1081,13 +1114,8 @@ export default React.createClass({
         }
       }
     }
-    // char is after the end of the last line
-    let last = this.state.lines.length - 1
-    return {
-      line: this.state.lines[last],
-      index: last,
-      endOfLine: true
-    }
+
+    return null
   },
 
   _lineAndAdvanceAtPosition(position, positionEolStart) {
@@ -1188,7 +1216,8 @@ export default React.createClass({
       return null
     }
 
-    let selectionDiv = (leftX, widthX, height) => {
+    let selectionDiv = (leftX, widthX) => {
+      let height = Math.round(lineHeight * 10) / 10
       return (
         <div className="text-selection-overlay text-htmloverlay ui-unprintable text-htmloverlay-under-text"
           style={{top: 0, left: leftX, width: widthX, height: height}}></div>
@@ -1196,10 +1225,9 @@ export default React.createClass({
     }
 
     let line = this.state.lines[lineIndex]
-    let selectionHeight = Math.round(lineHeight * 10) / 10
 
-    if(line && line.isEof() && this.state.selectionRightChar.id === line.start.id) {
-      return selectionDiv(0, this.advanceXForSpace(this.props.fontSize), selectionHeight)
+    if(line && line.isEof() && this.state.selectionRightChar === EOF) {
+      return selectionDiv(0, this.advanceXForSpace(this.props.fontSize))
     }
 
     if(!line
@@ -1228,17 +1256,26 @@ export default React.createClass({
     let leftChars = this.replica.getTextRange(line.start, left)
     let selectionLeftX = this.advanceXForChars(this.props.fontSize, leftChars)
 
-    let selectionChars = this.replica.getTextRange(left, right)
-    if(selectionChars.length === 0) {
-      return null
+    let selectionWidthX
+    let selectionAddSpace
+    if((right === EOF && line.isEof()) || (!line.isEof() && right.id === line.end.id && left.id !== right.id)) {
+      // shortcut when we select to end of line, we already know the line advance from the flow algorithm
+      selectionWidthX = line.advance - selectionLeftX
+      selectionAddSpace = line.isEof() || line.end.char === '\n'
+    } else {
+      let selectionChars = this.replica.getTextRange(left, right)
+      if(selectionChars.length === 0) {
+        return null
+      }
+      selectionWidthX = this.advanceXForChars(this.props.fontSize, selectionChars)
+      selectionAddSpace = selectionChars[selectionChars.length - 1].char === '\n'
     }
 
-    let selectionWidthX = this.advanceXForChars(this.props.fontSize, selectionChars)
-    if(selectionChars[selectionChars.length - 1].char === '\n') {
+    if(selectionAddSpace) {
       selectionWidthX += this.advanceXForSpace(this.props.fontSize)
     }
 
-    return selectionDiv(selectionLeftX, selectionWidthX, selectionHeight)
+    return selectionDiv(selectionLeftX, selectionWidthX)
   },
 
   _renderStyledText(id, text, attributes) {
@@ -1317,7 +1354,7 @@ export default React.createClass({
     }
 
     // the initial render before the component is mounted has no position or lines
-    if (!this.state.position || !this.state.lines) {
+    if (!this.state.position || !this.state.lines || this.state.lines.length === 0) {
       return null
     }
 

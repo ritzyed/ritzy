@@ -389,13 +389,22 @@ let Text = Syncable.extend('Text', {
    * @param {char|number} charOrId
    * @param {number} relative
    * @param {string} [wrap='wrap'] The behavior when the index is out of bounds. Must be one
-   *   of 'wrap', 'limit', or 'error'.
+   *   of 'wrap', 'limit', 'eof', or 'error'. 'eof' returns EOF (-1) if past the end.
    * @return {*}
    */
   getCharRelativeTo(charOrId, relative, wrap) {
     invariant(charOrId, 'Char must be defined.')
     if(_.isUndefined(relative)) relative = 0
     if(_.isUndefined(wrap)) wrap = 'wrap'
+
+    if(charOrId === EOF) {
+      if(relative > 0) return EOF
+      else {
+        charOrId = this.data.getChar(this.data.len() - 1)
+        relative += 1
+      }
+    }
+
     let id = _.has(charOrId, 'id') ? charOrId.id : charOrId
     for (let i = 0; i < this.data.len(); i++) {
       if (this.data.matches(i, id) > 0) {
@@ -406,6 +415,9 @@ let Text = Syncable.extend('Text', {
         } else if (wrap === 'limit') {
           if(index < 0) index = 0
           else if(index >= this.data.len()) index = this.data.len() - 1
+        } else if (wrap === 'eof') {
+          if(index < 0) index = 0
+          else if(index >= this.data.len()) return EOF
         } else if (wrap === 'error') {
           if(index < 0 || index >= this.data.len()) {
             throw new Error('Index out of bounds: ' + index)
@@ -469,8 +481,14 @@ let Text = Syncable.extend('Text', {
   compareCharPos(charOrId1, charOrId2) {
     invariant(charOrId1, 'First char must be defined.')
     invariant(charOrId2, 'Second char must be defined.')
+
+    if(charOrId1 === EOF && charOrId2 === EOF) return 0
+    else if(charOrId1 === EOF) return 1
+    else if(charOrId2 === EOF) return -1
+
     let char1Id = _.has(charOrId1, 'id') ? charOrId1.id : charOrId1
     let char2Id = _.has(charOrId2, 'id') ? charOrId2.id : charOrId2
+
     let seen1Index
     let seen2Index
     for (let i = 0; i < this.data.len(); i++) {
@@ -491,4 +509,4 @@ let Text = Syncable.extend('Text', {
 })
 
 export default Text
-export { BASE_CHAR, TextData }
+export { BASE_CHAR, EOF, TextData }

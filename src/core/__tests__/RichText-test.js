@@ -1,6 +1,6 @@
 import { assert } from 'chai'
 import _ from 'lodash'
-import Text, { BASE_CHAR, TextData } from '../RichText'
+import Text, { BASE_CHAR, EOF, TextData } from '../RichText'
 import Swarm from 'swarm'
 
 Swarm.env.localhost = new Swarm.Host('test~0')
@@ -8,20 +8,14 @@ Swarm.env.localhost = new Swarm.Host('test~0')
 const BASE_ID = BASE_CHAR.id
 
 const charAt_ = function(text) {
-  return _.partial((text, index) => {
-    return text.getCharAt(index)
-  }, text)
+  return _.partial((text, index) => text.getCharAt(index), text)
 }
 const getCharRelativeTo_ = function(text) {
-  return _.partial((text, charOrId, relative, allowWrap) => {
-    return text.getCharRelativeTo(charOrId, relative, allowWrap)
-  }, text)
+  return _.partial((text, charOrId, relative, allowWrap) => text.getCharRelativeTo(charOrId, relative, allowWrap), text)
 }
 
 const compareCharPos_ = function(text) {
-  return _.partial((text, char1, char2) => {
-    return text.compareCharPos(char1, char2)
-  }, text)
+  return _.partial((text, char1, char2) => text.compareCharPos(char1, char2), text)
 }
 
 describe('RichText TextData', () => {
@@ -482,6 +476,11 @@ describe('RichText', () => {
     assert.deepEqual(getCharRelativeTo(BASE_ID, -1, 'limit'), BASE_CHAR)
     assert.deepEqual(getCharRelativeTo(charAt(6), 1, 'limit'), charAt(6))
 
+    assert.deepEqual(getCharRelativeTo(BASE_ID, -1, 'eof'), BASE_CHAR)
+    assert.deepEqual(getCharRelativeTo(charAt(6), 1, 'eof'), EOF)
+    assert.deepEqual(getCharRelativeTo(EOF, 1, 'eof'), EOF)
+    assert.deepEqual(getCharRelativeTo(EOF, -1, 'eof'), charAt(6))
+
     assert.throw(() => { getCharRelativeTo(BASE_ID, -1, 'error') },
       'Index out of bounds: -1')
     assert.throw(() => { getCharRelativeTo(charAt(6), 1, 'error') },
@@ -493,7 +492,7 @@ describe('RichText', () => {
     text.reset()
     text.set('abcdef')
     let charAt = charAt_(text)
-    let chars = (c) => { return c.char }
+    let chars = c => c.char
 
     assert.deepEqual(text.getTextRange(BASE_ID, BASE_ID).map(chars),
       [])
@@ -509,6 +508,10 @@ describe('RichText', () => {
       [ 'd', 'e', 'f' ])
     assert.deepEqual(text.getTextRange(BASE_ID, charAt(1).id).map(chars),
       [ 'a' ])
+
+    // EOF end argument
+    assert.deepEqual(text.getTextRange(charAt(3).id, EOF).map(chars),
+      [ 'd', 'e', 'f' ])
 
     // optional end argument
     assert.deepEqual(text.getTextRange(BASE_ID).map(chars),
@@ -532,10 +535,18 @@ describe('RichText', () => {
     assert.deepEqual(text.getTextRange('NOTEXIST1', 'NOTEXIST2').map(chars),
       [])
 
+    // EOF start argument
+    assert.deepEqual(text.getTextRange(EOF).map(chars),
+      [])
+    assert.deepEqual(text.getTextRange(EOF, 'NOTEXIST1').map(chars),
+      [])
+
     // invariants
     assert.throw(() => { text.getTextRange(charAt(2).id, charAt(1).id) },
       'From id must precede To id.')
     assert.throw(() => { text.getTextRange('NOTEXIST', charAt(3).id) },
+      'From id must precede To id.')
+    assert.throw(() => { text.getTextRange(EOF, BASE_ID) },
       'From id must precede To id.')
   })
 
@@ -559,6 +570,11 @@ describe('RichText', () => {
     assert.strictEqual(compareCharPos(charAt(6).id, charAt(5)), 1)
     assert.strictEqual(compareCharPos(charAt(6), charAt(5).id), 1)
     assert.strictEqual(compareCharPos(charAt(6).id, charAt(5).id), 1)
+    assert.strictEqual(compareCharPos(BASE_CHAR, EOF), -1)
+    assert.strictEqual(compareCharPos(charAt(6), EOF), -1)
+    assert.strictEqual(compareCharPos(EOF, BASE_CHAR), 1)
+    assert.strictEqual(compareCharPos(EOF, charAt(0)), 1)
+    assert.strictEqual(compareCharPos(EOF, EOF), 0)
 
     assert.throw(() => { compareCharPos('NOTEXIST', charAt(5)) },
       'One or both chars were not found.')
