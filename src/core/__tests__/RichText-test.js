@@ -487,6 +487,17 @@ describe('RichText', () => {
       'Index out of bounds: 7')
   })
 
+  it('can get the length including the base char', () => {
+    let text = new Text('/Text#1')
+    text.reset()
+    text.set('abcdef')
+    assert.equal(text.len(), 7)
+
+    text.reset()
+    text.set('abc')
+    assert.equal(text.len(), 4)
+  })
+
   it('can get a range of chars', () => {
     let text = new Text('/Text#1')
     text.reset()

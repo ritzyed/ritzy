@@ -3,7 +3,24 @@ import invariant from 'react/lib/invariant'
 import Spec from 'swarm/lib/Spec'
 import Syncable from 'swarm/lib/Syncable'
 
-const BASE_CHAR = {id: '00000+swarm', char: ''}
+function Char(id, char, deletedIds, attributes) {
+  this.id = id
+  this.char = char
+  if (deletedIds && !_.isEmpty(deletedIds)) {
+    this.deletedIds = _.clone(deletedIds)
+  }
+  if (attributes && !_.isEmpty(attributes)) {
+    this.attributes = _.clone(attributes)
+  }
+}
+Char.prototype.toString = function() {
+  let char = this.char.replace('\n', '\\n').replace(' ', '_')
+  return `${char} (${this.id})}`
+}
+
+//const BASE_CHAR = {id: '00000+swarm', char: '', charToString}
+const BASE_CHAR = new Char('00000+swarm', '')
+const EOF = -1
 
 /**
  * Contains the textual data and corresponding lamport timestamps (ids) for each character. Each character
@@ -28,17 +45,7 @@ class TextData {
 
   getChar(pos) {
     invariant(pos < this.len(), 'Index ' + pos + ' out of bounds.' + JSON.stringify(this.weave))
-    let obj = {
-      char: this.weave[pos],
-      id: this.ids[pos]
-    }
-    if (this.deletedIds[pos] && this.deletedIds[pos].length > 0) {
-      obj.deletedIds = _.clone(this.deletedIds[pos])
-    }
-    if (this.attributes[pos] && !_.isEmpty(this.attributes[pos])) {
-      obj.attributes = _.clone(this.attributes[pos])
-    }
-    return obj
+    return new Char(this.ids[pos], this.weave[pos], this.deletedIds[pos], this.attributes[pos])
   }
 
   insertChar(pos, char, id, attributes) {
@@ -344,6 +351,14 @@ let Text = Syncable.extend('Text', {
   set(newText, attributes) {
     this.rmChars(this.getTextRange(BASE_CHAR))
     this.insertCharsAt(BASE_CHAR, newText, attributes)
+  },
+
+  /**
+   * Gets the length of the current replica data, including the BASE_CHAR (the length of the actual data).
+   * @returns {number}
+   */
+  len() {
+    return this.data.len()
   },
 
   /**
