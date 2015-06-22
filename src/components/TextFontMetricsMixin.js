@@ -38,11 +38,111 @@ function calcFontSizeFromAttributes(fontSize, minFontSize, attributes) {
   return superscript || subscript ? calcSuperSubFontSize(fontSize, minFontSize) : fontSize
 }
 
-function calcCharAdvance(char, fontSize, font, unitsPerEm) {
+function fontSpec(fontSize, font) {
+  let styleSpec = font.styleName === 'Regular' ? '' : `${font.styleName} `
+  let fontSizeSpec = `${fontSize}px `
+  let name = font.familyName
+  return styleSpec + fontSizeSpec + name
+}
+
+function calcCharAdvanceOpenType(char, fontSize, font, unitsPerEm) {
   let glyph = font.charToGlyph(char)
   return glyph.unicode ?
     glyph.advanceWidth * calcFontScale(fontSize, unitsPerEm) :
     0
+}
+
+let canvas = _.memoize(function() {
+  return document.createElement('canvas')
+})
+
+let canvasContext = _.memoize(function() {
+  return canvas().getContext('2d')
+})
+
+function clearCanvas() {
+  let c = canvas()
+  canvasContext().clearRect(0, 0, c.width, c.height)
+}
+
+function calcTextAdvanceCanvas(text, fontSize, font) {
+  let context = canvasContext()
+  context.font = fontSpec(fontSize, font)
+  return context.measureText(text).width
+}
+
+/**
+ * Tests various string widths and compares the advance width (in pixels) results between OpenType.js and
+ * the canvas fallback mechanism which returns the browser's actual rendered font width.
+ * @type {Function}
+ */
+let isOpenTypeJsReliable = _.memoize(function(fontSize, font, unitsPerEm) {
+  let strings = [
+    '111111111111111111111111111111',
+    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    'iiiiiiiiiiiiiiiiiiiiiiiiiiiiii',
+    'wwwwwwwwwwwwwwwwwwwwwwwwwwwwww',
+    'Lorem ipsum dolor sit amet, libris essent labitur duo cu.'
+  ]
+
+  let reduceOt = function(currentAdvance, char) {
+    return currentAdvance + calcCharAdvanceOpenType(char, fontSize, font, unitsPerEm)
+  }
+
+  let reduceCanvas = function(currentAdvance, char) {
+    return currentAdvance + calcTextAdvanceCanvas(char, fontSize, font)
+  }
+
+  let reliable = true
+  for(let candidate of strings) {
+    let chars = candidate.split('')
+    let advanceOt = chars.reduce(reduceOt, 0)
+    let advanceCanvas = calcTextAdvanceCanvas(candidate, fontSize, font)
+    let delta = Math.abs(advanceOt - advanceCanvas)
+
+    if(delta > 1) {
+      console.warn(`OpenType.js NOT reliable on this browser/OS (or font not loaded):
+  Candidate = [${candidate}], Fontspec = ${fontSpec(fontSize, font)}, Δ = ${delta}px
+  Falling back to slower canvas measurement mechanism.`)
+
+      // test if canvas char-by-char width additions are the same as canvas total text width
+      // if this ever returns false, then the current approach will need to be refactored, see docs on calcCharAdvance
+      let advanceCanvasByChar = chars.reduce(reduceCanvas, 0)
+      let deltaCanvas = Math.abs(advanceCanvas - advanceCanvasByChar)
+
+      if(deltaCanvas > 1) {
+        console.error(`Canvas char-by-char width != canvas text width, oops!
+  Candidate = [${candidate}], Fontspec = ${fontSpec(fontSize, font)}, Δ ot = ${delta}px, Δ canvas = ${deltaCanvas}px
+  Please report this along with your browser/OS details.`)
+      }
+
+      reliable = false
+      break
+    }
+  }
+
+  // clear the canvas, not really necessary as measureText shouldn't write anything there
+  clearCanvas()
+  return reliable
+}, (fontSize, font, unitsPerEm) => fontSpec(fontSize, font) + ' ' + unitsPerEm)
+
+/**
+ * Calculate the advance in pixels for a given char. In some browsers/platforms/font sizes, the fonts are not
+ * rendered according to the specs in the font (see
+ * http://stackoverflow.com/questions/30922573/firefox-rendering-of-opentype-font-does-not-match-the-font-specification).
+ * Therefore, ensure the font spec matches the actual rendered width (via the canvas `measureText` method), and use
+ * the font spec if it matches, otherwise fall back to the (slower) measuredText option.
+ *
+ * NOTE there may still be one difference between the browser's rendering and canvas-based calculations here: the
+ * browser renders entire strings within elements, whereas this calculation renders one character to the canvas at
+ * a time and adds up the widths. These two approaches seem to be equivalent except for IE in compatibility mode.
+ *
+ * TODO refactor mixin to deal with chunks of styled text rather than chars for IE in compatibility mode
+ */
+function calcCharAdvance(char, fontSize, font, unitsPerEm) {
+  return isOpenTypeJsReliable(fontSize, font, unitsPerEm) ?
+    calcCharAdvanceOpenType(char, fontSize, font, unitsPerEm) :
+    calcTextAdvanceCanvas(char, fontSize, font)
 }
 
 function calcReplicaCharAdvance(replicaChar, fontSize, fonts, minFontSize, unitsPerEm) {

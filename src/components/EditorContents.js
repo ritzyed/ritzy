@@ -1267,10 +1267,10 @@ export default React.createClass({
       'line-through': strikethrough
     })
 
-    /*font-family:OpenSans;*/
     let style = {
       color: '#000000',
       backgroundColor: 'transparent',
+      fontFamily: 'Open Sans',  // TODO test other fonts, make the font selectable
       fontSize: fontSize,
       fontWeight: fontWeight,
       fontStyle: fontStyle,

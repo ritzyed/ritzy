@@ -26,6 +26,7 @@
     "superagent": "1.2.0",
     "swarm": "0.3.25",
     "swarm-restapi": "0.3.24",
+    "webfontloader": "1.6.3",
     "ws": "0.7.2"
   },
   "devDependencies": {

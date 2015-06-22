@@ -1,4 +1,5 @@
 import React from 'react/addons'
+import WebFont from 'webfontloader'
 import OpenType from 'opentype.js'
 import Editor from './components/Editor'
 import { detectMinFontSize } from './core/dom'
@@ -17,11 +18,29 @@ let renderEditor = function(fonts, unitsPerEm, minFontSize) {
   )
 }
 
-let fontPromise = function(fontUrl) {
-  return new Promise(function(resolve, reject){
+let webFontPromise = function() {
+  return new Promise(function(resolve, reject) {
+    let families = ['Open Sans:400italic,700italic,700,400']
+    WebFont.load({
+      classes: false,
+      google: {
+        families: families
+      },
+      active() {
+        resolve()
+      },
+      inactive() {
+        reject(Error('Webfonts ' + families + ' could not be loaded.'))
+      }
+    })
+  })
+}
+
+let otFontPromise = function(fontUrl) {
+  return new Promise(function(resolve, reject) {
     OpenType.load(fontUrl, (err, font) => {
       if (err) {
-        reject(Error('Font ' + fontUrl + ' could not be loaded: ' + err))
+        reject(Error('Opentype.js font ' + fontUrl + ' could not be loaded: ' + err))
       } else {
         resolve(font)
       }
@@ -30,10 +49,11 @@ let fontPromise = function(fontUrl) {
 }
 
 Promise.all([
-  fontPromise('/fonts/OpenSans-Regular-Latin.ttf'),
-  fontPromise('/fonts/OpenSans-Bold-Latin.ttf'),
-  fontPromise('/fonts/OpenSans-BoldItalic-Latin.ttf'),
-  fontPromise('/fonts/OpenSans-Italic-Latin.ttf')
+  otFontPromise('/fonts/OpenSans-Regular-Latin.ttf'),
+  otFontPromise('/fonts/OpenSans-Bold-Latin.ttf'),
+  otFontPromise('/fonts/OpenSans-BoldItalic-Latin.ttf'),
+  otFontPromise('/fonts/OpenSans-Italic-Latin.ttf'),
+  webFontPromise()
 ]).then(function(fonts) {
   // all units per em must be the same (they are for OpenSans)
   // we could detect minFontSize when needed (with this one-time approach, if the user changes it, they will need to refresh)
@@ -44,7 +64,7 @@ Promise.all([
     italic: fonts[3]
   }, fonts[0].unitsPerEm, detectMinFontSize())
 }).catch(function(err) {
-  // TODO handle error with some type of oops screen
-  console.error('Editor loading failed.', err)
+  // TODO handle error by just using a sans-serif fallback and dealing with either or both of opentype/webfont fails
+  console.error('Font loading failed.', err)
   document.getElementById('content').innerHTML = 'Oops, I couldn\'t load the editor.'
 })
