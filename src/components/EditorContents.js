@@ -831,19 +831,26 @@ export default React.createClass({
     }
   },
 
+  /**
+   * Double-click does a word selection. Follows Google Docs and Microsoft Word 2010 behavior of:
+   * - selecting the word that was clicked, and one or more spaces following it
+   * - if clicking at the end of a line with a soft return, the first word on the next line is selected
+   * - if clicking at the end of a line with a hard return, the hard return is selected (shown as a "space")
+   * - if clicking at the end of the last (empty) line, a (non-existent) hard return at EOF is selected (shown as
+   *   a "space")
+   */
   _doOnDoubleClick() {
     if(!this.savedPosition) return
 
-    let word = this._wordRelativeTo(this.savedPosition)
-
-    this.setState({
-      selectionActive: true,
-      selectionAnchorChar: word.start,
-      selectionLeftChar: word.start,
-      selectionRightChar: word.end,
-      position: word.end,
-      positionEolStart: false
-    })
+    // handle cursor at EOF
+    if(this._lineContainingChar(this.savedPosition, true).line.isEof()) {
+      this.setPosition(this.savedPosition)
+      this._modifySelection(EOF, true)
+    } else {
+      let word = this._wordRelativeTo(this.savedPosition)
+      this.setPosition(word.start)
+      this._modifySelection(word.end, false)
+    }
   },
 
   _onMouseDown(e) {
