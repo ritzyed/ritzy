@@ -2,6 +2,7 @@ import React from 'react/addons'
 import getEventKey from 'react/lib/getEventKey'
 import Mousetrap from 'mousetrap'
 
+const batchedUpdates = React.addons.batchedUpdates
 const T = React.PropTypes
 
 // alphabet lower case +
@@ -65,9 +66,21 @@ export default React.createClass({
   //mixins: [React.addons.PureRenderMixin],
 
   componentDidMount() {
-    // TODO should this be at the top-level somewhere? do we even need a textarea for input?
-    // use the React getEventKey shim to get the actual key pressed
-    let keyBindings = new Mousetrap(React.findDOMNode(this.refs.input))
+    // React does not batch setState calls inside events raised by mousetrap, create a wrapper to do that
+    let keyBindingsReal = new Mousetrap(React.findDOMNode(this.refs.input))
+
+    // the wrapper function returns the function that will be called by Mousetrap with two args: keyEvent and combo
+    let wrapperFunction = (handler) => (keyEvent, combo) => {
+      let returnValue
+      batchedUpdates(() => returnValue = handler(keyEvent, combo))
+      return returnValue
+    }
+    let keyBindings = {
+      bind(binding, handler) {
+        keyBindingsReal.bind(binding, wrapperFunction(handler))
+      }
+    }
+
     // TODO probably ALL_CHARS should be handled via onInput instead to avoid keycode translation
     keyBindings.bind(ALL_CHARS, this._handleKeyChar)
     keyBindings.bind(['up', 'down', 'left', 'right'], this._handleKeyArrow)
