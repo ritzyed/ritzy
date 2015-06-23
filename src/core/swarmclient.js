@@ -11,7 +11,7 @@ window.localStorage.setItem('localuser', app.id)
 // server host uri
 app.wsServerUri = 'ws://' + window.location.host
 
-var hash = window.location.hash || '#0'
+let hash = window.location.hash || '#0'
 
 // create Host
 app.host = Swarm.env.localhost = new Swarm.Host(app.id + hash.replace('#', '~'))

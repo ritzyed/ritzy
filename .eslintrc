@@ -8,7 +8,8 @@
   },
   "ecmaFeatures": {
     "modules": true,
-    "jsx": true
+    "jsx": true,
+    "blockBindings": true
   },
   "sourceType": "module",
   "globals": {
@@ -40,6 +41,7 @@
     "curly": [1, "multi-line"],
     "semi": [1, "never"],
     "space-unary-ops": [1, { "words": true, "nonwords": false }],
-    "no-underscore-dangle": [0]  // leading underscore is useful inside React components
+    "no-underscore-dangle": [0],  // leading underscore is useful inside React components
+    "no-var": [1]
   }
 }

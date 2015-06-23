@@ -8,13 +8,13 @@ export function getNumericStyleProperty(style, prop) {
  * allowed by the browser's current settings. TODO is there a better way to get the browser minimum font size?
  */
 export function detectMinFontSize() {
-  var elem = document.createElement('div')
+  let elem = document.createElement('div')
   elem.style['font-size'] = '1px'
   elem.style.display = 'none'
   elem.style.visibility = 'hidden'
   document.body.appendChild(elem)
-  var style = getComputedStyle(elem, null)
-  var size = Number(style.getPropertyValue('font-size').match(/(\d*(\.\d*)?)px/)[1])
+  let style = getComputedStyle(elem, null)
+  let size = Number(style.getPropertyValue('font-size').match(/(\d*(\.\d*)?)px/)[1])
   document.body.removeChild(elem)
   return size
 }

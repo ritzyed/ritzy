@@ -983,7 +983,7 @@ export default React.createClass({
 
   _selectionLeftRight(charCount) {
     let endOfLine = this._lineContainingChar(this.state.position).endOfLine
-    var toChar = this.relativeChar(this.state.position, charCount, 'eof')
+    let toChar = this.relativeChar(this.state.position, charCount, 'eof')
     if(toChar === EOF && !this._lastLine().isEof()) {
       toChar = this._lastLine().end
     }
@@ -1178,7 +1178,7 @@ export default React.createClass({
       if(this.state.lines) {
         let printLine = l => console.debug(l.toString())
 
-        var currentLine = this._lineContainingChar(this.state.position)
+        let currentLine = this._lineContainingChar(this.state.position)
         if(currentLine.index > 0) {
           logInGroup('Before', () => {
             printLine(this.state.lines[currentLine.index - 1])

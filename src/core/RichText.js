@@ -294,7 +294,7 @@ let Text = Syncable.extend('Text', {
     let opKeys = Object.keys(op)
     let lastRemove = 0
     for (let i = 0; i < this.data.len(); i++) {
-      var matchCount = this.data.matches(i, opKeys)
+      let matchCount = this.data.matches(i, opKeys)
       if (matchCount > 0) {
         if(i - lastRemove > 0) delta.push({ retain: i - lastRemove })
         // since the delete has already occurred we need to use the number of matched ids at the current char
