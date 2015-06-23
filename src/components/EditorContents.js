@@ -7,7 +7,7 @@ import classNames from 'classnames'
 
 import { BASE_CHAR, EOF } from 'RichText'
 import { elementPosition } from 'dom'
-import { pushArray } from 'utils'
+import { pushArray, logInGroup } from 'utils'
 import { default as tokenizer, isWhitespace } from 'tokenizer'
 import TextReplicaMixin from './TextReplicaMixin'
 import TextFontMetricsMixin from './TextFontMetricsMixin'
@@ -254,6 +254,19 @@ export default React.createClass({
           },
           isEof() {
             return this.end === EOF
+          },
+          toString() {
+            let chunks = '-'
+            if(this.chunks && this.chunks.length > 0) {
+              let text = this.chunks[0].text.map(c => c.char)
+              if(text.length > 10) {
+                text = text.slice(0, 10)
+                chunks = text.join('') + '...'
+              } else {
+                chunks = text.join('')
+              }
+            }
+            return `${chunks} chars=[${this.start.toString()} → ${this.end.toString()}] adv=${this.advance}}`
           },
           chunks: line.chunks,
           start: line.start,
@@ -1160,6 +1173,34 @@ export default React.createClass({
   },
 
   /** For debugging */
+  _dumpCurrentLine() {
+    logInGroup('Line debug', () => {
+      if(this.state.lines) {
+        let printLine = l => console.debug(l.toString())
+
+        var currentLine = this._lineContainingChar(this.state.position)
+        if(currentLine.index > 0) {
+          logInGroup('Before', () => {
+            printLine(this.state.lines[currentLine.index - 1])
+          })
+        }
+        logInGroup('Current', () => {
+          console.debug('index', currentLine.index, 'endOfLine', currentLine.endOfLine)
+          printLine(currentLine.line)
+        })
+        if(currentLine.index < this.state.lines.length - 1) {
+          logInGroup('After', () => {
+            printLine(this.state.lines[currentLine.index + 1])
+          })
+        }
+      } else {
+        console.debug('No lines')
+      }
+    })
+    this.refs.input.focus()
+  },
+
+  /** For debugging */
   _dumpLines() {
     if(this.state.lines) {
       console.debug('Current lines:', this.state.lines)
@@ -1172,7 +1213,7 @@ export default React.createClass({
   /** For debugging */
   _dumpSelection() {
     if(this.state.selectionActive) {
-      var selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
+      let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
       console.debug('Current selection contents: [' + selectionChars.map(c => c.char).join('') + ']')
       console.debug('Left=', this.state.selectionLeftChar)
       console.debug('Right=', this.state.selectionRightChar)
@@ -1404,6 +1445,7 @@ export default React.createClass({
   // TODO cursor is rendered at the document level in docs, we could do editor-level
   // TODO can do the onClick handler at at a higher level too, that way we can click outside elements e.g. before and after line ends
   render() {
+    //console.trace('render')
     let id = this.props.id
 
     let lineHeight = this.lineHeight(this.props.fontSize)
@@ -1425,6 +1467,7 @@ export default React.createClass({
           <button onClick={this._reset}>Reset</button><br/>
           <button onClick={this._dumpReplica}>Dump Replica</button>&nbsp;
           <button onClick={this._dumpPosition}>Dump Position</button>&nbsp;
+          <button onClick={this._dumpCurrentLine}>Dump Current Line</button>&nbsp;
           <button onClick={this._dumpLines}>Dump Lines</button>&nbsp;
           <button onClick={this._dumpSelection}>Dump Selection</button><br/>
           <button onClick={this._forceRender}>Force Render</button>&nbsp;
