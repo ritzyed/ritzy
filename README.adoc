@@ -205,6 +205,15 @@ are welcome.
 * Once tests are in place, refactoring to make the editor code more modular /
 easier to understand (hard).
 
+* Performance improvements. Performance is already decent but much more can be
+done to improve it. Some ideas:
+** Create finer-grained React components (see refactor above) to avoid
+re-rendering the entire editor on updates (this should be a big win).
+** Implement `shouldComponentUpdate` and/or `PureRenderMixin` to avoid
+unnecessary component renders.
+** Cache frequently used operations.
+** Implement some type of indexing for characters.
+
 * Module loader support i.e. inclusion via Browserify, Webpack, etc. (medium).
 
 * Expose an API for programmatic access to the editor and contents (medium):
@@ -227,7 +236,7 @@ a local-only replica with the same API (medium).
 simpler (easy).
 
 [[commercial_features]]
-== Commercial Features
+== Commercial Features (Future)
 
 In addition to the editor which will remain free and open source,
 http://vivosys.com[VIVO Systems], the organization behind Ritzy, is considering
