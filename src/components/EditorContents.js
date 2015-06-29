@@ -1159,9 +1159,20 @@ export default React.createClass({
       index: index,
       endOfLine: endOfLine
     }
+  },
+
+  _searchLinesWithSelection() {
+    if(!this.state.lines || this.state.lines.length === 0 || !this.state.selectionActive) {
+      return null
     }
 
-    return null
+    let left = this._lineContainingChar(this.state.selectionLeftChar)
+    let right = this._lineContainingChar(this.state.selectionRightChar, null, this.state.lines.slice(left.index))
+
+    return {
+      left: left.index,
+      right: right.index + left.index
+    }
   },
 
   _lineAndAdvanceAtPosition(position, positionEolStart) {
@@ -1408,14 +1419,17 @@ export default React.createClass({
     return this.state.lines.map(line => line.chunks.map(chunkToStyledText))
   },
 
-  _renderLine(line, index, lineHeight) {
+  _renderLine(line, index, lineHeight, shouldRenderSelection) {
     let blockHeight = 10000
     let blockTop = this.top(this.props.fontSize) - blockHeight
+
+    let renderSelectionOverlay = () => shouldRenderSelection ? this._renderSelectionOverlay(index, lineHeight) : null
+
     // TODO set lineHeight based on font sizes used in line chunks
     // the span wrapper around the text is required so that the text does not shift up/down when using superscript/subscript
     return (
       <div className="text-lineview" style={{height: lineHeight, direction: 'ltr', textAlign: 'left'}} key={index}>
-        {this._renderSelectionOverlay(index, lineHeight)}
+        {renderSelectionOverlay()}
         <div className="text-lineview-content" style={{marginLeft: 0, paddingTop: 0}}>
           <span style={{display: 'inline-block', height: blockHeight}}></span>
           <span style={{display: 'inline-block', position: 'relative', top: blockTop}}>
@@ -1492,6 +1506,10 @@ export default React.createClass({
 
     let lineHeight = this.lineHeight(this.props.fontSize)
     let lines = this._splitIntoLines()
+    let linesWithSelection = this._searchLinesWithSelection()
+
+    let shouldRenderSelection = index =>
+      linesWithSelection != null && index >= linesWithSelection.left && index <= linesWithSelection.right
 
     return (
       <div ref="editorContentsContainer">
@@ -1499,8 +1517,8 @@ export default React.createClass({
           <TextInput id={id} ref="input" {...this.inputFunctions}/>
           <div className="text-contents">
             { lines.length > 0 ?
-              lines.map((line, index) =>this._renderLine(line, index, lineHeight) ) :
-              this._renderLine(nbsp, 0, lineHeight)}
+              lines.map((line, index) => this._renderLine(line, index, lineHeight, shouldRenderSelection(index)) ) :
+              this._renderLine(nbsp, 0, lineHeight, false)}
           </div>
           {this._renderCursor(lineHeight)}
         </div>
