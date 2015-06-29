@@ -4,6 +4,7 @@ import React from 'react/addons'
 import invariant from 'react/lib/invariant'
 import _ from 'lodash'
 import classNames from 'classnames'
+import bs from 'binarysearch'
 
 import { BASE_CHAR, EOF } from 'RichText'
 import { elementPosition } from 'dom'
@@ -506,7 +507,7 @@ export default React.createClass({
     if(this.state.selectionActive) {
       this._eraseSelection()
     } else {
-      let next = this.relativeChar(this.state.position, 1)
+      let next = this.relativeChar(this.state.position, 1, 'limit')
       this.replica.rmChars(next)
       this.flow()
 
@@ -1098,36 +1099,66 @@ export default React.createClass({
     }
   },
 
-  _lineContainingChar(char, nextIfEol) {
-    invariant(this.state.lines, 'Lines must be defined in the state.')
+  _lineContainingChar(char, nextIfEol, searchSpace) {
     if(_.isUndefined(nextIfEol)) nextIfEol = false
+    if(_.isUndefined(searchSpace)) {
+      invariant(this.state.lines, 'Lines must be defined in the state when search space is not provided.')
+      searchSpace = this.state.lines
+    }
 
-    if(char === EOF) {
-      let last = this._lastLine()
+    if(!searchSpace || searchSpace.length === 0) {
+      return null
+    }
+
+    // TODO move this function somewhere reusable or change EOF to be part of the definition of Char
+    let charEq = (char1, char2) => {
+      if(char1 === EOF) return char1 === char2
+      else if(char2 === EOF) return char1 === char2
+      else return char1.id === char2.id
+    }
+
+    // shortcut searches at the beginning or end of the searchSpace, this is used often and these comparisons are fast
+    if(charEq(searchSpace[0].start, char)) {
       return {
-        line: last,
-        index: this.state.lines.length - 1,
+        line: searchSpace[0],
+        index: 0,
+        endOfLine: !charEq(char, BASE_CHAR)
+      }
+    } else if(charEq(searchSpace[searchSpace.length - 1].end, char)) {
+      return {
+        line: searchSpace[searchSpace.length - 1],
+        index: searchSpace.length - 1,
         endOfLine: true
       }
     }
 
-    for(let i = 0; i < this.state.lines.length; i++) {
-      let end = this.state.lines[i].isEof() ? this.state.lines[i].start : this.state.lines[i].end
+    let compare = (char1, char2) => this.replica.compareCharPos(char1, char2)
+    let comparator = function(line, c) {
+      // shortcut fast equality comparisons with line.start and line.end
+      if (charEq(c, line.start)) return 1
+      if (charEq(c, line.end)) return 0
+      if (compare(c, line.start) < 0) return 1
+      if (compare(c, line.end) > 0) return -1
+      return 0
+    }
 
-      // make this a binary search for performance with large numbers of lines?
-      let compareCharPos = this.replica.compareCharPos(char, end)
-      if(compareCharPos <= 0) {
-        let endOfLine = compareCharPos === 0
-        let index = i
-        if(nextIfEol && endOfLine && !this.state.lines[i].isEof()) {
-          index = this.state.lines.length - 1 > index ? index + 1 : index
-        }
-        return {
-          line: this.state.lines[index],
-          index: index,
-          endOfLine: endOfLine
-        }
-      }
+    let index = bs(searchSpace, char, comparator)
+    if(index === -1) {
+      return null
+    }
+    let line = searchSpace[index]
+
+    let endOfLine = charEq(char, line.end)
+    if(nextIfEol && endOfLine && !line.isEof() && searchSpace.length - 1 > index) {
+      index++
+      line = searchSpace[index]
+    }
+
+    return {
+      line: line,
+      index: index,
+      endOfLine: endOfLine
+    }
     }
 
     return null
@@ -1185,20 +1216,24 @@ export default React.createClass({
       if(this.state.lines) {
         let printLine = l => console.debug(l.toString())
 
-        let currentLine = this._lineContainingChar(this.state.position)
-        if(currentLine.index > 0) {
-          logInGroup('Before', () => {
-            printLine(this.state.lines[currentLine.index - 1])
+        let currentLine = this._lineContainingChar(this.state.position, this.state.positionEolStart)
+        if(!currentLine) {
+          console.log(null)
+        } else {
+          if (currentLine.index > 0) {
+            logInGroup('Before', () => {
+              printLine(this.state.lines[currentLine.index - 1])
+            })
+          }
+          logInGroup('Current', () => {
+            console.debug('index', currentLine.index, 'endOfLine', currentLine.endOfLine)
+            printLine(currentLine.line)
           })
-        }
-        logInGroup('Current', () => {
-          console.debug('index', currentLine.index, 'endOfLine', currentLine.endOfLine)
-          printLine(currentLine.line)
-        })
-        if(currentLine.index < this.state.lines.length - 1) {
-          logInGroup('After', () => {
-            printLine(this.state.lines[currentLine.index + 1])
-          })
+          if (currentLine.index < this.state.lines.length - 1) {
+            logInGroup('After', () => {
+              printLine(this.state.lines[currentLine.index + 1])
+            })
+          }
         }
       } else {
         console.debug('No lines')
@@ -1471,15 +1506,18 @@ export default React.createClass({
         </div>
         {/*
         <div className="text-lineview-debug">
-          <button onClick={this._reset}>Reset</button><br/>
-          <button onClick={this._dumpReplica}>Dump Replica</button>&nbsp;
-          <button onClick={this._dumpPosition}>Dump Position</button>&nbsp;
-          <button onClick={this._dumpCurrentLine}>Dump Current Line</button>&nbsp;
-          <button onClick={this._dumpLines}>Dump Lines</button>&nbsp;
-          <button onClick={this._dumpSelection}>Dump Selection</button><br/>
-          <button onClick={this._forceRender}>Force Render</button>&nbsp;
-          <button onClick={this._forceFlow}>Force Flow</button><br/>
+          <span>Dump:&nbsp;</span>
+          <button onClick={this._dumpReplica}>Replica</button>&nbsp;
+          <button onClick={this._dumpPosition}>Position</button>&nbsp;
+          <button onClick={this._dumpCurrentLine}>Line</button>&nbsp;
+          <button onClick={this._dumpLines}>All Lines</button>&nbsp;
+          <button onClick={this._dumpSelection}>Selection</button><br/>
+          <span>Force:&nbsp;</span>
+          <button onClick={this._forceRender}>Render</button>&nbsp;
+          <button onClick={this._forceFlow}>Flow</button><br/>
+          <span>Action:&nbsp;</span>
           <button onClick={this._togglePositionEolStart}>Toggle Position EOL Start</button>&nbsp;
+          <button onClick={this._reset}>Reset</button><br/>
         </div>
         */}
       </div>

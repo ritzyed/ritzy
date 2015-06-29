@@ -6,10 +6,11 @@
   "repository": "https://github.com/rocketraman/ritzy-editor",
   "engines": {
     "node": ">= 0.12",
-    "npm": ">= 2.7"
+    "npm": ">= 2.11"
   },
   "dependencies": {
     "babel": "5.5.8",
+    "binarysearch": "0.2.4",
     "bootstrap": "3.3.5",
     "classnames": "2.1.2",
     "express": "4.12.4",
