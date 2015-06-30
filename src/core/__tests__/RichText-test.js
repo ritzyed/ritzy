@@ -1,6 +1,6 @@
 import { assert } from 'chai'
 import _ from 'lodash'
-import Text, { BASE_CHAR, EOF, TextData } from '../RichText'
+import Text, { BASE_CHAR, EOF, Char, TextData } from '../RichText'
 import Swarm from 'swarm'
 
 Swarm.env.localhost = new Swarm.Host('test~0')
@@ -34,10 +34,7 @@ describe('RichText TextData', () => {
     assert.strictEqual(textData.text(), 'a')
     assert.strictEqual(textData.len(), 2)  // includes initial id
     assert.deepEqual(textData.getChar(0), BASE_CHAR)
-    assert.deepEqual(textData.getChar(1), {
-      char: 'a',
-      id: charId
-    })
+    assert.deepEqual(textData.getChar(1), new Char(charId, 'a'))
   })
 
   it('getting, inserting, or deleting a non-existent character throws an error', () => {
@@ -77,37 +74,22 @@ describe('RichText TextData', () => {
 
     assert.strictEqual(textData.text(),'123')
     assert.strictEqual(textData.len(), 4)  // includes initial id
-    assert.deepEqual(textData.getChar(1), {
-      char: '1',
-      id: charIds[0]
-    })
+    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1'))
 
     textData.deleteChar(2)
     assert.strictEqual(textData.text(), '13')
     assert.strictEqual(textData.len(), 3)  // includes initial id
-    assert.deepEqual(textData.getChar(1), {
-      char: '1',
-      id: charIds[0],
-      deletedIds: ['00002+test']
-    })
+    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', ['00002+test']))
 
     textData.deleteChar(2)
     assert.strictEqual(textData.text(), '1')
     assert.strictEqual(textData.len(), 2)  // includes initial id
-    assert.deepEqual(textData.getChar(1), {
-      char: '1',
-      id: charIds[0],
-      deletedIds: ['00002+test', '00003+test']
-    })
+    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', ['00002+test', '00003+test']))
 
     textData.deleteChar(1)
     assert.strictEqual(textData.text(), '')
     assert.strictEqual(textData.len(), 1)  // includes initial id
-    assert.deepEqual(textData.getChar(0), {
-      char: '',
-      id: BASE_ID,
-      deletedIds: ['00001+test', '00002+test', '00003+test']
-    })
+    assert.deepEqual(textData.getChar(0), new Char(BASE_ID, '', ['00001+test', '00002+test', '00003+test']))
   })
 })
 
@@ -395,6 +377,27 @@ describe('RichText', () => {
     text.remove(rm)
 
     assert.deepEqual(text.getCharAt(1).deletedIds, [charOfB.id])
+  })
+
+  it('determines whether chars are equal', () => {
+    let text = new Text('/Text#1')
+    text.reset()
+    text.set('abcdef')
+
+    let charOfA = text.getCharAt(1)
+    let charOfF = text.getCharAt(6)
+    let undef
+    let nullVar = null
+
+    assert.isTrue(text.charEq(charOfA, charOfA))
+    assert.isTrue(text.charEq(charOfA, charOfA.id))
+    assert.isTrue(text.charEq(charOfA.id, charOfA))
+    assert.isTrue(text.charEq(EOF, EOF))
+    assert.isFalse(text.charEq(charOfA.id, charOfF.id))
+    assert.isFalse(text.charEq(charOfA, charOfF))
+    assert.isFalse(text.charEq(EOF, charOfF))
+    assert.isFalse(text.charEq(charOfA, undef))
+    assert.isFalse(text.charEq(charOfA, nullVar))
   })
 
   it('returns the proper index of characters, including or excluding deleted', () => {

@@ -382,6 +382,18 @@ let Text = Syncable.extend('Text', {
   },
 
   /**
+   * Determines whether two chars are the same or not.
+   */
+  charEq(charOrId1, charOrId2) {
+    if(charOrId1 === EOF && charOrId2 === EOF) return charOrId1 === charOrId2
+
+    let char1Id = _.has(charOrId1, 'id') ? charOrId1.id : charOrId1
+    let char2Id = _.has(charOrId2, 'id') ? charOrId2.id : charOrId2
+
+    return char1Id === char2Id
+  },
+
+  /**
    * Returns the index of a given char or ID. Index 0 is always the BASE_CHAR. If the char is not
    * found, returns -1.
    * @param {char|number} charOrId
@@ -524,4 +536,4 @@ let Text = Syncable.extend('Text', {
 })
 
 export default Text
-export { BASE_CHAR, EOF, TextData }
+export { BASE_CHAR, EOF, Char, TextData }

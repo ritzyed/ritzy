@@ -523,7 +523,7 @@ export default React.createClass({
       let position = this.state.position
       let start = this._wordStartRelativeTo(position)
       let end = position
-      if(start.id === position.id) {
+      if(this.replica.charEq(start, position)) {
         // beginning of word, move to the previous word
         let previousStart = this._wordStartRelativeTo(this.relativeChar(position, -1, 'limit'))
         // no previous word, nothing to delete
@@ -553,7 +553,7 @@ export default React.createClass({
       }
       let start = position
       let end = this._wordEndRelativeTo(start, options)
-      if(end.id === position.id) {
+      if(this.replica.charEq(end, position)) {
         // ending of word, move to the next word
         let nextEnd = this._wordEndRelativeTo(this.relativeChar(position, 1, 'limit'), options)
         // no next word, nothing to delete
@@ -638,7 +638,7 @@ export default React.createClass({
 
     this.setState((previousState) => {
       if(previousState.selectionActive) {
-        if(previousState.selectionAnchorChar.id === previousState.selectionLeftChar.id) {
+        if(this.replica.charEq(previousState.selectionAnchorChar, previousState.selectionLeftChar)) {
           let compareAnchorPos = this.replica.compareCharPos(toChar, previousState.selectionAnchorChar)
           if(compareAnchorPos < 0) {
             return {
@@ -705,7 +705,7 @@ export default React.createClass({
 
   _wordRelativeTo(char, options) {
     let textChars = this.replica.getTextRange(BASE_CHAR)
-    let charIndex = textChars.findIndex(e => e.id === char.id) + 1
+    let charIndex = textChars.findIndex(e => this.replica.charEq(e, char)) + 1
     let tokenRanges = tokenizer(textChars.map(c => c.char), options)
     for(let i = 0; i < tokenRanges.length; i++) {
       if(charIndex >= tokenRanges[i].start && charIndex < tokenRanges[i].end) {
@@ -793,7 +793,7 @@ export default React.createClass({
     if(line.isEof()) {
       position = line.start
       positionEolStart = true
-    } else if(line.isHard() && (line.chunks.length > 0 || line.start.id !== line.end.id)) {
+    } else if(line.isHard() && (line.chunks.length > 0 || !this.replica.charEq(line.start, line.end))) {
       // position just before the end newline
       position = this.relativeChar(line.end, -1, 'limit')
       positionEolStart = true
@@ -966,7 +966,7 @@ export default React.createClass({
         newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
 
         // if the new position is the start of the line, position the cursor at the start of the line
-        positionEolStart = newPosition.id === targetLine.start.id
+        positionEolStart = this.replica.charEq(newPosition, targetLine.start)
       }
       this.setPosition(newPosition, positionEolStart, false)
     }
@@ -1041,7 +1041,7 @@ export default React.createClass({
         newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
 
         // if the new position is the start of the line, position the cursor at the start of the line
-        positionEolStart = newPosition.id === targetLine.start.id
+        positionEolStart = this.replica.charEq(newPosition, targetLine.start)
       }
       this._modifySelection(newPosition, positionEolStart, false)
     }
@@ -1110,21 +1110,14 @@ export default React.createClass({
       return null
     }
 
-    // TODO move this function somewhere reusable or change EOF to be part of the definition of Char
-    let charEq = (char1, char2) => {
-      if(char1 === EOF) return char1 === char2
-      else if(char2 === EOF) return char1 === char2
-      else return char1.id === char2.id
-    }
-
     // shortcut searches at the beginning or end of the searchSpace, this is used often and these comparisons are fast
-    if(charEq(searchSpace[0].start, char)) {
+    if(this.replica.charEq(searchSpace[0].start, char)) {
       return {
         line: searchSpace[0],
         index: 0,
-        endOfLine: !charEq(char, BASE_CHAR)
+        endOfLine: !this.replica.charEq(char, BASE_CHAR)
       }
-    } else if(charEq(searchSpace[searchSpace.length - 1].end, char)) {
+    } else if(this.replica.charEq(searchSpace[searchSpace.length - 1].end, char)) {
       return {
         line: searchSpace[searchSpace.length - 1],
         index: searchSpace.length - 1,
@@ -1132,13 +1125,12 @@ export default React.createClass({
       }
     }
 
-    let compare = (char1, char2) => this.replica.compareCharPos(char1, char2)
-    let comparator = function(line, c) {
+    let comparator = (line, c) => {
       // shortcut fast equality comparisons with line.start and line.end
-      if (charEq(c, line.start)) return 1
-      if (charEq(c, line.end)) return 0
-      if (compare(c, line.start) < 0) return 1
-      if (compare(c, line.end) > 0) return -1
+      if (this.replica.charEq(c, line.start)) return 1
+      if (this.replica.charEq(c, line.end)) return 0
+      if (this.replica.compareCharPos(c, line.start) < 0) return 1
+      if (this.replica.compareCharPos(c, line.end) > 0) return -1
       return 0
     }
 
@@ -1148,7 +1140,7 @@ export default React.createClass({
     }
     let line = searchSpace[index]
 
-    let endOfLine = charEq(char, line.end)
+    let endOfLine = this.replica.charEq(char, line.end)
     if(nextIfEol && endOfLine && !line.isEof() && searchSpace.length - 1 > index) {
       index++
       line = searchSpace[index]
@@ -1179,7 +1171,7 @@ export default React.createClass({
     let {line, index, endOfLine} = this._lineContainingChar(position, positionEolStart)
     let advanceX
 
-    if(position.id === BASE_CHAR.id || (endOfLine && positionEolStart)) {
+    if(this.replica.charEq(BASE_CHAR, position) || (endOfLine && positionEolStart)) {
       advanceX = 0
     } else {
       let chars = this.replica.getTextRange(line.start, position)
@@ -1347,7 +1339,7 @@ export default React.createClass({
 
     let selectionWidthX
     let selectionAddSpace
-    if((right === EOF && line.isEof()) || (!line.isEof() && right.id === line.end.id && left.id !== right.id)) {
+    if((right === EOF && line.isEof()) || (!line.isEof() && this.replica.charEq(right, line.end) && !this.replica.charEq(left, right))) {
       // shortcut when we select to end of line, we already know the line advance from the flow algorithm
       selectionWidthX = line.advance - selectionLeftX
       selectionAddSpace = line.isEof() || line.end.char === '\n'
