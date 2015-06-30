@@ -3,22 +3,24 @@ import invariant from 'react/lib/invariant'
 import Spec from 'swarm/lib/Spec'
 import Syncable from 'swarm/lib/Syncable'
 
-function Char(id, char, deletedIds, attributes) {
-  this.id = id
-  this.char = char
-  if (deletedIds && !_.isEmpty(deletedIds)) {
-    this.deletedIds = _.clone(deletedIds)
+class Char {
+  constructor(id, char, deletedIds, attributes) {
+    this.id = id
+    this.char = char
+    if (deletedIds && !_.isEmpty(deletedIds)) {
+      this.deletedIds = _.clone(deletedIds)
+    }
+    if (attributes && !_.isEmpty(attributes)) {
+      this.attributes = _.clone(attributes)
+    }
   }
-  if (attributes && !_.isEmpty(attributes)) {
-    this.attributes = _.clone(attributes)
+
+  toString() {
+    let char = this.char.replace('\n', '\\n').replace(' ', '_')
+    return `${char} (${this.id})}`
   }
-}
-Char.prototype.toString = function() {
-  let char = this.char.replace('\n', '\\n').replace(' ', '_')
-  return `${char} (${this.id})}`
 }
 
-//const BASE_CHAR = {id: '00000+swarm', char: '', charToString}
 const BASE_CHAR = new Char('00000+swarm', '')
 const EOF = -1
 
