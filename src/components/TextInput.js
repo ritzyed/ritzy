@@ -30,6 +30,7 @@ const ALL_CHARS = [
 export default React.createClass({
   propTypes: {
     id: T.number.isRequired,
+    position: T.number.isRequired,
     insertChars: T.func.isRequired,
     navigateLeft: T.func.isRequired,
     navigateRight: T.func.isRequired,
@@ -63,7 +64,7 @@ export default React.createClass({
     toggleSubscript: T.func.isRequired
   },
 
-  //mixins: [React.addons.PureRenderMixin],
+  mixins: [React.addons.PureRenderMixin],
 
   componentDidMount() {
     // React does not batch setState calls inside events raised by mousetrap, create a wrapper to do that
@@ -111,11 +112,6 @@ export default React.createClass({
     keyBindings.bind('ctrl+,', this._handleKeySubscript)
 
     // TODO figure out tab, enter, return, pageup, pagedown, end, home, ins
-  },
-
-  shouldComponentUpdate() {
-    // invisible component, we don't need to update it
-    return false
   },
 
   focus() {
@@ -306,9 +302,18 @@ export default React.createClass({
 
   // TODO hide the text area and move it along with the cursor (and keep focus on it)
   render() {
+    let divStyle = {
+      position: 'absolute',
+      overflow: 'hidden',
+      height: 0,
+      outline: 'none',
+      left: 0,
+      top: this.props.position
+    }
+
     return (
-      <div style={{overflow: 'hidden', height: 0}}>
-        <textarea className="text-inputarea" key="input" ref="input" onPaste={this._onPaste} onInput={this._onInput}/>
+      <div style={divStyle}>
+        <textarea key="input" ref="input" onPaste={this._onPaste} onInput={this._onInput}/>
       </div>
     )
   }

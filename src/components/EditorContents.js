@@ -1432,7 +1432,46 @@ export default React.createClass({
     )
   },
 
-  _renderCursor(lineHeight) {
+  _cursorPosition(lineHeight) {
+    // the initial render before the component is mounted has no position or lines
+    if (!this.state.position || !this.state.lines || this.state.lines.length === 0) {
+      return {
+        left: 0,
+        top: 0
+      }
+    }
+
+    let {line, index, endOfLine} = this._lineContainingChar(this.state.position, this.state.positionEolStart)
+    let previousLineHeights = line ? lineHeight * index : 0
+
+    // The cursor position is relative to the first parent of the contents container with position=relative that is
+    // a common parent with the cursor div we are rendering --> it should be the text-content-wrapper
+    let contentsContainerPosition = elementPosition(this.editorContentsContainer,
+      (elem) => elem.className.indexOf('text-content-wrapper') >= 0)
+    let cursorAdvanceX
+
+    if(!line || (endOfLine && this.state.positionEolStart && index < this.state.lines.length - 1)) {
+      cursorAdvanceX = 0
+    } else {
+      let positionChars = this.replica.getTextRange(line.start, this.state.position)
+      cursorAdvanceX = this.advanceXForChars(this.props.fontSize, positionChars)
+    }
+
+    return {
+      left: contentsContainerPosition.x + cursorAdvanceX,
+      top: contentsContainerPosition.y + previousLineHeights
+    }
+  },
+
+  _renderInput(cursorPosition) {
+    let position = cursorPosition.top
+
+    return (
+      <TextInput id={this.props.id} ref="input" position={position} {...this.inputFunctions}/>
+    )
+  },
+
+  _renderCursor(cursorPosition, lineHeight) {
     if (this.state.selectionActive) {
       return null
     }
@@ -1454,26 +1493,12 @@ export default React.createClass({
       'text-cursor-italic': italicActive || (italicAtPosition && !italicInactive)
     })
 
-    let cursorStyle = {opacity: 1}
-
-    let {line, index, endOfLine} = this._lineContainingChar(this.state.position, this.state.positionEolStart)
-    let previousLineHeights = line ? lineHeight * index : 0
-
-    // The cursor position is relative to the first parent of the contents container with position=relative that is
-    // a common parent with the cursor div we are rendering --> it should be the text-content-wrapper
-    let contentsContainerPosition = elementPosition(this.editorContentsContainer,
-      (elem) => elem.className.indexOf('text-content-wrapper') >= 0)
-    let cursorAdvanceX
-
-    if(!line || (endOfLine && this.state.positionEolStart && index < this.state.lines.length - 1)) {
-      cursorAdvanceX = 0
-    } else {
-      let positionChars = this.replica.getTextRange(line.start, this.state.position)
-      cursorAdvanceX = this.advanceXForChars(this.props.fontSize, positionChars)
+    let cursorStyle = {
+      opacity: 1,
+      left: cursorPosition.left,
+      top: cursorPosition.top
     }
 
-    cursorStyle.left = contentsContainerPosition.x + cursorAdvanceX
-    cursorStyle.top = contentsContainerPosition.y + previousLineHeights
 /*
     cursorStyle.opacity = 0
     cursorStyle.display = 'none'
@@ -1494,10 +1519,9 @@ export default React.createClass({
   // TODO can do the onClick handler at at a higher level too, that way we can click outside elements e.g. before and after line ends
   render() {
     //console.trace('render')
-    let id = this.props.id
-
     let lineHeight = this.lineHeight(this.props.fontSize)
     let lines = this._splitIntoLines()
+    let cursorPosition = this._cursorPosition(lineHeight)
     let linesWithSelection = this._searchLinesWithSelection()
 
     let shouldRenderSelection = index =>
@@ -1506,13 +1530,13 @@ export default React.createClass({
     return (
       <div ref="editorContentsContainer">
         <div onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
-          <TextInput id={id} ref="input" {...this.inputFunctions}/>
+          {this._renderInput(cursorPosition)}
           <div className="text-contents">
             { lines.length > 0 ?
               lines.map((line, index) => this._renderLine(line, index, lineHeight, shouldRenderSelection(index)) ) :
               this._renderLine(nbsp, 0, lineHeight, false)}
           </div>
-          {this._renderCursor(lineHeight)}
+          {this._renderCursor(cursorPosition, lineHeight)}
         </div>
         {/*
         <div className="text-lineview-debug">
