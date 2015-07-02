@@ -89,6 +89,9 @@ Microsoft Word and Google Docs.
 
 * Cursor slant when traversing italic text.
 
+* Automatically scrolling the document window horizontally and vertically to
+keep the cursor visible.
+
 * Cursor user identification via color and tag (TODO).
 
 * Figures and tables (TODO).

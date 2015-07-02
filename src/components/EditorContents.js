@@ -7,7 +7,7 @@ import classNames from 'classnames'
 import bs from 'binarysearch'
 
 import { BASE_CHAR, EOF } from 'RichText'
-import { elementPosition } from 'dom'
+import { elementPosition, scrollByToVisible } from 'dom'
 import { pushArray, logInGroup } from 'utils'
 import { default as tokenizer, isWhitespace } from 'tokenizer'
 import TextReplicaMixin from './TextReplicaMixin'
@@ -93,6 +93,16 @@ export default React.createClass({
 
     this.refs.input.focus()
     this.flow()
+  },
+
+  componentDidUpdate() {
+    let caret = React.findDOMNode(this.refs.caret)
+    if(caret) {
+      let scrollByToCursor = scrollByToVisible(caret, 5)
+      if(scrollByToCursor.xDelta !== 0 || scrollByToCursor.yDelta !== 0) {
+        window.scrollBy(scrollByToCursor.xDelta, scrollByToCursor.yDelta)
+      }
+    }
   },
 
   /**
@@ -747,8 +757,9 @@ export default React.createClass({
 
   _mouseEventToPositionAndCursorX(e) {
     // target is the particular element within the editor clicked on, current target is the entire editor div
-    let mouseX = e.pageX - elementPosition(e.currentTarget).x
-    let mouseY = e.pageY - elementPosition(e.currentTarget).y
+    let targetPosition = elementPosition(e.currentTarget)
+    let mouseX = e.pageX - targetPosition.x
+    let mouseY = e.pageY - targetPosition.y
 
     // TODO this works for now since all line heights are the same, but get the heights of each line dynamically
     let lineHeight = this.lineHeight(this.props.fontSize)
@@ -1507,8 +1518,8 @@ export default React.createClass({
     let cursorHeight = Math.round(lineHeight * 10) / 10
 
     return (
-      <div className={cursorClasses} style={cursorStyle} key="cursor">
-        <div className={caretClasses} style={{borderColor: 'black', height: cursorHeight}}></div>
+      <div className={cursorClasses} style={cursorStyle} key="cursor" ref="cursor">
+        <div className={caretClasses} style={{borderColor: 'black', height: cursorHeight}} ref="caret"></div>
         <div className="text-cursor-top" style={{opacity: 0, display: 'none'}}></div>
         <div className="text-cursor-name" style={{opacity: 0, display: 'none'}}></div>
       </div>
