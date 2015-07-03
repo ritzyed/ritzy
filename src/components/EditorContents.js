@@ -121,7 +121,7 @@ export default React.createClass({
    *   current one (positionEolStart = false). If the cursor position is not at a line end, this state
    *   is ignored by the renderer. Since this state is often "left over" from previous calls to setPosition
    *   it should not be trusted other than for rendering.
-   * @param resetUpDown {boolean} [resetUpDown = true] resetUpDown Whether to reset the up/down advance
+   * @param {boolean} [resetUpDown = true] resetUpDown Whether to reset the up/down advance
    *   and position values.
    */
   setPosition(position, positionEolStart, resetUpDown) {
@@ -756,6 +756,15 @@ export default React.createClass({
   },
 
   _mouseEventToPositionAndCursorX(e) {
+    // hack: if the user clicks or rolls over their own cursor sometimes that becomes the target element (in browsers
+    // that don't support pointer-events: none, like IE < 11): BUT we know the cursor is the current position
+    if(e.target.className.indexOf('text-cursor-caret') >= 0) {
+      return {
+        position: this.state.position,
+        positionEolStart: this.state.positionEolStart
+      }
+    }
+
     // target is the particular element within the editor clicked on, current target is the entire editor div
     let targetPosition = elementPosition(e.currentTarget)
     let mouseX = e.pageX - targetPosition.x
@@ -820,14 +829,9 @@ export default React.createClass({
   },
 
   _doOnSingleClick(e) {
-    // hack: if the user clicks on their own cursor sometimes that becomes the target element
-    // this is for browsers that don't support pointer-events: none, like IE < 11
-    if(e.target.className.indexOf('text-cursor-caret') >= 0) {
-      return
-    }
+    let {position, positionEolStart} = this._mouseEventToPositionAndCursorX(e)
 
     // save the position for a potential double-click
-    let {position, positionEolStart} = this._mouseEventToPositionAndCursorX(e)
     this.savedPosition = position
 
     if(e.shiftKey) {
@@ -889,12 +893,6 @@ export default React.createClass({
 
   _onMouseMove(e) {
     if(e.buttons !== 1) return
-
-    // hack: if we're rolling over our own cursor do nothing, otherwise the element position goes to 0
-    // this is for browsers that don't support pointer-events: none, like IE < 11
-    if(e.target.className.indexOf('text-cursor-caret') >= 0) {
-      return
-    }
 
     let {position, positionEolStart} = this._mouseEventToPositionAndCursorX(e)
 
