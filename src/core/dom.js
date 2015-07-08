@@ -1,5 +1,33 @@
+import 'babel/polyfill'
+
 export function getNumericStyleProperty(style, prop) {
   return parseInt(style.getPropertyValue(prop), 10)
+}
+
+export function getPixelStyleProperty(style, prop) {
+  return Number(style.getPropertyValue(prop).match(/(\d*(\.\d*)?)px/)[1])
+}
+
+/**
+ * The computed font-weight property is textual ("bold") on some browsers e.g. Chrome and numeric Strings ("700")
+ * on some other browsers e.g. Firefox. This method normalizes the font-weight value to a textual property.
+ * See https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight.
+ *
+ * This method does not do a complete normalization e.g. lighter, bolder, etc. Only basic normal and bold weights
+ * are currently handled.
+ * @param fontWeight
+ */
+export function normalizeFontWeight(fontWeight) {
+  let fontWeightNumeric = parseInt(fontWeight, 10)
+  if (Number.isNaN(fontWeightNumeric)) {
+    return fontWeight
+  } else if (fontWeightNumeric === 400) {
+    return 'normal'
+  } else if (fontWeightNumeric === 700) {
+    return 'bold'
+  } else {
+    return fontWeight
+  }
 }
 
 /**
@@ -14,7 +42,7 @@ export function detectMinFontSize() {
   elem.style.visibility = 'hidden'
   document.body.appendChild(elem)
   let style = getComputedStyle(elem, null)
-  let size = Number(style.getPropertyValue('font-size').match(/(\d*(\.\d*)?)px/)[1])
+  let size = getPixelStyleProperty(style, 'font-size')
   document.body.removeChild(elem)
   return size
 }
