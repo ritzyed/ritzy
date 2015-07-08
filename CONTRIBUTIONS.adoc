@@ -66,7 +66,7 @@ project.
  ./nodew npm ...
  ./nodew node ...
  ./nodew gulp ...
-
+ ./nodew karma ...
 
 WARNING: Under Windows Cygwin, the platform and architecture detection in
 `nodew` is unlikely to work correctly. Set NODE_HOME to override it, and check
@@ -146,10 +146,13 @@ When running gulp directly, specify the task before other arguments: e.g.
 [[testing]]
 === Testing
 
-==== Javascript
+==== Javascript Off-Browser
 
 Javascript unit tests are written using http://mochajs.org/[Mocha] and
-assertions using http://chaijs.com/[Chai]. To execute:
+assertions using http://chaijs.com/[Chai]. Tests are named
+`<something>-test.js`.
+
+To execute:
 
  gradle npm_test      # or ./npm test
 
@@ -164,6 +167,16 @@ and not with NodeJS.
 More information:
 
 * http://www.hammerlab.org/2015/02/14/testing-react-web-apps-with-mocha/
+
+==== Javascript In-Browser
+
+In cases where a browser API is required for the test, the unit tests are named
+`<something>-testb.js`. Tests are executed via the
+http://karma-runner.github.io/[Karma] runner.
+
+To execute:
+
+ gradle npm_run-script_testb      # or ./npm run-script testb
 
 ==== Browser Sync
 
