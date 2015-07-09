@@ -13,7 +13,7 @@ import { default as tokenizer, isWhitespace } from 'tokenizer'
 import TextReplicaMixin from './TextReplicaMixin'
 import TextFontMetricsMixin from './TextFontMetricsMixin'
 import TextInput from './TextInput'
-import {ATTR, hasAttributeFor, attributesEqual} from './attributes'
+import {ATTR, hasAttributeFor, attributesEqual} from '../core/attributes'
 
 // TODO do this as a require or just make it part of the js or make it global?
 require('text.less')
@@ -90,6 +90,11 @@ export default React.createClass({
     this.upDownAdvanceX = null
     this.upDownPositionEolStart = null
     this.editorContentsContainer = React.findDOMNode(this.refs.editorContentsContainer)
+
+    // TODO deal with non-Chrome browsers that require a selection before this event will work
+    document.addEventListener('copy', function(e) {
+      console.log('copying', e)
+    })
 
     this.refs.input.focus()
     this.flow()
