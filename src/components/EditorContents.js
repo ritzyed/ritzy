@@ -1548,7 +1548,7 @@ export default React.createClass({
           {this._renderCursor(cursorPosition, lineHeight)}
         </div>
         {/*
-        <div className="text-lineview-debug">
+        <div style={{position: 'relative', zIndex: 100}}>
           <span>Dump:&nbsp;</span>
           <button onClick={this._dumpReplica}>Replica</button>&nbsp;
           <button onClick={this._dumpPosition}>Position</button>&nbsp;
