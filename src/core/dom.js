@@ -105,3 +105,13 @@ export function scrollByToVisible(el, xGutter, yGutter) {
     yDelta: yDelta
   }
 }
+
+/**
+ * Empties a DOM node of all its children.
+ * @param {Node} node
+ */
+export function emptyNode(node) {
+  while (node.firstChild) {
+    node.removeChild(node.firstChild)
+  }
+}
