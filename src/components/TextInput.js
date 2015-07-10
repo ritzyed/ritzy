@@ -1,6 +1,10 @@
+import 'babel/polyfill'
+
 import React from 'react/addons'
 import getEventKey from 'react/lib/getEventKey'
 import Mousetrap from 'mousetrap'
+import parseHtml from '../core/htmlparser'
+import {emptyNode} from '../core/dom'
 
 const batchedUpdates = React.addons.batchedUpdates
 const T = React.PropTypes
@@ -32,6 +36,7 @@ export default React.createClass({
     id: T.number.isRequired,
     position: T.number.isRequired,
     insertChars: T.func.isRequired,
+    insertCharsBatch: T.func.isRequired,
     navigateLeft: T.func.isRequired,
     navigateRight: T.func.isRequired,
     navigateUp: T.func.isRequired,
@@ -68,7 +73,18 @@ export default React.createClass({
 
   componentDidMount() {
     // React does not batch setState calls inside events raised by mousetrap, create a wrapper to do that
-    let keyBindingsReal = new Mousetrap(React.findDOMNode(this.refs.input))
+    this.input = React.findDOMNode(this.refs.input)
+    this.hiddenContainer = React.findDOMNode(this.refs.hiddenContainer)
+    this.ieClipboardDiv = React.findDOMNode(this.refs.ieClipboardDiv)
+
+    // for HTML paste support in IE -- ignored by Chrome/Firefox
+    this.input.addEventListener('beforepaste', () => {
+      if (document.activeElement !== this.ieClipboardDiv) {
+        this._focusIeClipboardDiv()
+      }
+    }, true)
+
+    let keyBindingsReal = new Mousetrap(this.input)
 
     // the wrapper function returns the function that will be called by Mousetrap with two args: keyEvent and combo
     let wrapperFunction = (handler) => (keyEvent, combo) => {
@@ -95,8 +111,6 @@ export default React.createClass({
     keyBindings.bind('ctrl+backspace', this._handleKeyWordBackspace)
     keyBindings.bind('ctrl+del', this._handleKeyWordDelete)
     //keyBindings.bind('ctrl+s', this._handleKeySave)
-    //keyBindings.bind(['ctrl+c', 'ctrl+ins'], this._handleKeyCopy)
-    //keyBindings.bind(['ctrl+v', 'shift+ins'], this._handleKeyPaste)
     //keyBindings.bind('tab', this._handleKeyTab)
     keyBindings.bind('enter', this._handleKeyEnter)
     //keyBindings.bind(['pageup', 'pagedown'], this._handleKeyPage)
@@ -281,16 +295,53 @@ export default React.createClass({
 
   _onPaste(e) {
     this._checkEmptyValue()
+    if(e.clipboardData.types) {
+      this._handleNormalPaste(e)
+    } else {
+      // IE does not provide access to HTML in the paste event but does allow HTML to paste into a contentEditable
+      // see http://stackoverflow.com/a/27279218/430128
+      this._handleIePaste()
+    }
+  },
 
-    if(e.clipboardData.types.filter((t) => { return t === 'text/plain' }).length > 0) {
+  _handleNormalPaste(e) {
+    let clipboardDataTypes
+    if(e.clipboardData.types.filter) {
+      clipboardDataTypes = e.clipboardData.types
+    } else {
+      // Firefox uses DOMStringList instead of an array type, convert it
+      clipboardDataTypes = Array.from(e.clipboardData.types)
+    }
+
+    if(clipboardDataTypes.filter((t) => { return t === 'text/html' }).length > 0) {
+      let pasted = e.clipboardData.getData('text/html')
+      let pastedChunks = parseHtml(pasted, this.hiddenContainer)
+      this.props.insertCharsBatch(pastedChunks)
+    } else if(clipboardDataTypes.filter((t) => { return t === 'text/plain' }).length > 0) {
       let pasted = e.clipboardData.getData('text/plain')
       this.props.insertChars(pasted)
     } else {
-      console.warn('Paste not supported yet for types: ' + JSON.stringify(e.clipboardData.types))
+      console.warn('Paste not supported yet for types: ' + JSON.stringify(clipboardDataTypes))
     }
-
     e.preventDefault()
     e.stopPropagation()
+  },
+
+  _handleIePaste() {
+    setTimeout(() => {
+      let pasted = this.ieClipboardDiv.innerHTML
+      try {
+        let pastedChunks = parseHtml(pasted, this.hiddenContainer)
+        this.props.insertCharsBatch(pastedChunks)
+      } finally {
+        emptyNode(this.ieClipboardDiv)
+        this.focus()
+      }
+    }, 0)
+  },
+
+  _focusIeClipboardDiv() {
+    this.ieClipboardDiv.focus()
   },
 
   _onInput(e) {
@@ -300,7 +351,6 @@ export default React.createClass({
     this.props.insertChars(value)
   },
 
-  // TODO hide the text area and move it along with the cursor (and keep focus on it)
   render() {
     let divStyle = {
       position: 'absolute',
@@ -311,8 +361,11 @@ export default React.createClass({
       top: this.props.position
     }
 
+    // we can't focus an element with display: none so wrap them in another invisible div
     return (
       <div style={divStyle}>
+        <div style={{display: 'none'}} ref="hiddenContainer"></div>
+        <div contentEditable="true" ref="ieClipboardDiv" onPaste={this._onPaste}></div>
         <textarea key="input" ref="input" onPaste={this._onPaste} onInput={this._onInput}/>
       </div>
     )

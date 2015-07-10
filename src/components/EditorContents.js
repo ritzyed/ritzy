@@ -52,6 +52,7 @@ export default React.createClass({
 
     this.inputFunctions = {
       insertChars: this.insertChars,
+      insertCharsBatch: this.insertCharsBatch,
       navigateLeft: this.navigateLeft,
       navigateRight: this.navigateRight,
       navigateUp: this.navigateUp,
@@ -347,28 +348,53 @@ export default React.createClass({
     this.setState({lines: lines})
   },
 
-  insertChars(value) {
-    let position = this.state.position
+  insertChars(value, attributes, atPosition, reflow) {
+    if(_.isUndefined(reflow)) reflow = true
+    let position
+    if(atPosition) {
+      position = atPosition
+    } else {
+      position = this.state.position
+    }
     // if the last char is a newline, then we want to position on the start of the next line
     let positionEolStart = value.slice(-1) === '\n'
-    let activeAttributes
+
     if(this.state.selectionActive) {
       position = this.state.selectionLeftChar
-      // if selection, then activeAttributes (set by command or toolbar) are set by the first selected char
-      activeAttributes = this.relativeChar(position, 1, 'limit').attributes
       this._eraseSelection()
-    } else {
-      activeAttributes = this.state.activeAttributes ?
-        this.state.activeAttributes :
-        this.relativeChar(position, 0).attributes // reload attributes from the replica in case they have changed
     }
 
-    this.replica.insertCharsAt(position, value, activeAttributes)
+    if(!attributes) {
+      if(this.state.selectionActive) {
+        position = this.state.selectionLeftChar
+        // if selection, then activeAttributes (set by command or toolbar) are set by the first selected char
+        attributes = this.relativeChar(position, 1, 'limit').attributes
+      } else {
+        attributes = this.state.activeAttributes ?
+          this.state.activeAttributes :
+          this.relativeChar(position, 0).attributes // reload attributes from the replica in case they have changed
+      }
+    }
+
+    this.replica.insertCharsAt(position, value, attributes)
 
     let relativeMove = value.length
+    let newPosition = this.relativeChar(position, relativeMove)
+    this.setPosition(newPosition, positionEolStart)
+    this.setState({activeAttributes: attributes})
+
+    if(reflow) this.flow()
+
+    // return the new position so that multiple insertChars calls can be made in sequence
+    return newPosition
+  },
+
+  insertCharsBatch(chunks) {
+    let insertPosition = null
+    chunks.forEach(c => {
+      insertPosition = this.insertChars(c.text, c.attrs, insertPosition, false)
+    })
     this.flow()
-    this.setPosition(this.relativeChar(position, relativeMove), positionEolStart)
-    this.setState({activeAttributes: activeAttributes})
   },
 
   navigateLeft() {

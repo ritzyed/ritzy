@@ -92,6 +92,8 @@ Microsoft Word and Google Docs.
 * Automatically scrolling the document window horizontally and vertically to
 keep the cursor visible.
 
+* Paste of clipboard data, including conversion to rich text if data is HTML.
+
 * Cursor user identification via color and tag (TODO).
 
 * Figures and tables (TODO).
