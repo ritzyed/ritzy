@@ -8,8 +8,8 @@ let app = {}
 app.id = window.localStorage.getItem('localuser') || 'A' + Swarm.Spec.int2base((Math.random() * 10000) | 0)
 window.localStorage.setItem('localuser', app.id)
 
-// server host uri
-app.wsServerUri = 'ws://' + window.location.host
+// server host uri (/websocket is appended because https://github.com/websockets/ws/issues/131)
+app.wsServerUri = 'ws://' + window.location.host + '/websocket'
 
 let hash = window.location.hash || '#0'
 
