@@ -92,7 +92,8 @@ Microsoft Word and Google Docs.
 * Automatically scrolling the document window horizontally and vertically to
 keep the cursor visible.
 
-* Paste of clipboard data, including conversion to rich text if data is HTML.
+* Cut/copy/paste of clipboard data, including conversion between rich text and
+HTML.
 
 * Cursor user identification via color and tag (TODO).
 
@@ -195,7 +196,6 @@ https://github.com/rocketraman/ritzy-editor/blob/master/CONTRIBUTIONS.adoc[Contr
 are welcome.
 
 * Basic features:
-** cut/copy/paste
 ** undo/redo
 ** search/replace
 
