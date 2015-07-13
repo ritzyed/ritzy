@@ -66,6 +66,7 @@ export default React.createClass({
     eraseCharForward: T.func.isRequired,
     eraseWordBack: T.func.isRequired,
     eraseWordForward: T.func.isRequired,
+    eraseSelection: T.func.isRequired,
     toggleBold: T.func.isRequired,
     toggleItalics: T.func.isRequired,
     toggleUnderline: T.func.isRequired,
@@ -326,9 +327,9 @@ export default React.createClass({
     }
   },
 
-  _onCut(/*e*/) {
-
-    //TODO
+  _onCut(e) {
+    this._onCopy(e)
+    this.props.eraseSelection()
   },
 
   _handleNormalCopy(e, selectionChunks, copiedText, copiedHtml) {

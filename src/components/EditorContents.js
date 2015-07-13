@@ -77,6 +77,7 @@ export default React.createClass({
       eraseCharForward: this.eraseCharForward,
       eraseWordBack: this.eraseWordBack,
       eraseWordForward: this.eraseWordForward,
+      eraseSelection: this.eraseSelection,
       toggleBold: this.toggleBold,
       toggleItalics: this.toggleItalics,
       toggleUnderline: this.toggleUnderline,
@@ -606,6 +607,12 @@ export default React.createClass({
 
       let endOfLine = this._lineContainingChar(position).endOfLine
       this.setPosition(position, endOfLine)
+    }
+  },
+
+  eraseSelection() {
+    if(this.state.selectionActive) {
+      this._eraseSelection()
     }
   },
 
