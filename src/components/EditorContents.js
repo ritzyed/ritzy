@@ -82,7 +82,8 @@ export default React.createClass({
       toggleUnderline: this.toggleUnderline,
       toggleStrikethrough: this.toggleStrikethrough,
       toggleSuperscript: this.toggleSuperscript,
-      toggleSubscript: this.toggleSubscript
+      toggleSubscript: this.toggleSubscript,
+      getSelection: this.getSelection
     }
   },
 
@@ -91,11 +92,6 @@ export default React.createClass({
     this.upDownAdvanceX = null
     this.upDownPositionEolStart = null
     this.editorContentsContainer = React.findDOMNode(this.refs.editorContentsContainer)
-
-    // TODO deal with non-Chrome browsers that require a selection before this event will work
-    document.addEventListener('copy', function(e) {
-      console.log('copying', e)
-    })
 
     this.refs.input.focus()
     this.flow()
@@ -635,6 +631,68 @@ export default React.createClass({
 
   toggleSubscript() {
     this._toggleAttribute(ATTR.SUBSCRIPT, ATTR.SUPERSCRIPT)
+  },
+
+  getSelection() {
+    let selectionChunks = []
+
+    if(!this.state.selectionActive) {
+      return selectionChunks
+    }
+
+    let currentChunk = {
+      chars: [],
+      attributes: null,
+
+      reset() {
+        this.chars = []
+        this.attributes = null
+      },
+
+      pushChar(c) {
+        if(!this.attributes) {
+          this.attributes = c.attributes
+        }
+        // push newlines as separate chunks for ease of parsing paragraphs and breaks from chunks
+        if(c.char === '\n') {
+          // previous chunk
+          this.pushChunk()
+        }
+        this.chars.push(c.char)
+        if(c.char === '\n') {
+          // newline chunk
+          this.pushChunk()
+        }
+      },
+
+      pushChunk() {
+        if(this.chars.length > 0) {
+          selectionChunks.push({
+            text: this.chars.join(''),
+            attrs: this.attributes
+          })
+        }
+        this.reset()
+      }
+    }
+
+    let processChar = (c) => {
+      if (!attributesEqual(currentChunk.attributes, c.attributes)) {
+        currentChunk.pushChunk()
+      }
+      currentChunk.pushChar(c, this)
+    }
+
+    let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
+    let contentIterator = selectionChars[Symbol.iterator]()
+    let e
+    while(!(e = contentIterator.next()).done) {
+      processChar(e.value)
+    }
+    // last chunk
+    currentChunk.pushChunk()
+
+    return selectionChunks
   },
 
   _createReplica() {
