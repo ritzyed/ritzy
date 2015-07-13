@@ -37,7 +37,9 @@ module.exports = function(config) {
       }
     },
     logLevel: config.LOG_INFO,
-    browsers : ['Chrome', 'Firefox'],
+    // For IE testing in VMs see https://github.com/xdissent/karma-ievms or just connect to host port 9876 from the VM
+    // iectrl open -s 10,11 http://<hostip>:9876/
+    browsers : ['Chrome', 'Firefox'/*, 'IE10 - Win7', 'IE11 - Win7'*/],
     singleRun: true
   })
 }

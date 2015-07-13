@@ -13,7 +13,7 @@ import { default as tokenizer, isWhitespace } from 'tokenizer'
 import TextReplicaMixin from './TextReplicaMixin'
 import TextFontMetricsMixin from './TextFontMetricsMixin'
 import TextInput from './TextInput'
-import {ATTR, hasAttributeFor, attributesEqual} from './attributes'
+import {ATTR, hasAttributeFor, attributesEqual} from '../core/attributes'
 
 // TODO do this as a require or just make it part of the js or make it global?
 require('text.less')
@@ -52,6 +52,7 @@ export default React.createClass({
 
     this.inputFunctions = {
       insertChars: this.insertChars,
+      insertCharsBatch: this.insertCharsBatch,
       navigateLeft: this.navigateLeft,
       navigateRight: this.navigateRight,
       navigateUp: this.navigateUp,
@@ -76,12 +77,14 @@ export default React.createClass({
       eraseCharForward: this.eraseCharForward,
       eraseWordBack: this.eraseWordBack,
       eraseWordForward: this.eraseWordForward,
+      eraseSelection: this.eraseSelection,
       toggleBold: this.toggleBold,
       toggleItalics: this.toggleItalics,
       toggleUnderline: this.toggleUnderline,
       toggleStrikethrough: this.toggleStrikethrough,
       toggleSuperscript: this.toggleSuperscript,
-      toggleSubscript: this.toggleSubscript
+      toggleSubscript: this.toggleSubscript,
+      getSelection: this.getSelection
     }
   },
 
@@ -342,28 +345,53 @@ export default React.createClass({
     this.setState({lines: lines})
   },
 
-  insertChars(value) {
-    let position = this.state.position
+  insertChars(value, attributes, atPosition, reflow) {
+    if(_.isUndefined(reflow)) reflow = true
+    let position
+    if(atPosition) {
+      position = atPosition
+    } else {
+      position = this.state.position
+    }
     // if the last char is a newline, then we want to position on the start of the next line
     let positionEolStart = value.slice(-1) === '\n'
-    let activeAttributes
+
     if(this.state.selectionActive) {
       position = this.state.selectionLeftChar
-      // if selection, then activeAttributes (set by command or toolbar) are set by the first selected char
-      activeAttributes = this.relativeChar(position, 1, 'limit').attributes
       this._eraseSelection()
-    } else {
-      activeAttributes = this.state.activeAttributes ?
-        this.state.activeAttributes :
-        this.relativeChar(position, 0).attributes // reload attributes from the replica in case they have changed
     }
 
-    this.replica.insertCharsAt(position, value, activeAttributes)
+    if(!attributes) {
+      if(this.state.selectionActive) {
+        position = this.state.selectionLeftChar
+        // if selection, then activeAttributes (set by command or toolbar) are set by the first selected char
+        attributes = this.relativeChar(position, 1, 'limit').attributes
+      } else {
+        attributes = this.state.activeAttributes ?
+          this.state.activeAttributes :
+          this.relativeChar(position, 0).attributes // reload attributes from the replica in case they have changed
+      }
+    }
+
+    this.replica.insertCharsAt(position, value, attributes)
 
     let relativeMove = value.length
+    let newPosition = this.relativeChar(position, relativeMove)
+    this.setPosition(newPosition, positionEolStart)
+    this.setState({activeAttributes: attributes})
+
+    if(reflow) this.flow()
+
+    // return the new position so that multiple insertChars calls can be made in sequence
+    return newPosition
+  },
+
+  insertCharsBatch(chunks) {
+    let insertPosition = null
+    chunks.forEach(c => {
+      insertPosition = this.insertChars(c.text, c.attrs, insertPosition, false)
+    })
     this.flow()
-    this.setPosition(this.relativeChar(position, relativeMove), positionEolStart)
-    this.setState({activeAttributes: activeAttributes})
   },
 
   navigateLeft() {
@@ -582,6 +610,12 @@ export default React.createClass({
     }
   },
 
+  eraseSelection() {
+    if(this.state.selectionActive) {
+      this._eraseSelection()
+    }
+  },
+
   toggleBold() {
     this._toggleAttribute(ATTR.BOLD)
   },
@@ -604,6 +638,68 @@ export default React.createClass({
 
   toggleSubscript() {
     this._toggleAttribute(ATTR.SUBSCRIPT, ATTR.SUPERSCRIPT)
+  },
+
+  getSelection() {
+    let selectionChunks = []
+
+    if(!this.state.selectionActive) {
+      return selectionChunks
+    }
+
+    let currentChunk = {
+      chars: [],
+      attributes: null,
+
+      reset() {
+        this.chars = []
+        this.attributes = null
+      },
+
+      pushChar(c) {
+        if(!this.attributes) {
+          this.attributes = c.attributes
+        }
+        // push newlines as separate chunks for ease of parsing paragraphs and breaks from chunks
+        if(c.char === '\n') {
+          // previous chunk
+          this.pushChunk()
+        }
+        this.chars.push(c.char)
+        if(c.char === '\n') {
+          // newline chunk
+          this.pushChunk()
+        }
+      },
+
+      pushChunk() {
+        if(this.chars.length > 0) {
+          selectionChunks.push({
+            text: this.chars.join(''),
+            attrs: this.attributes
+          })
+        }
+        this.reset()
+      }
+    }
+
+    let processChar = (c) => {
+      if (!attributesEqual(currentChunk.attributes, c.attributes)) {
+        currentChunk.pushChunk()
+      }
+      currentChunk.pushChar(c, this)
+    }
+
+    let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
+    let contentIterator = selectionChars[Symbol.iterator]()
+    let e
+    while(!(e = contentIterator.next()).done) {
+      processChar(e.value)
+    }
+    // last chunk
+    currentChunk.pushChunk()
+
+    return selectionChunks
   },
 
   _createReplica() {
