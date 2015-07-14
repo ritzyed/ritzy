@@ -427,10 +427,10 @@ export default React.createClass({
     // we can't focus an element with display: none so wrap them in another invisible div
     return (
       <div style={divStyle}>
-        <div style={{display: 'none'}} ref="hiddenContainer"></div>
-        <div contentEditable="true" ref="ieClipboardDiv" onPaste={this._onPaste}></div>
         <textarea key="input" ref="input" onInput={this._onInput}
           onCopy={this._onCopy} onCut={this._onCut} onPaste={this._onPaste}/>
+        <div style={{display: 'none'}} ref="hiddenContainer"></div>
+        <div contentEditable="true" ref="ieClipboardDiv" onPaste={this._onPaste}></div>
       </div>
     )
   }
