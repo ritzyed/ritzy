@@ -1640,8 +1640,8 @@ export default React.createClass({
       linesWithSelection != null && index >= linesWithSelection.left && index <= linesWithSelection.right
 
     return (
-      <div ref="editorContentsContainer">
-        <div onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
+      <div>
+        <div ref="editorContentsContainer" onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
           {this._renderInput(cursorPosition)}
           <div className="text-contents">
             { lines.length > 0 ?
