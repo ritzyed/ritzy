@@ -33,7 +33,6 @@ export default React.createClass({
     fontSize: T.number.isRequired,
     minFontSize: T.number.isRequired,
     unitsPerEm: T.number.isRequired,
-    margin: T.number.isRequired,
     width: T.number.isRequired
   },
 
@@ -291,8 +290,6 @@ export default React.createClass({
       line.reset()
     }
 
-    let lineWidth = this.props.width - (this.props.margin * 2)
-
     let processChar = (c) => {
       if (!attributesEqual(currentWord.attributes, c.attributes)) {
         currentWord.pushChunks()
@@ -314,14 +311,14 @@ export default React.createClass({
       }
 
       // check for line wrap
-      if(currentLine.advance === 0 && currentWord.advance > lineWidth) {
+      if(currentLine.advance === 0 && currentWord.advance > this.props.width) {
         // word longer than a line, here we need to remove the last char to get us back under the line width
         let lastChar = currentWord.popChar()
         currentWord.pushChunks()
         currentLine.pushWord(currentWord)
         pushLine(currentLine)
         processChar(lastChar)
-      } else if (currentLine.advance + currentWord.advance > lineWidth) {
+      } else if (currentLine.advance + currentWord.advance > this.props.width) {
         pushLine(currentLine)
       }
     }
@@ -1644,7 +1641,7 @@ export default React.createClass({
           {this._renderCursor(cursorPosition, lineHeight)}
         </div>
         {/*
-        <div style={{position: 'relative', zIndex: 100}}>
+        <div style={{position: 'relative', zIndex: 100, paddingTop: 30}}>
           <span>Dump:&nbsp;</span>
           <button onClick={this._dumpReplica}>Replica</button>&nbsp;
           <button onClick={this._dumpPosition}>Position</button>&nbsp;

@@ -25,10 +25,8 @@ export default React.createClass({
     const width = 600
 
     return (
-      <div className="text-content-wrapper" style={{width: width, backgroundColor: 'rgb(255, 255, 255)'}}>
-        <div style={{padding: '0px ' + margin + 'px'}}>
-          <EditorContents id={id} fontSize={18} margin={margin} width={width} {...other} />
-        </div>
+      <div className="text-content-wrapper" style={{width: width, backgroundColor: 'rgb(255, 255, 255)', padding: `0px ${margin}px`}}>
+        <EditorContents id={id} fontSize={18} width={width} {...other} />
       </div>
     )
   }
