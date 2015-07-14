@@ -197,11 +197,8 @@ are welcome.
 
 * Basic features:
 ** undo/redo
-** search/replace
 
 * Multiple colored/labeled cursors (medium).
-
-* Dynamic editor height based on content (easy).
 
 * Right-click menu support (medium).
 
@@ -210,14 +207,16 @@ are welcome.
 * Once tests are in place, refactoring to make the editor code more modular /
 easier to understand (hard).
 
-* Performance improvements. Performance is already decent but much more can be
-done to improve it. Some ideas:
+* Performance improvements. Performance is pretty poor right now but much can
+be done to improve it. Some ideas:
 ** Create finer-grained React components (see refactor above) to avoid
 re-rendering the entire editor on updates (this should be a big win).
 ** Implement `shouldComponentUpdate` and/or `PureRenderMixin` to avoid
 unnecessary component renders.
-** Cache frequently used operations.
 ** Implement some type of indexing for characters.
+** Use immutable collections as much as possible e.g.
+http://facebook.github.io/immutable-js/
+** Cache frequently used / slow operations where possible.
 
 * Module loader support i.e. inclusion via Browserify, Webpack, etc. (medium).
 
@@ -227,6 +226,9 @@ unnecessary component renders.
 ** Insert HTML at a particular position specified by the native data model
 ** Event callbacks for inserts, deletions, changes, and selections
 ** Command and status support for text attributes e.g. to support a toolbar
+** See http://w3c.github.io/editing/historic-editing-apis.html[Historic Editing
+APIs] for comparison/implementation with
+contentEditable-based APIs
 
 * A skinnable toolbar that leverages the editor API (medium).
 
@@ -239,6 +241,8 @@ a local-only replica with the same API (medium).
 
 * Separate CSS (internal vs user editable) to make skinning and integration
 simpler (easy).
+
+* Search/replace
 
 [[commercial_features]]
 == Commercial Features (Future)
@@ -275,6 +279,8 @@ Kafka, etc.
 * Get editing statistics e.g. authors, character count overall and by author,
 word count overall and by author, time spent editing overall and by author, and
 so forth.
+
+* Isomorphic rendering of editor's server-side and client-side for performance.
 
 Please
 mailto:sales@vivosys.com?subject=Interested%20in%20the%20Ritzy%20Service[let us
