@@ -92,15 +92,18 @@ export default React.createClass({
     this.upDownAdvanceX = null
     this.upDownPositionEolStart = null
     this.editorContentsContainer = React.findDOMNode(this.refs.editorContentsContainer)
+    this.caret = React.findDOMNode(this.refs.caret)
 
     this.refs.input.focus()
     this.flow()
   },
 
   componentDidUpdate() {
-    let caret = React.findDOMNode(this.refs.caret)
-    if(caret) {
-      let scrollByToCursor = scrollByToVisible(caret, 5)
+    if(!this.caret) {
+      this.caret = React.findDOMNode(this.refs.caret)
+    }
+    if(this.caret) {
+      let scrollByToCursor = scrollByToVisible(this.caret, 5)
       if(scrollByToCursor.xDelta !== 0 || scrollByToCursor.yDelta !== 0) {
         window.scrollBy(scrollByToCursor.xDelta, scrollByToCursor.yDelta)
       }
@@ -1610,7 +1613,7 @@ export default React.createClass({
 
     return (
       <div className={cursorClasses} style={cursorStyle} key="cursor" ref="cursor">
-        <div className={caretClasses} style={{borderColor: 'black', height: cursorHeight}} ref="caret"></div>
+        <div className={caretClasses} style={{borderColor: 'black', height: cursorHeight}} key="caret" ref="caret"></div>
         <div className="text-cursor-top" style={{opacity: 0, display: 'none'}}></div>
         <div className="text-cursor-name" style={{opacity: 0, display: 'none'}}></div>
       </div>
