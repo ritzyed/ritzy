@@ -376,12 +376,12 @@ export default React.createClass({
 
     this.replica.insertCharsAt(position, value, attributes)
 
+    if(reflow) this.flow()
+
     let relativeMove = value.length
     let newPosition = this.relativeChar(position, relativeMove)
     this.setPosition(newPosition, positionEolStart)
     this.setState({activeAttributes: attributes})
-
-    if(reflow) this.flow()
 
     // return the new position so that multiple insertChars calls can be made in sequence
     return newPosition
