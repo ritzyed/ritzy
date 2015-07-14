@@ -8,7 +8,7 @@ import writeHtml from '../core/htmlwriter'
 import writeText from '../core/textwriter'
 import {emptyNode} from '../core/dom'
 
-const batchedUpdates = React.addons.batchedUpdates
+//const batchedUpdates = React.addons.batchedUpdates
 const T = React.PropTypes
 const MIME_TYPE_TEXT_PLAIN = 'text/plain'
 const MIME_TYPE_TEXT_HTML = 'text/html'
@@ -96,19 +96,20 @@ export default React.createClass({
       }
     }, true)
 
-    let keyBindingsReal = new Mousetrap(this.input)
-
+    let keyBindings = new Mousetrap(this.input)
+    //let keyBindingsReal = new Mousetrap(this.input)
+    //
     // the wrapper function returns the function that will be called by Mousetrap with two args: keyEvent and combo
-    let wrapperFunction = (handler) => (keyEvent, combo) => {
-      let returnValue
-      batchedUpdates(() => returnValue = handler(keyEvent, combo))
-      return returnValue
-    }
-    let keyBindings = {
-      bind(binding, handler) {
-        keyBindingsReal.bind(binding, wrapperFunction(handler))
-      }
-    }
+    //let wrapperFunction = (handler) => (keyEvent, combo) => {
+    //  let returnValue
+    //  batchedUpdates(() => returnValue = handler(keyEvent, combo))
+    //  return returnValue
+    //}
+    //let keyBindings = {
+    //  bind(binding, handler) {
+    //    keyBindingsReal.bind(binding, wrapperFunction(handler))
+    //  }
+    //}
 
     // TODO probably ALL_CHARS should be handled via onInput instead to avoid keycode translation
     keyBindings.bind(ALL_CHARS, this._handleKeyChar)
