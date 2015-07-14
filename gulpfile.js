@@ -49,12 +49,6 @@ gulp.task('clean', del.bind(
   null, ['.tmp', options.builddir + '/*', '!' + options.builddir + '/.git'], {dot: true}
 ))
 
-// 3rd party libraries
-gulp.task('vendor', function() {
-  return gulp.src('node_modules/bootstrap/dist/fonts/**')
-    .pipe(gulp.dest(options.builddir + '/fonts'))
-})
-
 // Static files
 gulp.task('assets', function() {
   src.assets = [
@@ -65,22 +59,6 @@ gulp.task('assets', function() {
     .pipe($.changed(options.builddir))
     .pipe(gulp.dest(options.builddir))
     .pipe($.size({title: 'assets'}))
-})
-
-// CSS style sheets
-gulp.task('styles', function() {
-  return gulp.src('src/styles/bootstrap.less')
-    .pipe($.plumber())
-    .pipe($.less({
-      sourceMap: !options.release,
-      sourceMapBasepath: __dirname
-    }))
-    .on('error', console.error.bind(console))
-    .pipe($.autoprefixer({browsers: options.autoprefixer}))
-    .pipe($.csscomb())
-    .pipe($.if(options.release, $.minifyCss()))
-    .pipe(gulp.dest(options.builddir + '/css'))
-    .pipe($.size({title: 'styles'}))
 })
 
 // Bundle
@@ -123,7 +101,7 @@ gulp.task('bundle', function(cb) {
 
 // Build the app from source code
 gulp.task('build', ['clean'], function(cb) {
-  runSequence(['vendor', 'assets', 'styles', 'bundle'], cb)
+  runSequence(['assets', 'bundle'], cb)
 })
 
 // Build and start watching for modifications
@@ -131,7 +109,6 @@ gulp.task('build:watch', function(cb) {
   watch = true
   runSequence('build', function(err) {
     gulp.watch(src.assets, ['assets'])
-    gulp.watch(src.styles, ['styles'])
     cb(err)
   })
 })
