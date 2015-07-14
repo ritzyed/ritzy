@@ -62,6 +62,7 @@ export default React.createClass({
     selectionEndLine: T.func.isRequired,
     selectionWordLeft: T.func.isRequired,
     selectionWordRight: T.func.isRequired,
+    selectionAll: T.func.isRequired,
     eraseCharBack: T.func.isRequired,
     eraseCharForward: T.func.isRequired,
     eraseWordBack: T.func.isRequired,
@@ -113,6 +114,7 @@ export default React.createClass({
     keyBindings.bind(['ctrl+shift+home', 'shift+home', 'ctrl+shift+end', 'shift+end'], this._handleKeySelectionHomeEnd)
     keyBindings.bind(['ctrl+left', 'ctrl+right'], this._handleKeyNavigationWord)
     keyBindings.bind(['shift+ctrl+left', 'shift+ctrl+right'], this._handleKeySelectionWord)
+    keyBindings.bind('ctrl+a', this._handleKeySelectionAll)
     keyBindings.bind('backspace', this._handleKeyBackspace)
     keyBindings.bind('del', this._handleKeyDelete)
     keyBindings.bind('ctrl+backspace', this._handleKeyWordBackspace)
@@ -280,6 +282,11 @@ export default React.createClass({
     } else if(key === 'shift+ctrl+right') {
       this.props.selectionWordRight()
     }
+    return false
+  },
+
+  _handleKeySelectionAll() {
+    this.props.selectionAll()
     return false
   },
 

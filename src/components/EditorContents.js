@@ -72,6 +72,7 @@ export default React.createClass({
       selectionEndLine: this.selectionEndLine,
       selectionWordLeft: this.selectionWordLeft,
       selectionWordRight: this.selectionWordRight,
+      selectionAll: this.selectionAll,
       eraseCharBack: this.eraseCharBack,
       eraseCharForward: this.eraseCharForward,
       eraseWordBack: this.eraseWordBack,
@@ -526,6 +527,12 @@ export default React.createClass({
     let endOfLine = this._lineContainingChar(this.state.position).endOfLine
 
     this._modifySelection(position, !endOfLine)
+  },
+
+  selectionAll() {
+    this.setPosition(BASE_CHAR)
+    let lastChar = this._lastLine().isEof() ? EOF : this._lastLine().end
+    this._modifySelection(lastChar, false)
   },
 
   eraseCharBack() {
