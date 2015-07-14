@@ -46,6 +46,8 @@ export default React.createClass({
     navigateRight: T.func.isRequired,
     navigateUp: T.func.isRequired,
     navigateDown: T.func.isRequired,
+    navigatePageUp: T.func.isRequired,
+    navigatePageDown: T.func.isRequired,
     navigateStart: T.func.isRequired,
     navigateStartLine: T.func.isRequired,
     navigateEnd: T.func.isRequired,
@@ -56,6 +58,8 @@ export default React.createClass({
     selectionRight: T.func.isRequired,
     selectionUp: T.func.isRequired,
     selectionDown: T.func.isRequired,
+    selectionPageUp: T.func.isRequired,
+    selectionPageDown: T.func.isRequired,
     selectionStart: T.func.isRequired,
     selectionStartLine: T.func.isRequired,
     selectionEnd: T.func.isRequired,
@@ -110,6 +114,8 @@ export default React.createClass({
     keyBindings.bind(ALL_CHARS, this._handleKeyChar)
     keyBindings.bind(['up', 'down', 'left', 'right'], this._handleKeyArrow)
     keyBindings.bind(['shift+up', 'shift+down', 'shift+left', 'shift+right'], this._handleKeySelectionArrow)
+    keyBindings.bind(['pageup', 'pagedown'], this._handleKeyNavigationPage)
+    keyBindings.bind(['shift+pageup', 'shift+pagedown'], this._handleKeySelectionPage)
     keyBindings.bind(['ctrl+home', 'home', 'ctrl+end', 'end'], this._handleKeyNavigationHomeEnd)
     keyBindings.bind(['ctrl+shift+home', 'shift+home', 'ctrl+shift+end', 'shift+end'], this._handleKeySelectionHomeEnd)
     keyBindings.bind(['ctrl+left', 'ctrl+right'], this._handleKeyNavigationWord)
@@ -122,8 +128,6 @@ export default React.createClass({
     //keyBindings.bind('ctrl+s', this._handleKeySave)
     //keyBindings.bind('tab', this._handleKeyTab)
     keyBindings.bind('enter', this._handleKeyEnter)
-    //keyBindings.bind(['pageup', 'pagedown'], this._handleKeyPage)
-    //keyBindings.bind(['ctrl+home', 'ctrl+end'], this._handleKeyNavigationCtrlHomeEnd)
     //keyBindings.bind('ctrl+z', this._handleUndo)
     //keyBindings.bind('ctrl+y', this._handleRedo)
 
@@ -235,6 +239,24 @@ export default React.createClass({
     this._checkEmptyValue()
 
     this.props.insertChars('\n')
+    return false
+  },
+
+  _handleKeyNavigationPage(e, key) {
+    if(key === 'pageup') {
+      this.props.navigatePageUp()
+    } else if(key === 'pagedown') {
+      this.props.navigatePageDown()
+    }
+    return false
+  },
+
+  _handleKeySelectionPage(e, key) {
+    if(key === 'shift+pageup') {
+      this.props.selectionPageUp()
+    } else if(key === 'shift+pagedown') {
+      this.props.selectionPageDown()
+    }
     return false
   },
 

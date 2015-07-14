@@ -56,6 +56,8 @@ export default React.createClass({
       navigateRight: this.navigateRight,
       navigateUp: this.navigateUp,
       navigateDown: this.navigateDown,
+      navigatePageUp: this.navigatePageUp,
+      navigatePageDown: this.navigatePageDown,
       navigateStart: this.navigateStart,
       navigateStartLine: this.navigateStartLine,
       navigateEnd: this.navigateEnd,
@@ -66,6 +68,8 @@ export default React.createClass({
       selectionRight: this.selectionRight,
       selectionUp: this.selectionUp,
       selectionDown: this.selectionDown,
+      selectionPageUp: this.selectionPageUp,
+      selectionPageDown: this.selectionPageDown,
       selectionStart: this.selectionStart,
       selectionStartLine: this.selectionStartLine,
       selectionEnd: this.selectionEnd,
@@ -411,6 +415,16 @@ export default React.createClass({
     this._navigateUpDown(1)
   },
 
+  navigatePageUp() {
+    // assume for now a page is 10 lines
+    this._navigateUpDown(-10)
+  },
+
+  navigatePageDown() {
+    // assume for now a page is 10 lines
+    this._navigateUpDown(10)
+  },
+
   navigateStart() {
     this.setPosition(BASE_CHAR, true)
   },
@@ -465,6 +479,16 @@ export default React.createClass({
 
   selectionDown() {
     this._selectionUpDown(1)
+  },
+
+  selectionPageUp() {
+    // assume for now a page is 10 lines
+    this._selectionUpDown(-10)
+  },
+
+  selectionPageDown() {
+    // assume for now a page is 10 lines
+    this._selectionUpDown(10)
   },
 
   selectionStart() {
@@ -1063,11 +1087,22 @@ export default React.createClass({
       this.upDownPositionEolStart = positionEolStart
     }
 
-    if(index + lineCount < 0 || index + lineCount > this.state.lines.length - 1) {
-      // nowhere to go, just unblink for a second to indicate to the user input was received
-      this._delayedCursorBlink()
+    let targetIndex = index + lineCount
+    let targetLine
+    if(targetIndex < 0 || targetIndex > this.state.lines.length - 1) {
+      if(targetIndex < 0 && index !== 0) {
+        targetLine = this.state.lines[0]
+      } else if(targetIndex > this.state.lines.length - 1 && index !== this.state.lines.length - 1) {
+        targetLine = this.state.lines[this.state.lines.length - 1]
+      } else {
+        // nowhere to go, just unblink for a second to indicate to the user input was received
+        this._delayedCursorBlink()
+      }
     } else {
-      let targetLine = this.state.lines[index + lineCount]
+      targetLine = this.state.lines[targetIndex]
+    }
+
+    if(targetLine) {
       let newPosition
       if(targetLine.isEof()) {
         newPosition = targetLine.start
@@ -1126,12 +1161,13 @@ export default React.createClass({
       this.upDownPositionEolStart = positionEolStart
     }
 
-    if(index + lineCount < 0) {
+    let targetIndex = index + lineCount
+    if(targetIndex < 0) {
       this._modifySelection(BASE_CHAR, true)
       // at start of first line, reset the advanceX, and positionEolStart is now true
       this.upDownAdvanceX = 0
       this.upDownPositionEolStart = true
-    } else if(index + lineCount > this.state.lines.length - 1 && !this._lastLine().isEof()) {
+    } else if(targetIndex > this.state.lines.length - 1 && !this._lastLine().isEof()) {
       // trying to navigate past the last line (and last line does not have an EOF), position at end of line
       let toChar = this.relativeChar(BASE_CHAR, -1)
       this._modifySelection(toChar, false)
@@ -1139,10 +1175,10 @@ export default React.createClass({
       let chars = this.replica.getTextRange(line.start, line.end)
       this.upDownAdvanceX = this.advanceXForChars(this.props.fontSize, chars)
       this.upDownPositionEolStart = false
-    } else if(index + lineCount >= this.state.lines.length - 1 && this._lastLine().isEof()) {
+    } else if(targetIndex >= this.state.lines.length - 1 && this._lastLine().isEof()) {
       this._modifySelection(EOF, true, false)
     } else {
-      let targetLine = this.state.lines[index + lineCount]
+      let targetLine = this.state.lines[targetIndex]
       let newPosition
       if(targetLine.isEof()) {
         newPosition = targetLine.start
