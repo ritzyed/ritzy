@@ -128,7 +128,6 @@ describe('word tokenizer', () => {
     assert.equal(true, ranges[0].isWord)
     assert.equal(true, ranges[1].isWord)
     assert.equal(true, ranges[2].isWord)
-    console.dir(ranges[2])
     assert.equal(true, ranges[3].isWord)
     assert.equal(false, ranges[4].isWord)
     assert.equal(true, ranges[5].isWord)
