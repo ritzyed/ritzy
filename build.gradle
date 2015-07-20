@@ -10,7 +10,7 @@ apply plugin: 'com.moowork.gulp'
 
 node {
   // Version of node to use.
-  version = '0.12.4'
+  version = '0.12.7'
   npmVersion = '2.11.3'
 
   // If true, it will download node using above parameters.

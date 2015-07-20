@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JavaScriptLibraryMappings">
-    <file url="PROJECT" libraries="{Node.js v0.12.4 Core Modules, ritzy-editor node_modules}" />
+    <file url="PROJECT" libraries="{Node.js v0.12.7 Core Modules, ritzy-editor node_modules}" />
     <includedPredefinedLibrary name="ECMAScript 6" />
     <includedPredefinedLibrary name="Node.js Globals" />
   </component>
