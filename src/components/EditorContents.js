@@ -57,10 +57,7 @@ export default React.createClass({
 
   componentDidMount() {
     this.clickCount = 0
-    this.caret = React.findDOMNode(this.refs.caret)
-
     EditorStore.listen(this.onStateChange)
-
     this.refs.input.focus()
   },
 
@@ -459,10 +456,6 @@ export default React.createClass({
   },
 
   _renderCursor(cursorPosition, lineHeight) {
-    if (this.state.selectionActive) {
-      return null
-    }
-
     // the initial render before the component is mounted has no position
     if (!cursorPosition) {
       return null
@@ -481,16 +474,17 @@ export default React.createClass({
     })
 
     let cursorStyle = {
-      opacity: 1,
       left: cursorPosition.left,
       top: cursorPosition.top
     }
 
-/*
-    cursorStyle.opacity = 0
-    cursorStyle.display = 'none'
-    cursorStyle.visibility = 'hidden'
-*/
+    if (this.state.selectionActive) {
+      cursorStyle.opacity = 0
+      cursorStyle.visibility = 'hidden'
+    } else {
+      cursorStyle.opacity = 1
+    }
+
     let cursorHeight = Math.round(lineHeight * 10) / 10
 
     return (
