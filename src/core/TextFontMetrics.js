@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import {ATTR, hasAttributeFor} from '../core/attributes'
+import {ATTR, hasAttributeFor} from 'attributes'
 
 const SUPER_SUB_FONT_RATIO = 0.65  // matches MS word according to http://en.wikipedia.org/wiki/Subscript_and_superscript
 
@@ -152,13 +152,17 @@ function calcReplicaCharAdvance(replicaChar, fontSize, fonts, minFontSize, units
 }
 
 export default {
+  setConfig(config) {
+    this.config = config
+  },
+
   /**
    * Get the font scale to convert between font units and pixels for the given font size.
    * @param fontSize
    * @return {number}
    */
   fontScale(fontSize) {
-    return calcFontScale(fontSize, this.props.unitsPerEm)
+    return calcFontScale(fontSize, this.config.unitsPerEm)
   },
 
   /**
@@ -167,7 +171,7 @@ export default {
    * @param attributes
    */
   fontSizeFromAttributes(fontSize, attributes) {
-    return calcFontSizeFromAttributes(fontSize, this.props.minFontSize, attributes)
+    return calcFontSizeFromAttributes(fontSize, this.config.minFontSize, attributes)
   },
 
   /**
@@ -177,7 +181,7 @@ export default {
    * @return {number}
    */
   replicaCharAdvance(char, fontSize) {
-    return calcReplicaCharAdvance(char, fontSize, this.props.fonts, this.props.minFontSize, this.props.unitsPerEm)
+    return calcReplicaCharAdvance(char, fontSize, this.config.fonts, this.config.minFontSize, this.config.unitsPerEm)
   },
 
   /**
@@ -185,14 +189,14 @@ export default {
    * information cannot be determined. A normal weight, non-decorated font with no special attributes is assumed.
    */
   charAdvance(char, fontSize, font) {
-    return calcCharAdvance(char, fontSize, font, this.props.unitsPerEm)
+    return calcCharAdvance(char, fontSize, font, this.config.unitsPerEm)
   },
 
   /**
    * Returns the advance width in pixels for a space character in the normal style.
    */
   advanceXForSpace(fontSize) {
-    return this.charAdvance(' ', fontSize, this.props.fonts.regular)
+    return this.charAdvance(' ', fontSize, this.config.fonts.regular)
   },
 
   /**
@@ -206,7 +210,7 @@ export default {
    *   (index) for the given x value.
    */
   indexAndCursorForXValue(fontSize, pixelValue, chars) {
-    let minFontSize = this.props.minFontSize
+    let minFontSize = this.config.minFontSize
     fontSize = fontSize > minFontSize ? fontSize : minFontSize
     let currentWidthPx = 0
     let index = 0
@@ -235,7 +239,7 @@ export default {
    * @return {number}
    */
   advanceXForChars(fontSize, chars) {
-    let minFontSize = this.props.minFontSize
+    let minFontSize = this.config.minFontSize
     fontSize = fontSize > minFontSize ? fontSize : minFontSize
     if(_.isArray(chars)) {
       return chars.reduce((currentWidthPx, char) => {
@@ -250,7 +254,7 @@ export default {
    * Gets the line height in pixels for a given font size, using the bold font.
    */
   lineHeight(fontSize) {
-    let fontHeader = this.props.fonts.bold.tables.head
+    let fontHeader = this.config.fonts.bold.tables.head
     return (fontHeader.yMax - fontHeader.yMin) * this.fontScale(fontSize)
   },
 
@@ -258,7 +262,7 @@ export default {
    * Gets the height in pixels of the top of the font, relative to the baseline, using the bold font.
    */
   top(fontSize) {
-    let fontHeader = this.props.fonts.bold.tables.head
+    let fontHeader = this.config.fonts.bold.tables.head
     return fontHeader.yMax * this.fontScale(fontSize)
   }
 }
