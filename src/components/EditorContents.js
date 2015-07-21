@@ -118,6 +118,8 @@ export default React.createClass({
   },
 
   _doOnSingleClick(e) {
+    this.refs.input.focus()
+
     let coordinates = this._mouseEventToCoordinates(e)
     if(!coordinates) {
       return
@@ -419,8 +421,15 @@ export default React.createClass({
 
   _cursorPosition(lineHeight) {
     // the initial render before the component is mounted has no position or lines
-    if (!this.state.position || !this.state.lines || this.state.lines.length === 0) {
+    if (!this.state.position || !this.state.lines) {
       return null
+    }
+
+    if(this.replica.charEq(BASE_CHAR, this.state.position) || this.state.lines.length === 0) {
+      return {
+        left: this.props.margin,
+        top: 0
+      }
     }
 
     let {line, index, endOfLine} = lineContainingChar(this.replica, this.state.lines, this.state.position, this.state.positionEolStart)

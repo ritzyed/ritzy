@@ -296,7 +296,7 @@ class EditorStore {
   eraseCharBack() {
     if(this.state.selectionActive) {
       this._eraseSelection()
-    } else {
+    } else if(!this.replica.charEq(this.state.position, BASE_CHAR)) {
       let position = this._relativeChar(this.state.position, -1)
       this.replica.rmChars(this.state.position)
       this._flow()
@@ -309,7 +309,7 @@ class EditorStore {
   eraseCharForward() {
     if(this.state.selectionActive) {
       this._eraseSelection()
-    } else {
+    } else if(!this.replica.charEq(this.state.position, this._lastLine().end)) {
       let next = this._relativeChar(this.state.position, 1, 'limit')
       this.replica.rmChars(next)
       this._flow()

@@ -7,7 +7,9 @@ export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
   if(_.isUndefined(nextIfEol)) nextIfEol = false
 
   if(!searchSpace || searchSpace.length === 0) {
-    return null
+    return {
+      endOfLine: true
+    }
   }
 
   // shortcut searches at the beginning or end of the searchSpace, this is used often and these comparisons are fast
