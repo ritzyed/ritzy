@@ -242,6 +242,9 @@ a local-only replica with the same API (medium).
 * Separate CSS (internal vs user editable) to make skinning and integration
 simpler (easy).
 
+* Reduce the number of dependencies and lower download size as much as is
+possible without sacrificing clarity and maintainability.
+
 * Search/replace
 
 [[commercial_features]]
