@@ -296,6 +296,12 @@ export default React.createClass({
     }
 
     if(!line
+      && this.replica.charEq(this.state.selectionLeftChar, BASE_CHAR)
+      && this.replica.charEq(this.state.selectionRightChar, EOF)) {
+      return selectionDiv(0, TextFontMetrics.advanceXForSpace(this.props.fontSize))
+    }
+
+    if(!line
       || line.isEof()
       || this.replica.compareCharPos(this.state.selectionLeftChar, line.end) > 0
       || this.replica.compareCharPos(this.state.selectionRightChar, line.start) < 0) {
@@ -515,7 +521,7 @@ export default React.createClass({
           <div className="text-contents">
             { lines.length > 0 ?
               lines.map((line, index) => this._renderLine(line, index, lineHeight, shouldRenderSelection(index)) ) :
-              this._renderLine(nbsp, 0, lineHeight, false)}
+              this._renderLine(nbsp, 0, lineHeight, true)}
           </div>
           {this._renderCursor(cursorPosition, lineHeight)}
         </div>

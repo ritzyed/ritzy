@@ -264,8 +264,12 @@ class EditorStore {
 
   selectionAll() {
     this._setPosition(BASE_CHAR)
-    let lastChar = this._lastLine().isEof() ? EOF : this._lastLine().end
-    this._modifySelection(lastChar, false)
+    if(this.state.lines.length === 0) {
+      this._modifySelection(EOF, true)
+    } else {
+      let lastChar = this._lastLine().isEof() ? EOF : this._lastLine().end
+      this._modifySelection(lastChar, false)
+    }
   }
 
   selectToCoordinates(coordinates) {
@@ -282,8 +286,8 @@ class EditorStore {
    *   a "space")
    */
   selectWordAtCurrentPosition() {
-    // handle cursor at EOF
-    if(lineContainingChar(this.replica, this.state.lines, this.state.position, true).line.isEof()) {
+    if(this.state.lines.length === 0
+      || lineContainingChar(this.replica, this.state.lines, this.state.position, true).line.isEof()) {
       this._setPosition(this.state.position)
       this._modifySelection(EOF, true)
     } else {
@@ -309,7 +313,7 @@ class EditorStore {
   eraseCharForward() {
     if(this.state.selectionActive) {
       this._eraseSelection()
-    } else if(!this.replica.charEq(this.state.position, this._lastLine().end)) {
+    } else if(!this._cursorAtEof()) {
       let next = this._relativeChar(this.state.position, 1, 'limit')
       this.replica.rmChars(next)
       this._flow()
@@ -727,6 +731,13 @@ class EditorStore {
 
   _lastLine() {
     return this.state.lines[this.state.lines.length - 1]
+  }
+
+  _cursorAtEof() {
+    // note this returns *cursor* at EOF, not position (the cursor may be at EOF even if the position is not)
+    //return lineContainingChar(this.replica, this.state.lines, this.state.position, true).line.isEof()
+    return this.replica.charEq(this.state.position, this._lastLine().end)
+      || (this._lastLine().isEof() && this.replica.charEq(this.state.position, this._lastLine().start))
   }
 
   _modifySelection(toChar, positionEolStart, resetUpDown) {
