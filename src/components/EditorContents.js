@@ -33,7 +33,8 @@ export default React.createClass({
     fontSize: T.number.isRequired,
     minFontSize: T.number.isRequired,
     unitsPerEm: T.number.isRequired,
-    width: T.number.isRequired
+    width: T.number.isRequired,
+    margin: T.number.isRequired
   },
 
   mixins: [TextReplicaMixin, TextFontMetricsMixin],
