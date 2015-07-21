@@ -318,8 +318,8 @@ class EditorStore {
       this.replica.rmChars(next)
       this._flow()
 
-      let endOfLine = lineContainingChar(this.replica, this.state.lines, next).endOfLine
-      this._setPosition(next, endOfLine)
+      let endOfLine = lineContainingChar(this.replica, this.state.lines, this.state.position).endOfLine
+      this._setPosition(this.state.position, endOfLine)
     }
   }
 
