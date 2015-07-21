@@ -11,15 +11,15 @@
   "dependencies": {
     "babel": "5.6.23",
     "binarysearch": "0.2.4",
-    "classnames": "2.1.2",
-    "express": "4.12.4",
-    "lodash": "3.9.3",
-    "mousetrap": "1.5.2",
-    "opentype.js": "0.4.8",
+    "classnames": "2.1.3",
+    "express": "4.13.1",
+    "lodash": "3.10.0",
+    "mousetrap": "1.5.3",
+    "opentype.js": "0.4.9",
     "react": "0.13.3",
     "swarm": "0.3.25",
     "swarm-restapi": "0.3.24",
-    "webfontloader": "1.6.3",
+    "webfontloader": "1.6.4",
     "ws": "0.7.2"
   },
   "devDependencies": {
