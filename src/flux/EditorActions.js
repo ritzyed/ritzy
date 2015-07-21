@@ -12,6 +12,14 @@ class EditorActions {
     this.dispatch()
   }
 
+  focusInput() {
+    this.dispatch()
+  }
+
+  inputFocusLost() {
+    this.dispatch()
+  }
+
   // navigation actions
   navigateLeft() {
     this.dispatch()

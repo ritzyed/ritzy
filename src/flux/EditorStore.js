@@ -29,7 +29,8 @@ class EditorStore {
       position: BASE_CHAR,
       positionEolStart: true,
       cursorMotion: false,
-      selectionActive: false
+      selectionActive: false,
+      focus: false
     }
   }
 
@@ -37,10 +38,21 @@ class EditorStore {
     TextFontMetrics.setConfig(config)
     this.config = config
     this.replica = replica
+
+    this.setState({focus: config.initialFocus})
   }
 
   replicaUpdated() {
     this._flow()
+  }
+
+  focusInput() {
+    this._delayedCursorBlink(0)
+    this.setState({focus: true})
+  }
+
+  inputFocusLost() {
+    this.setState({focus: false})
   }
 
   navigateLeft() {
@@ -736,7 +748,9 @@ class EditorStore {
     this._setPosition(BASE_CHAR)
   }
 
-  _delayedCursorBlink() {
+  _delayedCursorBlink(timeout) {
+    if(_.isUndefined(timeout)) timeout = 1000
+
     this.setState({cursorMotion: true})
 
     // in a second, reset the cursor blink, clear any previous resets to avoid unnecessary state changes
@@ -746,7 +760,7 @@ class EditorStore {
     this.cursorMotionTimeout = setTimeout(() => {
       this.setState({cursorMotion: false})
       this.cursorMotionTimeout = null
-    }, 1000)
+    }, timeout)
   }
 
   _lastLine() {

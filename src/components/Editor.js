@@ -17,7 +17,8 @@ export default React.createClass({
     minFontSize: T.number.isRequired,
     unitsPerEm: T.number.isRequired,
     width: T.number.isRequired,
-    margin: T.number.isRequired
+    margin: T.number.isRequired,
+    initialFocus: T.bool
   },
 
   //mixins: [React.addons.PureRenderMixin],

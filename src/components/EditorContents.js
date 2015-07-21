@@ -34,10 +34,17 @@ export default React.createClass({
     minFontSize: T.number.isRequired,
     unitsPerEm: T.number.isRequired,
     width: T.number.isRequired,
-    margin: T.number.isRequired
+    margin: T.number.isRequired,
+    initialFocus: T.bool
   },
 
   mixins: [TextReplicaMixin],
+
+  getDefaultProps() {
+    return {
+      initialFocus: true
+    }
+  },
 
   getInitialState() {
     return EditorStore.getState()
@@ -58,7 +65,6 @@ export default React.createClass({
   componentDidMount() {
     this.clickCount = 0
     EditorStore.listen(this.onStateChange)
-    this.refs.input.focus()
   },
 
   componentDidUpdate() {
@@ -115,7 +121,7 @@ export default React.createClass({
   },
 
   _doOnSingleClick(e) {
-    this.refs.input.focus()
+    EditorActions.focusInput()
 
     let coordinates = this._mouseEventToCoordinates(e)
     if(!coordinates) {
@@ -169,12 +175,18 @@ export default React.createClass({
 
   // DEBUGGING ---------------------------------------------------------------------------------------------------------
 
+  _dumpState() {
+    console.debug('Current state contents (NOTE: state.focus always false due to debug button click):')
+    console.dir(this.state)
+    EditorActions.focusInput()
+  },
+
   _dumpReplica() {
     let text = this.replica.getTextRange(BASE_CHAR)
     console.debug('Current replica text: [' + text.map(c => c.char).join('') + ']')
     console.debug('Current replica contents:')
     console.dir(text)
-    this.refs.input.focus()
+    EditorActions.focusInput()
   },
 
   _dumpPosition() {
@@ -183,7 +195,7 @@ export default React.createClass({
     } else {
       console.debug('No active position')
     }
-    this.refs.input.focus()
+    EditorActions.focusInput()
   },
 
   _dumpCurrentLine() {
@@ -214,7 +226,7 @@ export default React.createClass({
         console.debug('No lines')
       }
     })
-    this.refs.input.focus()
+    EditorActions.focusInput()
   },
 
   _dumpLines() {
@@ -223,7 +235,7 @@ export default React.createClass({
     } else {
       console.debug('No lines')
     }
-    this.refs.input.focus()
+    EditorActions.focusInput()
   },
 
   _dumpSelection() {
@@ -237,17 +249,17 @@ export default React.createClass({
     } else {
       console.debug('No active selection')
     }
-    this.refs.input.focus()
+    EditorActions.focusInput()
   },
 
   _forceFlow() {
     EditorActions.replicaUpdated()
-    this.refs.input.focus()
+    EditorActions.focusInput()
   },
 
   _forceRender() {
     this.forceUpdate(() => console.debug('Render done.'))
-    this.refs.input.focus()
+    EditorActions.focusInput()
   },
 
   _togglePositionEolStart() {
@@ -257,7 +269,7 @@ export default React.createClass({
       console.debug('Toggling positionEolStart from ' + previous + ' to ' + !previous)
       return { positionEolStart: !previous }
     })
-    this.refs.input.focus()
+    EditorActions.focusInput()
   },
 
   // RENDERING ---------------------------------------------------------------------------------------------------------
@@ -283,9 +295,24 @@ export default React.createClass({
 
     let selectionDiv = (leftX, widthX) => {
       let height = Math.round(lineHeight * 10) / 10
+      let selectionStyle = {
+        top: 0,
+        left: leftX,
+        width: widthX,
+        height: height
+      }
+
+      if(!this.state.focus) {
+        selectionStyle.borderTopColor = 'rgb(0, 0, 0)'
+        selectionStyle.borderBottomColor = 'rgb(0, 0, 0)'
+        selectionStyle.backgroundColor = 'rgb(0, 0, 0)'
+        selectionStyle.opacity = 0.15
+        selectionStyle.color = 'black'
+      }
+
       return (
         <div className="text-selection-overlay text-htmloverlay ui-unprintable text-htmloverlay-under-text"
-          style={{top: 0, left: leftX, width: widthX, height: height}}></div>
+          style={selectionStyle}></div>
       )
     }
 
@@ -457,7 +484,7 @@ export default React.createClass({
     let position = cursorPosition ? cursorPosition.top : 0
 
     return (
-      <TextInput id={this.props.id} ref="input" position={position}/>
+      <TextInput id={this.props.id} ref="input" position={position} focused={this.state.focus}/>
     )
   },
 
@@ -484,7 +511,7 @@ export default React.createClass({
       top: cursorPosition.top
     }
 
-    if (this.state.selectionActive) {
+    if (this.state.selectionActive || !this.state.focus) {
       cursorStyle.opacity = 0
       cursorStyle.visibility = 'hidden'
     } else {
@@ -528,6 +555,7 @@ export default React.createClass({
         {/*
         <div style={{position: 'relative', zIndex: 100, paddingTop: 30}}>
           <span>Dump:&nbsp;</span>
+          <button onClick={this._dumpState}>State</button>&nbsp;
           <button onClick={this._dumpReplica}>Replica</button>&nbsp;
           <button onClick={this._dumpPosition}>Position</button>&nbsp;
           <button onClick={this._dumpCurrentLine}>Line</button>&nbsp;

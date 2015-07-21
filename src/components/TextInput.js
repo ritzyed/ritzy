@@ -40,7 +40,8 @@ const ALL_CHARS = [
 export default React.createClass({
   propTypes: {
     id: T.number.isRequired,
-    position: T.number.isRequired
+    position: T.number.isRequired,
+    focused: T.bool.isRequired
   },
 
   mixins: [React.addons.PureRenderMixin],
@@ -86,11 +87,15 @@ export default React.createClass({
     keyBindings.bind('alt+shift+5', this._handleKeyStrikethrough)
     keyBindings.bind('ctrl+.', this._handleKeySuperscript)
     keyBindings.bind('ctrl+,', this._handleKeySubscript)
-
-    // TODO figure out tab, enter, return, pageup, pagedown, end, home, ins
   },
 
-  focus() {
+  componentDidUpdate() {
+    if(this.props.focused) {
+      this._focus()
+    }
+  },
+
+  _focus() {
     this._checkEmptyValue()
     this.input.focus()
 
@@ -291,6 +296,10 @@ export default React.createClass({
     return false
   },
 
+  _onInputFocusLost() {
+    EditorActions.inputFocusLost()
+  },
+
   _onCopy(e) {
     let selectionChunks = EditorActions.getSelection()
 
@@ -327,7 +336,7 @@ export default React.createClass({
     this._selectNodeContents(this.ieClipboardDiv)
     setTimeout(() => {
       emptyNode(this.ieClipboardDiv)
-      this.focus()
+      this._focus()
     }, 0)
   },
 
@@ -376,7 +385,7 @@ export default React.createClass({
         EditorActions.insertCharsBatch(pastedChunks)
       } finally {
         emptyNode(this.ieClipboardDiv)
-        this.focus()
+        this._focus()
       }
     }, 0)
   },
@@ -406,7 +415,7 @@ export default React.createClass({
     return (
       <div style={divStyle}>
         <textarea key="input" ref="input" onInput={this._onInput}
-          onCopy={this._onCopy} onCut={this._onCut} onPaste={this._onPaste}/>
+          onCopy={this._onCopy} onCut={this._onCut} onPaste={this._onPaste} onBlur={this._onInputFocusLost}/>
         <div style={{display: 'none'}} ref="hiddenContainer"></div>
         <div contentEditable="true" ref="ieClipboardDiv" onPaste={this._onPaste}></div>
       </div>
