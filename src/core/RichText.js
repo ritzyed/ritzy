@@ -427,7 +427,11 @@ let Text = Syncable.extend('Text', {
     if(_.isUndefined(wrap)) wrap = 'wrap'
 
     if(charOrId === EOF) {
-      if(relative > 0) return EOF
+      if(relative > 0 && (wrap === 'limit' || wrap === 'eof')) return EOF
+      else if (relative > 0 && wrap === 'error') throw new Error('Index out of bounds, past EOF by: ' + relative)
+      else if(relative > 0 && wrap === 'wrap') {
+        charOrId = this.data.getChar(this.data.len() - 1)
+      }
       else {
         charOrId = this.data.getChar(this.data.len() - 1)
         relative += 1

@@ -481,13 +481,45 @@ describe('RichText', () => {
 
     assert.deepEqual(getCharRelativeTo(BASE_ID, -1, 'eof'), BASE_CHAR)
     assert.deepEqual(getCharRelativeTo(charAt(6), 1, 'eof'), EOF)
+    assert.deepEqual(getCharRelativeTo(EOF, 1), BASE_CHAR)
     assert.deepEqual(getCharRelativeTo(EOF, 1, 'eof'), EOF)
+    assert.deepEqual(getCharRelativeTo(EOF, 1, 'limit'), EOF)
     assert.deepEqual(getCharRelativeTo(EOF, -1, 'eof'), charAt(6))
+    assert.deepEqual(getCharRelativeTo(EOF, -1, 'limit'), charAt(6))
 
     assert.throw(() => { getCharRelativeTo(BASE_ID, -1, 'error') },
       'Index out of bounds: -1')
     assert.throw(() => { getCharRelativeTo(charAt(6), 1, 'error') },
       'Index out of bounds: 7')
+    assert.throw(() => { getCharRelativeTo(EOF, 1, 'error') },
+      'Index out of bounds, past EOF by: 1')
+  })
+
+  it('can get char information relative to a given char or char id in an empty editor', () => {
+    let text = new Text('/Text#1')
+    text.reset()
+    let getCharRelativeTo = getCharRelativeTo_(text)
+
+    assert.deepEqual(getCharRelativeTo(BASE_ID), BASE_CHAR)
+    assert.deepEqual(getCharRelativeTo(BASE_ID, 1), BASE_CHAR)
+    assert.deepEqual(getCharRelativeTo(BASE_ID, -1), BASE_CHAR)
+    assert.deepEqual(getCharRelativeTo(BASE_ID, -1, 'limit'), BASE_CHAR)
+    assert.deepEqual(getCharRelativeTo(BASE_ID, -1, 'eof'), BASE_CHAR)
+
+    assert.deepEqual(getCharRelativeTo(EOF, 1), BASE_CHAR)
+    assert.deepEqual(getCharRelativeTo(EOF, -1), BASE_CHAR)
+    assert.deepEqual(getCharRelativeTo(EOF, 1, 'eof'), EOF)
+    assert.deepEqual(getCharRelativeTo(EOF, -1, 'eof'), BASE_CHAR)
+    assert.deepEqual(getCharRelativeTo(EOF, 1, 'limit'), EOF)
+    assert.deepEqual(getCharRelativeTo(EOF, -1, 'limit'), BASE_CHAR)
+    assert.deepEqual(getCharRelativeTo(EOF, -1, 'error'), BASE_CHAR)
+
+    assert.throw(() => { getCharRelativeTo(BASE_ID, 1, 'error') },
+      'Index out of bounds: 1')
+    assert.throw(() => { getCharRelativeTo(BASE_ID, -1, 'error') },
+      'Index out of bounds: -1')
+    assert.throw(() => { getCharRelativeTo(EOF, 1, 'error') },
+      'Index out of bounds, past EOF by: 1')
   })
 
   it('can get the length including the base char', () => {

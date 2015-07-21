@@ -58,17 +58,23 @@ class EditorStore {
   _insertChars(value, attributes, atPosition, reflow) {
     if(_.isUndefined(reflow)) reflow = true
     let position
-    if(atPosition) {
-      position = atPosition
-    } else {
-      position = this.state.position
-    }
+
     // if the last char is a newline, then we want to position on the start of the next line
     let positionEolStart = value.slice(-1) === '\n'
 
     if(this.state.selectionActive) {
       position = this.state.selectionLeftChar
       this._eraseSelection()
+    } else {
+      if(atPosition) {
+        position = atPosition
+      } else {
+        position = this.state.position
+      }
+
+      if(position === EOF) {
+        position = this._relativeChar(EOF, -1, 'limit')
+      }
     }
 
     if(!attributes) {
@@ -123,23 +129,38 @@ class EditorStore {
   }
 
   navigateStart() {
-    this._setPosition(BASE_CHAR, true)
+    this._resetPosition()
   }
 
   navigateStartLine() {
+    if(this._emptyEditor()) {
+      this._resetPosition()
+      return
+    }
+
     let {line} = lineContainingChar(this.replica, this.state.lines, this.state.position, this.state.positionEolStart)
     this._setPosition(line.start, true)
   }
 
   navigateEnd() {
+    if(this._emptyEditor()) {
+      this._resetPosition()
+      return
+    }
+
     let positionEolStart = false
-    if(this.state.lines && this._lastLine().isEof()) {
+    if(this._lastLine().isEof()) {
       positionEolStart = true
     }
     this._setPosition(this._relativeChar(BASE_CHAR, -1), positionEolStart)
   }
 
   navigateEndLine() {
+    if(this._emptyEditor()) {
+      this._resetPosition()
+      return
+    }
+
     let {line} = lineContainingChar(this.replica, this.state.lines, this.state.position, this.state.positionEolStart)
     let position
     let positionEolStart = false
@@ -210,7 +231,7 @@ class EditorStore {
   }
 
   selectionEnd() {
-    let toChar = this._lastLine().isEof() ? EOF : this._relativeChar(BASE_CHAR, -1)
+    let toChar = this._lastLine() && this._lastLine().isEof() ? EOF : this._relativeChar(BASE_CHAR, -1)
     this._modifySelection(toChar, toChar === EOF)
   }
 
@@ -267,7 +288,7 @@ class EditorStore {
     if(this.state.lines.length === 0) {
       this._modifySelection(EOF, true)
     } else {
-      let lastChar = this._lastLine().isEof() ? EOF : this._lastLine().end
+      let lastChar = this._lastLine() && this._lastLine().isEof() ? EOF : this._lastLine().end
       this._modifySelection(lastChar, false)
     }
   }
@@ -313,7 +334,7 @@ class EditorStore {
   eraseCharForward() {
     if(this.state.selectionActive) {
       this._eraseSelection()
-    } else if(!this._cursorAtEof()) {
+    } else if(!this._cursorAtEnd()) {
       let next = this._relativeChar(this.state.position, 1, 'limit')
       this.replica.rmChars(next)
       this._flow()
@@ -733,10 +754,14 @@ class EditorStore {
     return this.state.lines[this.state.lines.length - 1]
   }
 
-  _cursorAtEof() {
-    // note this returns *cursor* at EOF, not position (the cursor may be at EOF even if the position is not)
-    //return lineContainingChar(this.replica, this.state.lines, this.state.position, true).line.isEof()
-    return this.replica.charEq(this.state.position, this._lastLine().end)
+  _emptyEditor() {
+    return this.state.lines.length === 0
+      && (this.state.position === EOF || this.replica.charEq(this.state.position, BASE_CHAR))
+  }
+
+  _cursorAtEnd() {
+    return this._emptyEditor()
+      || this.replica.charEq(this.state.position, this._lastLine().end)
       || (this._lastLine().isEof() && this.replica.charEq(this.state.position, this._lastLine().start))
   }
 
@@ -853,7 +878,7 @@ class EditorStore {
       let end = tokenRanges[0].end
       return textChars[end - 1]
     } else {
-      return this._lastLine().isEof() ? EOF : this._relativeChar(BASE_CHAR, -1)
+      return this._cursorAtEnd() ? EOF : this._relativeChar(BASE_CHAR, -1)
     }
   }
 
@@ -871,6 +896,11 @@ class EditorStore {
 
   _navigateLeftRight(charCount) {
     let position
+    if(this._emptyEditor()) {
+      this._resetPosition()
+      return
+    }
+
     if(this.state.selectionActive && charCount < 0) {
       // left from left char
       position = this.state.selectionLeftChar
@@ -885,6 +915,11 @@ class EditorStore {
   }
 
   _navigateUpDown(lineCount) {
+    if(this._emptyEditor()) {
+      this._resetPosition()
+      return
+    }
+
     if(this.state.selectionActive) {
       // collapse the selection and position the cursor relative to the left (if up) or right (if down)
       let position
@@ -947,6 +982,11 @@ class EditorStore {
 
   _navigateWordLeftRight(wordCount) {
     let position
+    if(this._emptyEditor()) {
+      this._resetPosition()
+      return
+    }
+
     if(this.state.selectionActive && wordCount < 0) {
       // start from one character into the selection left char so that relative to the left selected word
       position = this._relativeChar(this.state.selectionLeftChar, 1, 'limit')
@@ -965,7 +1005,7 @@ class EditorStore {
   _selectionLeftRight(charCount) {
     let endOfLine = lineContainingChar(this.replica, this.state.lines, this.state.position).endOfLine
     let toChar = this._relativeChar(this.state.position, charCount, 'eof')
-    if(toChar === EOF && !this._lastLine().isEof()) {
+    if(toChar === EOF && this._lastLine() && !this._lastLine().isEof()) {
       toChar = this._lastLine().end
     }
     this._modifySelection(toChar, (this.state.position === EOF && charCount === -1) || !endOfLine)
@@ -1003,6 +1043,8 @@ class EditorStore {
       this.upDownPositionEolStart = false
     } else if(targetIndex >= this.state.lines.length - 1 && this._lastLine().isEof()) {
       this._modifySelection(EOF, true, false)
+    } else if(this._emptyEditor()) {
+      this._resetPosition()
     } else {
       let targetLine = this.state.lines[targetIndex]
       let newPosition

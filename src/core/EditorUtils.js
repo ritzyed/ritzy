@@ -1,13 +1,34 @@
 import _ from 'lodash'
 import bs from 'binarysearch'
 
-import { BASE_CHAR } from './RichText'
+import { BASE_CHAR, EOF } from './RichText'
 
+/**
+ * Search the given replica and line search space for the line containing the provided char. If the search
+ * space is empty, an empty "virtual" line starting at BASE_CHAR and ending at EOF is returned.
+ * @param replica The replica containing all the characters.
+ * @param searchSpace The set of lines to search.
+ * @param char The char to search for.
+ * @param  {boolean} [nextIfEol=false] If at end of line, return the next line.
+ * @returns {*}
+ */
 export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
   if(_.isUndefined(nextIfEol)) nextIfEol = false
 
   if(!searchSpace || searchSpace.length === 0) {
     return {
+      line: {
+        isHard() {
+          return false
+        },
+        isEof() {
+          return true
+        },
+        chunks: [],
+        start: BASE_CHAR,
+        end: EOF,
+        advance: 0
+      },
       endOfLine: true
     }
   }
