@@ -134,8 +134,8 @@ class EditorActions {
     this.dispatch()
   }
 
-  getSelection() {
-    this.dispatch()
+  copySelection(copyHandler) {
+    this.dispatch(copyHandler)
   }
 
   insertChars(value, attributes, atPosition) {

@@ -1,13 +1,12 @@
 import 'babel/polyfill'
 
+import _ from 'lodash'
 import React from 'react/addons'
 import getEventKey from 'react/lib/getEventKey'
 import Mousetrap from 'mousetrap'
 
 import EditorActions from '../flux/EditorActions'
 import parseHtml from '../core/htmlparser'
-import writeHtml from '../core/htmlwriter'
-import writeText from '../core/textwriter'
 import {emptyNode} from '../core/dom'
 
 const T = React.PropTypes
@@ -301,17 +300,11 @@ export default React.createClass({
   },
 
   _onCopy(e) {
-    let selectionChunks = EditorActions.getSelection()
+    let copyHandler = window.clipboardData ?
+      _.partial(this._handleIeCopy) :
+      _.partial(this._handleNormalCopy, e)
 
-    if(selectionChunks && selectionChunks.length > 0) {
-      let copiedText = writeText(selectionChunks)
-      let copiedHtml = writeHtml(selectionChunks)
-      if(window.clipboardData) {
-        this._handleIeCopy(copiedText, copiedHtml)
-      } else {
-        this._handleNormalCopy(e, selectionChunks, copiedText, copiedHtml)
-      }
-    }
+    EditorActions.copySelection(copyHandler)
   },
 
   _onCut(e) {
@@ -319,12 +312,12 @@ export default React.createClass({
     EditorActions.eraseSelection()
   },
 
-  _handleNormalCopy(e, selectionChunks, copiedText, copiedHtml) {
+  _handleNormalCopy(e, copiedText, copiedHtml, copiedRich) {
     e.clipboardData.setData(MIME_TYPE_TEXT_PLAIN, copiedText)
     e.clipboardData.setData(MIME_TYPE_TEXT_HTML, copiedHtml)
     // some browsers e.g. Chrome support arbitrary MIME types, makes paste way more efficient
     // Firefox allows setting the type, but not pasting it -- see https://bugzilla.mozilla.org/show_bug.cgi?id=860857
-    e.clipboardData.setData(MIME_TYPE_RITZY_RICH_TEXT, JSON.stringify(selectionChunks))
+    e.clipboardData.setData(MIME_TYPE_RITZY_RICH_TEXT, JSON.stringify(copiedRich))
     e.preventDefault()
     e.stopPropagation()
   },

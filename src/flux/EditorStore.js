@@ -8,6 +8,8 @@ import EditorActions from './EditorActions'
 import { BASE_CHAR, EOF } from 'RichText'
 import { pushArray/*, logInGroup*/ } from 'utils'
 import { default as tokenizer, isWhitespace } from 'tokenizer'
+import writeHtml from '../core/htmlwriter'
+import writeText from '../core/textwriter'
 import TextFontMetrics from '../core/TextFontMetrics'
 import { lineContainingChar } from '../core/EditorUtils'
 
@@ -271,66 +273,13 @@ class EditorStore {
     }
   }
 
-  getSelection() {
-    let selectionChunks = []
-
-    if(!this.state.selectionActive) {
-      return selectionChunks
+  copySelection(copyHandler) {
+    let selectionChunks = this._getSelection()
+    if(selectionChunks && selectionChunks.length > 0) {
+      let copiedText = writeText(selectionChunks)
+      let copiedHtml = writeHtml(selectionChunks)
+      copyHandler(copiedText, copiedHtml, selectionChunks)
     }
-
-    let currentChunk = {
-      chars: [],
-      attributes: null,
-
-      reset() {
-        this.chars = []
-        this.attributes = null
-      },
-
-      pushChar(c) {
-        if(!this.attributes) {
-          this.attributes = c.attributes
-        }
-        // push newlines as separate chunks for ease of parsing paragraphs and breaks from chunks
-        if(c.char === '\n') {
-          // previous chunk
-          this.pushChunk()
-        }
-        this.chars.push(c.char)
-        if(c.char === '\n') {
-          // newline chunk
-          this.pushChunk()
-        }
-      },
-
-      pushChunk() {
-        if(this.chars.length > 0) {
-          selectionChunks.push({
-            text: this.chars.join(''),
-            attrs: this.attributes
-          })
-        }
-        this.reset()
-      }
-    }
-
-    let processChar = (c) => {
-      if (!attributesEqual(currentChunk.attributes, c.attributes)) {
-        currentChunk.pushChunk()
-      }
-      currentChunk.pushChar(c, this)
-    }
-
-    let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
-    let contentIterator = selectionChars[Symbol.iterator]()
-    let e
-    while(!(e = contentIterator.next()).done) {
-      processChar(e.value)
-    }
-    // last chunk
-    currentChunk.pushChunk()
-
-    return selectionChunks
   }
 
   insertChars({value, attributes, atPosition, reflow}) {
@@ -340,7 +289,7 @@ class EditorStore {
   insertCharsBatch(chunks) {
     let insertPosition = null
     chunks.forEach(c => {
-      insertPosition = this._insertChars(c.text, c.attrs, insertPosition, false)
+      insertPosition = this._insertChars(c.text, c.attrs || {}, insertPosition, false)
     })
     this._flow()
   }
@@ -776,6 +725,68 @@ class EditorStore {
     return this._emptyEditor()
       || this.replica.charEq(this.state.position, this._lastLine().end)
       || (this._lastLine().isEof() && this.replica.charEq(this.state.position, this._lastLine().start))
+  }
+
+  _getSelection() {
+    let selectionChunks = []
+
+    if(!this.state.selectionActive) {
+      return selectionChunks
+    }
+
+    let currentChunk = {
+      chars: [],
+      attributes: null,
+
+      reset() {
+        this.chars = []
+        this.attributes = null
+      },
+
+      pushChar(c) {
+        if(!this.attributes) {
+          this.attributes = c.attributes
+        }
+        // push newlines as separate chunks for ease of parsing paragraphs and breaks from chunks
+        if(c.char === '\n') {
+          // previous chunk
+          this.pushChunk()
+        }
+        this.chars.push(c.char)
+        if(c.char === '\n') {
+          // newline chunk
+          this.pushChunk()
+        }
+      },
+
+      pushChunk() {
+        if(this.chars.length > 0) {
+          selectionChunks.push({
+            text: this.chars.join(''),
+            attrs: this.attributes
+          })
+        }
+        this.reset()
+      }
+    }
+
+    let processChar = (c) => {
+      if (!attributesEqual(currentChunk.attributes, c.attributes)) {
+        currentChunk.pushChunk()
+      }
+      currentChunk.pushChar(c, this)
+    }
+
+    let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
+    let contentIterator = selectionChars[Symbol.iterator]()
+    let e
+    while(!(e = contentIterator.next()).done) {
+      processChar(e.value)
+    }
+    // last chunk
+    currentChunk.pushChunk()
+
+    return selectionChunks
   }
 
   _modifySelection(toChar, positionEolStart, resetUpDown) {
