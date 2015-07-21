@@ -11,8 +11,11 @@ let renderEditor = function(fonts, unitsPerEm, minFontSize) {
     editorFactory({
       id: 10,
       fonts: fonts,
+      fontSize: 18,
       minFontSize: minFontSize,
-      unitsPerEm: unitsPerEm
+      unitsPerEm: unitsPerEm,
+      width: 600,
+      margin: 20
     }),
     editorRenderTarget
   )

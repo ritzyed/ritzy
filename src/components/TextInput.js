@@ -3,12 +3,13 @@ import 'babel/polyfill'
 import React from 'react/addons'
 import getEventKey from 'react/lib/getEventKey'
 import Mousetrap from 'mousetrap'
+
+import EditorActions from '../flux/EditorActions'
 import parseHtml from '../core/htmlparser'
 import writeHtml from '../core/htmlwriter'
 import writeText from '../core/textwriter'
 import {emptyNode} from '../core/dom'
 
-//const batchedUpdates = React.addons.batchedUpdates
 const T = React.PropTypes
 const MIME_TYPE_TEXT_PLAIN = 'text/plain'
 const MIME_TYPE_TEXT_HTML = 'text/html'
@@ -39,52 +40,12 @@ const ALL_CHARS = [
 export default React.createClass({
   propTypes: {
     id: T.number.isRequired,
-    position: T.number.isRequired,
-    insertChars: T.func.isRequired,
-    insertCharsBatch: T.func.isRequired,
-    navigateLeft: T.func.isRequired,
-    navigateRight: T.func.isRequired,
-    navigateUp: T.func.isRequired,
-    navigateDown: T.func.isRequired,
-    navigatePageUp: T.func.isRequired,
-    navigatePageDown: T.func.isRequired,
-    navigateStart: T.func.isRequired,
-    navigateStartLine: T.func.isRequired,
-    navigateEnd: T.func.isRequired,
-    navigateEndLine: T.func.isRequired,
-    navigateWordLeft: T.func.isRequired,
-    navigateWordRight: T.func.isRequired,
-    selectionLeft: T.func.isRequired,
-    selectionRight: T.func.isRequired,
-    selectionUp: T.func.isRequired,
-    selectionDown: T.func.isRequired,
-    selectionPageUp: T.func.isRequired,
-    selectionPageDown: T.func.isRequired,
-    selectionStart: T.func.isRequired,
-    selectionStartLine: T.func.isRequired,
-    selectionEnd: T.func.isRequired,
-    selectionEndLine: T.func.isRequired,
-    selectionWordLeft: T.func.isRequired,
-    selectionWordRight: T.func.isRequired,
-    selectionAll: T.func.isRequired,
-    eraseCharBack: T.func.isRequired,
-    eraseCharForward: T.func.isRequired,
-    eraseWordBack: T.func.isRequired,
-    eraseWordForward: T.func.isRequired,
-    eraseSelection: T.func.isRequired,
-    toggleBold: T.func.isRequired,
-    toggleItalics: T.func.isRequired,
-    toggleUnderline: T.func.isRequired,
-    toggleStrikethrough: T.func.isRequired,
-    toggleSuperscript: T.func.isRequired,
-    toggleSubscript: T.func.isRequired,
-    getSelection: T.func.isRequired
+    position: T.number.isRequired
   },
 
   mixins: [React.addons.PureRenderMixin],
 
   componentDidMount() {
-    // React does not batch setState calls inside events raised by mousetrap, create a wrapper to do that
     this.input = React.findDOMNode(this.refs.input)
     this.hiddenContainer = React.findDOMNode(this.refs.hiddenContainer)
     this.ieClipboardDiv = React.findDOMNode(this.refs.ieClipboardDiv)
@@ -97,19 +58,6 @@ export default React.createClass({
     }, true)
 
     let keyBindings = new Mousetrap(this.input)
-    //let keyBindingsReal = new Mousetrap(this.input)
-    //
-    // the wrapper function returns the function that will be called by Mousetrap with two args: keyEvent and combo
-    //let wrapperFunction = (handler) => (keyEvent, combo) => {
-    //  let returnValue
-    //  batchedUpdates(() => returnValue = handler(keyEvent, combo))
-    //  return returnValue
-    //}
-    //let keyBindings = {
-    //  bind(binding, handler) {
-    //    keyBindingsReal.bind(binding, wrapperFunction(handler))
-    //  }
-    //}
 
     // TODO probably ALL_CHARS should be handled via onInput instead to avoid keycode translation
     keyBindings.bind(ALL_CHARS, this._handleKeyChar)
@@ -174,7 +122,7 @@ export default React.createClass({
     if(key === 'Enter') {
       key = '\n'
     }
-    this.props.insertChars(key)
+    EditorActions.insertChars(key)
     return false
   },
 
@@ -182,13 +130,13 @@ export default React.createClass({
     this._checkEmptyValue()
 
     if(key === 'left') {
-      this.props.navigateLeft()
+      EditorActions.navigateLeft()
     } else if(key === 'right') {
-      this.props.navigateRight()
+      EditorActions.navigateRight()
     } else if(key === 'up') {
-      this.props.navigateUp()
+      EditorActions.navigateUp()
     } else if(key === 'down') {
-      this.props.navigateDown()
+      EditorActions.navigateDown()
     }
     return false
   },
@@ -197,13 +145,13 @@ export default React.createClass({
     this._checkEmptyValue()
 
     if(key === 'shift+left') {
-      this.props.selectionLeft()
+      EditorActions.selectionLeft()
     } else if(key === 'shift+right') {
-      this.props.selectionRight()
+      EditorActions.selectionRight()
     } else if(key === 'shift+up') {
-      this.props.selectionUp()
+      EditorActions.selectionUp()
     } else if(key === 'shift+down') {
-      this.props.selectionDown()
+      EditorActions.selectionDown()
     }
     return false
   },
@@ -211,65 +159,65 @@ export default React.createClass({
   _handleKeyBackspace() {
     this._checkEmptyValue()
 
-    this.props.eraseCharBack()
+    EditorActions.eraseCharBack()
     return false
   },
 
   _handleKeyDelete() {
     this._checkEmptyValue()
 
-    this.props.eraseCharForward()
+    EditorActions.eraseCharForward()
     return false
   },
 
   _handleKeyWordBackspace() {
     this._checkEmptyValue()
 
-    this.props.eraseWordBack()
+    EditorActions.eraseWordBack()
     return false
   },
 
   _handleKeyWordDelete() {
     this._checkEmptyValue()
 
-    this.props.eraseWordForward()
+    EditorActions.eraseWordForward()
     return false
   },
 
   _handleKeyEnter() {
     this._checkEmptyValue()
 
-    this.props.insertChars('\n')
+    EditorActions.insertChars('\n')
     return false
   },
 
   _handleKeyNavigationPage(e, key) {
     if(key === 'pageup') {
-      this.props.navigatePageUp()
+      EditorActions.navigatePageUp()
     } else if(key === 'pagedown') {
-      this.props.navigatePageDown()
+      EditorActions.navigatePageDown()
     }
     return false
   },
 
   _handleKeySelectionPage(e, key) {
     if(key === 'shift+pageup') {
-      this.props.selectionPageUp()
+      EditorActions.selectionPageUp()
     } else if(key === 'shift+pagedown') {
-      this.props.selectionPageDown()
+      EditorActions.selectionPageDown()
     }
     return false
   },
 
   _handleKeyNavigationHomeEnd(e, key) {
     if(key === 'ctrl+home') {
-      this.props.navigateStart()
+      EditorActions.navigateStart()
     } else if(key === 'home') {
-      this.props.navigateStartLine()
+      EditorActions.navigateStartLine()
     } else if(key === 'ctrl+end') {
-      this.props.navigateEnd()
+      EditorActions.navigateEnd()
     } else if(key === 'end') {
-      this.props.navigateEndLine()
+      EditorActions.navigateEndLine()
     }
     return false
   },
@@ -278,22 +226,22 @@ export default React.createClass({
     this._checkEmptyValue()
 
     if(key === 'ctrl+left') {
-      this.props.navigateWordLeft()
+      EditorActions.navigateWordLeft()
     } else if(key === 'ctrl+right') {
-      this.props.navigateWordRight()
+      EditorActions.navigateWordRight()
     }
     return false
   },
 
   _handleKeySelectionHomeEnd(e, key) {
     if(key === 'ctrl+shift+home') {
-      this.props.selectionStart()
+      EditorActions.selectionStart()
     } else if(key === 'shift+home') {
-      this.props.selectionStartLine()
+      EditorActions.selectionStartLine()
     } else if(key === 'ctrl+shift+end') {
-      this.props.selectionEnd()
+      EditorActions.selectionEnd()
     } else if(key === 'shift+end') {
-      this.props.selectionEndLine()
+      EditorActions.selectionEndLine()
     }
 
     return false
@@ -301,50 +249,50 @@ export default React.createClass({
 
   _handleKeySelectionWord(e, key) {
     if(key === 'shift+ctrl+left') {
-      this.props.selectionWordLeft()
+      EditorActions.selectionWordLeft()
     } else if(key === 'shift+ctrl+right') {
-      this.props.selectionWordRight()
+      EditorActions.selectionWordRight()
     }
     return false
   },
 
   _handleKeySelectionAll() {
-    this.props.selectionAll()
+    EditorActions.selectionAll()
     return false
   },
 
   _handleKeyBold() {
-    this.props.toggleBold()
+    EditorActions.toggleBold()
     return false
   },
 
   _handleKeyItalics() {
-    this.props.toggleItalics()
+    EditorActions.toggleItalics()
     return false
   },
 
   _handleKeyUnderline() {
-    this.props.toggleUnderline()
+    EditorActions.toggleUnderline()
     return false
   },
 
   _handleKeyStrikethrough() {
-    this.props.toggleStrikethrough()
+    EditorActions.toggleStrikethrough()
     return false
   },
 
   _handleKeySuperscript() {
-    this.props.toggleSuperscript()
+    EditorActions.toggleSuperscript()
     return false
   },
 
   _handleKeySubscript() {
-    this.props.toggleSubscript()
+    EditorActions.toggleSubscript()
     return false
   },
 
   _onCopy(e) {
-    let selectionChunks = this.props.getSelection()
+    let selectionChunks = EditorActions.getSelection()
 
     if(selectionChunks && selectionChunks.length > 0) {
       let copiedText = writeText(selectionChunks)
@@ -359,7 +307,7 @@ export default React.createClass({
 
   _onCut(e) {
     this._onCopy(e)
-    this.props.eraseSelection()
+    EditorActions.eraseSelection()
   },
 
   _handleNormalCopy(e, selectionChunks, copiedText, copiedHtml) {
@@ -405,14 +353,14 @@ export default React.createClass({
 
     if(clipboardDataTypes.findIndex(t => t === MIME_TYPE_RITZY_RICH_TEXT) > -1) {
       let pasted = e.clipboardData.getData(MIME_TYPE_RITZY_RICH_TEXT)
-      this.props.insertCharsBatch(JSON.parse(pasted))
+      EditorActions.insertCharsBatch(JSON.parse(pasted))
     } else if(clipboardDataTypes.findIndex(t => t === MIME_TYPE_TEXT_HTML) > -1) {
       let pasted = e.clipboardData.getData(MIME_TYPE_TEXT_HTML)
       let pastedChunks = parseHtml(pasted, this.hiddenContainer)
-      this.props.insertCharsBatch(pastedChunks)
+      EditorActions.insertCharsBatch(pastedChunks)
     } else if(clipboardDataTypes.findIndex(t => t === MIME_TYPE_TEXT_PLAIN) > -1) {
       let pasted = e.clipboardData.getData(MIME_TYPE_TEXT_PLAIN)
-      this.props.insertChars(pasted)
+      EditorActions.insertChars(pasted)
     } else {
       console.warn('Paste not supported yet for types: ' + JSON.stringify(clipboardDataTypes))
     }
@@ -425,7 +373,7 @@ export default React.createClass({
       let pasted = this.ieClipboardDiv.innerHTML
       try {
         let pastedChunks = parseHtml(pasted, this.hiddenContainer)
-        this.props.insertCharsBatch(pastedChunks)
+        EditorActions.insertCharsBatch(pastedChunks)
       } finally {
         emptyNode(this.ieClipboardDiv)
         this.focus()
@@ -441,7 +389,7 @@ export default React.createClass({
     // catch inputs that our keyboard handler doesn't catch e.g. compose key, IME inputs, etc.
     let value = e.target.value
     e.target.value = ' '
-    this.props.insertChars(value)
+    EditorActions.insertChars(value)
   },
 
   render() {

@@ -3,6 +3,7 @@ import EditorContents from './EditorContents'
 
 const T = React.PropTypes
 
+// TODO most of these props this should go away, EditorContents should go away and become Editor
 export default React.createClass({
   propTypes: {
     id: T.number.isRequired,
@@ -12,21 +13,20 @@ export default React.createClass({
       boldItalic: T.object,
       italic: T.object
     }),
+    fontSize: T.number.isRequired,
     minFontSize: T.number.isRequired,
-    unitsPerEm: T.number.isRequired
+    unitsPerEm: T.number.isRequired,
+    width: T.number.isRequired,
+    margin: T.number.isRequired
   },
 
   //mixins: [React.addons.PureRenderMixin],
 
   render() {
     // TODO make padding a prop?
-    const { id, ...other } = this.props    // eslint-disable-line no-unused-vars
-    const margin = 20
-    const width = 600
-
     return (
-      <div className="text-content-wrapper" style={{width: width, backgroundColor: 'rgb(255, 255, 255)', padding: `0px ${margin}px`}}>
-        <EditorContents id={id} fontSize={18} width={width} {...other} />
+      <div className="text-content-wrapper" style={{width: this.props.width, backgroundColor: 'rgb(255, 255, 255)', padding: `0px ${this.props.margin}px`}}>
+        <EditorContents {...this.props} />
       </div>
     )
   }

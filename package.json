@@ -9,6 +9,7 @@
     "npm": ">= 2.11"
   },
   "dependencies": {
+    "alt": "0.17.1",
     "babel": "5.6.23",
     "binarysearch": "0.2.4",
     "classnames": "2.1.3",
