@@ -43,65 +43,6 @@ class EditorStore {
     this._flow()
   }
 
-  insertChars({value, attributes, atPosition, reflow}) {
-    return this._insertChars(value, attributes, atPosition, reflow)
-  }
-
-  insertCharsBatch(chunks) {
-    let insertPosition = null
-    chunks.forEach(c => {
-      insertPosition = this._insertChars(c.text, c.attrs, insertPosition, false)
-    })
-    this._flow()
-  }
-
-  _insertChars(value, attributes, atPosition, reflow) {
-    if(_.isUndefined(reflow)) reflow = true
-    let position
-
-    // if the last char is a newline, then we want to position on the start of the next line
-    let positionEolStart = value.slice(-1) === '\n'
-
-    if(this.state.selectionActive) {
-      position = this.state.selectionLeftChar
-      this._eraseSelection()
-    } else {
-      if(atPosition) {
-        position = atPosition
-      } else {
-        position = this.state.position
-      }
-
-      if(position === EOF) {
-        position = this._relativeChar(EOF, -1, 'limit')
-      }
-    }
-
-    if(!attributes) {
-      if(this.state.selectionActive) {
-        position = this.state.selectionLeftChar
-        // if selection, then activeAttributes (set by command or toolbar) are set by the first selected char
-        attributes = this._relativeChar(position, 1, 'limit').attributes
-      } else {
-        attributes = this.state.activeAttributes ?
-          this.state.activeAttributes :
-          this._relativeChar(position, 0).attributes // reload attributes from the replica in case they have changed
-      }
-    }
-
-    this.replica.insertCharsAt(position, value, attributes)
-
-    if(reflow) this._flow()
-
-    let relativeMove = value.length
-    let newPosition = this._relativeChar(position, relativeMove)
-    this._setPosition(newPosition, positionEolStart)
-    this.activeAttributes = attributes
-
-    // return the new position so that multiple insertChars calls can be made in sequence
-    return newPosition
-  }
-
   navigateLeft() {
     this._navigateLeftRight(-1)
   }
@@ -318,6 +259,80 @@ class EditorStore {
     }
   }
 
+  getSelection() {
+    let selectionChunks = []
+
+    if(!this.state.selectionActive) {
+      return selectionChunks
+    }
+
+    let currentChunk = {
+      chars: [],
+      attributes: null,
+
+      reset() {
+        this.chars = []
+        this.attributes = null
+      },
+
+      pushChar(c) {
+        if(!this.attributes) {
+          this.attributes = c.attributes
+        }
+        // push newlines as separate chunks for ease of parsing paragraphs and breaks from chunks
+        if(c.char === '\n') {
+          // previous chunk
+          this.pushChunk()
+        }
+        this.chars.push(c.char)
+        if(c.char === '\n') {
+          // newline chunk
+          this.pushChunk()
+        }
+      },
+
+      pushChunk() {
+        if(this.chars.length > 0) {
+          selectionChunks.push({
+            text: this.chars.join(''),
+            attrs: this.attributes
+          })
+        }
+        this.reset()
+      }
+    }
+
+    let processChar = (c) => {
+      if (!attributesEqual(currentChunk.attributes, c.attributes)) {
+        currentChunk.pushChunk()
+      }
+      currentChunk.pushChar(c, this)
+    }
+
+    let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
+    let contentIterator = selectionChars[Symbol.iterator]()
+    let e
+    while(!(e = contentIterator.next()).done) {
+      processChar(e.value)
+    }
+    // last chunk
+    currentChunk.pushChunk()
+
+    return selectionChunks
+  }
+
+  insertChars({value, attributes, atPosition, reflow}) {
+    return this._insertChars(value, attributes, atPosition, reflow)
+  }
+
+  insertCharsBatch(chunks) {
+    let insertPosition = null
+    chunks.forEach(c => {
+      insertPosition = this._insertChars(c.text, c.attrs, insertPosition, false)
+    })
+    this._flow()
+  }
+
   eraseCharBack() {
     if(this.state.selectionActive) {
       this._eraseSelection()
@@ -430,66 +445,51 @@ class EditorStore {
     this._toggleAttribute(ATTR.SUBSCRIPT, ATTR.SUPERSCRIPT)
   }
 
-  getSelection() {
-    let selectionChunks = []
+  _insertChars(value, attributes, atPosition, reflow) {
+    if(_.isUndefined(reflow)) reflow = true
+    let position
 
-    if(!this.state.selectionActive) {
-      return selectionChunks
-    }
+    // if the last char is a newline, then we want to position on the start of the next line
+    let positionEolStart = value.slice(-1) === '\n'
 
-    let currentChunk = {
-      chars: [],
-      attributes: null,
+    if(this.state.selectionActive) {
+      position = this.state.selectionLeftChar
+      this._eraseSelection()
+    } else {
+      if(atPosition) {
+        position = atPosition
+      } else {
+        position = this.state.position
+      }
 
-      reset() {
-        this.chars = []
-        this.attributes = null
-      },
-
-      pushChar(c) {
-        if(!this.attributes) {
-          this.attributes = c.attributes
-        }
-        // push newlines as separate chunks for ease of parsing paragraphs and breaks from chunks
-        if(c.char === '\n') {
-          // previous chunk
-          this.pushChunk()
-        }
-        this.chars.push(c.char)
-        if(c.char === '\n') {
-          // newline chunk
-          this.pushChunk()
-        }
-      },
-
-      pushChunk() {
-        if(this.chars.length > 0) {
-          selectionChunks.push({
-            text: this.chars.join(''),
-            attrs: this.attributes
-          })
-        }
-        this.reset()
+      if(position === EOF) {
+        position = this._relativeChar(EOF, -1, 'limit')
       }
     }
 
-    let processChar = (c) => {
-      if (!attributesEqual(currentChunk.attributes, c.attributes)) {
-        currentChunk.pushChunk()
+    if(!attributes) {
+      if(this.state.selectionActive) {
+        position = this.state.selectionLeftChar
+        // if selection, then activeAttributes (set by command or toolbar) are set by the first selected char
+        attributes = this._relativeChar(position, 1, 'limit').attributes
+      } else {
+        attributes = this.state.activeAttributes ?
+          this.state.activeAttributes :
+          this._relativeChar(position, 0).attributes // reload attributes from the replica in case they have changed
       }
-      currentChunk.pushChar(c, this)
     }
 
-    let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
-    let contentIterator = selectionChars[Symbol.iterator]()
-    let e
-    while(!(e = contentIterator.next()).done) {
-      processChar(e.value)
-    }
-    // last chunk
-    currentChunk.pushChunk()
+    this.replica.insertCharsAt(position, value, attributes)
 
-    return selectionChunks
+    if(reflow) this._flow()
+
+    let relativeMove = value.length
+    let newPosition = this._relativeChar(position, relativeMove)
+    this._setPosition(newPosition, positionEolStart)
+    this.activeAttributes = attributes
+
+    // return the new position so that multiple insertChars calls can be made in sequence
+    return newPosition
   }
 
   _relativeChar(charOrId, relative, wrap) {
@@ -736,7 +736,6 @@ class EditorStore {
     this._setPosition(BASE_CHAR)
   }
 
-  // todo rename
   _delayedCursorBlink() {
     this.setState({cursorMotion: true})
 
