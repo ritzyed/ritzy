@@ -1,5 +1,5 @@
+import 'babel/polyfill'
 import _ from 'lodash'
-import bs from 'binarysearch'
 
 import { BASE_CHAR, EOF } from './RichText'
 
@@ -25,6 +25,7 @@ export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
           return true
         },
         chunks: [],
+        charIds: new Set(),
         start: BASE_CHAR,
         end: EOF,
         advance: 0
@@ -48,30 +49,23 @@ export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
     }
   }
 
-  let comparator = (line, c) => {
-    // shortcut fast equality comparisons with line.start and line.end
-    if (replica.charEq(c, line.start)) return 1
-    if (replica.charEq(c, line.end)) return 0
-    if (replica.compareCharPos(c, line.start) < 0) return 1
-    if (replica.compareCharPos(c, line.end) > 0) return -1
-    return 0
+  for(let i = 0; i < searchSpace.length; i++) {
+    let line = searchSpace[i]
+    if(line.charIds.has(char.id)) {
+      let index = i
+      let endOfLine = replica.charEq(char, line.end)
+      if(nextIfEol && endOfLine && !line.isEof() && searchSpace.length - 1 > i) {
+        index++
+        line = searchSpace[index]
+      }
+
+      return {
+        line: line,
+        index: index,
+        endOfLine: endOfLine
+      }
+    }
   }
 
-  let index = bs(searchSpace, char, comparator)
-  if(index === -1) {
-    return null
-  }
-  let line = searchSpace[index]
-
-  let endOfLine = replica.charEq(char, line.end)
-  if(nextIfEol && endOfLine && !line.isEof() && searchSpace.length - 1 > index) {
-    index++
-    line = searchSpace[index]
-  }
-
-  return {
-    line: line,
-    index: index,
-    endOfLine: endOfLine
-  }
+  return null
 }

@@ -1,3 +1,4 @@
+import 'babel/polyfill'
 import _ from 'lodash'
 import invariant from 'react/lib/invariant'
 
@@ -529,12 +530,14 @@ class EditorStore {
 
     let currentLine = {
       chunks: [],
+      charIds: new Set(),
       advance: 0,
       start: BASE_CHAR,
       end: null,
 
       reset() {
         this.chunks = []
+        this.charIds = new Set()
         this.advance = 0
         this.start = lines.length > 0 ? lines[lines.length - 1].end : BASE_CHAR
         this.end = null
@@ -543,6 +546,8 @@ class EditorStore {
       pushWord(word) {
         invariant(word.chars.length === 0, 'Must complete word before pushing.')
         if(word.pendingChunks.length > 0) {
+          word.pendingChunks.forEach(chunk => chunk.text.forEach(char => this.charIds.add(char.id)))
+
           // if the last chunk in the line matches attributes with the first word chunk, join them to avoid extra spans
           if(this.chunks.length > 0
             && attributesEqual(this.chunks[this.chunks.length - 1].attributes, word.pendingChunks[0].attributes)) {
@@ -560,6 +565,7 @@ class EditorStore {
 
       pushNewline(c) {
         invariant(c.char === '\n', 'pushNewline can only be called with a newline char.')
+        this.charIds.add(c.id)
         this.end = c
       },
 
@@ -591,6 +597,7 @@ class EditorStore {
             return `${chunks} chars=[${this.start.toString()} → ${this.end.toString()}] adv=${this.advance}}`
           },
           chunks: line.chunks,
+          charIds: line.charIds,
           start: line.start,
           end: line.end,
           advance: line.advance
