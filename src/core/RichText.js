@@ -92,13 +92,42 @@ class TextData {
   matches(pos, ids, includeDeleted) {
     invariant(pos < this.len(), 'Index out of bounds.')
     includeDeleted = includeDeleted !== false
-    if(!_.isArray(ids)) ids = [ids]
-    let matches = 0
-    if(_.includes(ids, this.ids[pos])) {
-      matches += 1
+    if(_.isArray(ids)) {
+      if(_.includes(ids, this.ids[pos])) {
+        return true
+      }
+      if(includeDeleted && this.deletedIds[pos]) {
+        return _.intersection(this.deletedIds[pos], ids).length > 0
+      }
+    } else {
+      if(ids === this.ids[pos]) {
+        return true
+      }
+      if(includeDeleted && this.deletedIds[pos]) {
+        return this.deletedIds[pos].indexOf(ids) > -1
+      }
     }
-    if(includeDeleted && this.deletedIds[pos]) {
-      matches += _.intersection(this.deletedIds[pos], ids).length
+    return false
+  }
+
+  matchCount(pos, ids, includeDeleted) {
+    invariant(pos < this.len(), 'Index out of bounds.')
+    includeDeleted = includeDeleted !== false
+    let matches = 0
+    if(_.isArray(ids)) {
+      if(_.includes(ids, this.ids[pos])) {
+        matches += 1
+      }
+      if(includeDeleted && this.deletedIds[pos]) {
+        matches += _.intersection(this.deletedIds[pos], ids).length
+      }
+    } else {
+      if(ids === this.ids[pos]) {
+        matches += 1
+      }
+      if(includeDeleted && this.deletedIds[pos] && this.deletedIds[pos].indexOf(ids) > -1) {
+        matches += 1
+      }
     }
     return matches
   }
@@ -145,7 +174,7 @@ let Text = Syncable.extend('Text', {
       for (let i = 0; i < this.data.len(); i++) {
         for(let j = 0; j < insertKeys.length; j++) {
           let insKey = insertKeys[j]
-          if (this.data.matches(i, insKey) > 0) {
+          if (this.data.matches(i, insKey)) {
             let str = ins[insKey].value
             let attrs = ins[insKey].attributes
             let k = i + 1
@@ -180,7 +209,7 @@ let Text = Syncable.extend('Text', {
       if(!rm) return
       let rmKeys = Object.keys(rm)
       for (let i = 1; i < this.data.len(); i++) {
-        if (this.data.matches(i, rmKeys) > 0) {
+        if (this.data.matches(i, rmKeys)) {
           this.data.deleteChar(i)
           i -= 1
         }
@@ -197,7 +226,7 @@ let Text = Syncable.extend('Text', {
       let attrKeys = Object.keys(attrs)
       for (let i = 1; i < this.data.len(); i++) {
         for(let j = 0; j < attrKeys.length; j++) {
-          if (this.data.matches(i, attrKeys[j], false) > 0) {
+          if (this.data.matches(i, attrKeys[j], false)) {
             this.data.setCharAttr(i, attrs[attrKeys[j]])
           }
         }
@@ -263,7 +292,7 @@ let Text = Syncable.extend('Text', {
     for (let i = 0; i < this.data.len(); i++) {
       for(let j = 0; j < opKeys.length; j++) {
         let opKey = opKeys[j]
-        if (this.data.matches(i, opKey) > 0) {
+        if (this.data.matches(i, opKey)) {
           if (i - lastInsert > 0) delta.push({retain: i - lastInsert})
           let str = op[opKey].value
           let deltaOp = {insert: str}
@@ -296,7 +325,7 @@ let Text = Syncable.extend('Text', {
     let opKeys = Object.keys(op)
     let lastRemove = 0
     for (let i = 0; i < this.data.len(); i++) {
-      let matchCount = this.data.matches(i, opKeys)
+      let matchCount = this.data.matchCount(i, opKeys)
       if (matchCount > 0) {
         if(i - lastRemove > 0) delta.push({ retain: i - lastRemove })
         // since the delete has already occurred we need to use the number of matched ids at the current char
@@ -406,7 +435,7 @@ let Text = Syncable.extend('Text', {
     invariant(charOrId, 'From char must be defined.')
     let id = _.has(charOrId, 'id') ? charOrId.id : charOrId
     for (let i = 0; i < this.data.len(); i++) {
-      if (this.data.matches(i, id, includeDeleted) > 0) return i
+      if (this.data.matches(i, id, includeDeleted)) return i
     }
     return -1
   },
@@ -440,7 +469,7 @@ let Text = Syncable.extend('Text', {
 
     let id = _.has(charOrId, 'id') ? charOrId.id : charOrId
     for (let i = 0; i < this.data.len(); i++) {
-      if (this.data.matches(i, id) > 0) {
+      if (this.data.matches(i, id)) {
         let index = i + relative
         if(wrap === 'wrap') {
           if(index < 0) index = this.data.len() + index
@@ -484,14 +513,14 @@ let Text = Syncable.extend('Text', {
       return chars
     }
     for (let i = 0; i < this.data.len(); i++) {
-      if (!fromMatched && this.data.matches(i, fromId) > 0) {
+      if (!fromMatched && this.data.matches(i, fromId)) {
         // the fromId is exclusive
         fromMatched = true
         if(fromId === toId) {
           chars.push(this.getCharAt(i))
           return chars
         }
-      } else if(toId && this.data.matches(i, toId) > 0) {
+      } else if(toId && this.data.matches(i, toId)) {
         invariant(fromMatched, 'From id must precede To id.')
         chars.push(this.getCharAt(i))
         return chars
