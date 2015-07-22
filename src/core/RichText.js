@@ -551,16 +551,24 @@ let Text = Syncable.extend('Text', {
     let char1Id = _.has(charOrId1, 'id') ? charOrId1.id : charOrId1
     let char2Id = _.has(charOrId2, 'id') ? charOrId2.id : charOrId2
 
+    let seen1 = false
     let seen1Index
+    let seen2 = false
     let seen2Index
     for (let i = 0; i < this.data.len(); i++) {
-      if (this.data.matches(i, char1Id) > 0) {
+      if (!seen1 && this.data.matches(i, char1Id)) {
+        seen1 = true
         seen1Index = i
+        // special case same char
+        if(char1Id === char2Id) {
+          return 0
+        }
       }
-      if(char1Id === char2Id || this.data.matches(i, char2Id) > 0) {
+      if (!seen2 && this.data.matches(i, char2Id)) {
+        seen2 = true
         seen2Index = i
       }
-      if(!_.isUndefined(seen1Index) && !_.isUndefined(seen2Index)) {
+      if (seen1 && seen2) {
         if(seen1Index < seen2Index) return -1
         else if(seen1Index === seen2Index) return 0
         else return 1
