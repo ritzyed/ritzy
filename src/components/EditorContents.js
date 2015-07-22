@@ -279,7 +279,7 @@ export default React.createClass({
       return null
     }
 
-    let left = lineContainingChar(this.replica, this.state.lines, this.state.selectionLeftChar)
+    let left = lineContainingChar(this.replica, this.state.lines, this.replica.getCharRelativeTo(this.state.selectionLeftChar, 1, 'eof'))
     let right = lineContainingChar(this.replica, this.state.lines.slice(left.index), this.state.selectionRightChar, null)
 
     return {
@@ -288,8 +288,10 @@ export default React.createClass({
     }
   },
 
-  _renderSelectionOverlay(lineIndex, lineHeight) {
-    if(!this.state.selectionActive) {
+  _renderSelectionOverlay(lineIndex, lineHeight, linesWithSelection) {
+    // lines outside the selection range
+    if(!this.state.selectionActive
+      || (linesWithSelection && (lineIndex < linesWithSelection.left || lineIndex > linesWithSelection.right))) {
       return null
     }
 
@@ -318,55 +320,55 @@ export default React.createClass({
 
     let line = this.state.lines[lineIndex]
 
+    // middle lines
+    if(linesWithSelection && (lineIndex > linesWithSelection.left && lineIndex < linesWithSelection.right)) {
+      let selectionWidthX = line.advance
+      if(line.isEof() || line.end.char === '\n') {
+        selectionWidthX += TextFontMetrics.advanceXForSpace(this.props.fontSize)
+      }
+      return selectionDiv(0, selectionWidthX)
+    }
+
+    // last line with EOF
     if(line && line.isEof() && this.state.selectionRightChar === EOF) {
       return selectionDiv(0, TextFontMetrics.advanceXForSpace(this.props.fontSize))
     }
 
+    // empty editor (no line and selection is from BASE_CHAR to EOF)
     if(!line
       && this.replica.charEq(this.state.selectionLeftChar, BASE_CHAR)
       && this.replica.charEq(this.state.selectionRightChar, EOF)) {
       return selectionDiv(0, TextFontMetrics.advanceXForSpace(this.props.fontSize))
     }
 
-    if(!line
-      || line.isEof()
-      || this.replica.compareCharPos(this.state.selectionLeftChar, line.end) > 0
-      || this.replica.compareCharPos(this.state.selectionRightChar, line.start) < 0) {
-      return null
-    }
-
     let left = null
     let right = null
+    let selectionLeftX = 0
 
-    if(this.replica.compareCharPos(this.state.selectionLeftChar, line.start) < 0) {
-      left = line.start
-    } else {
+    if(lineIndex === linesWithSelection.left) {
       left = this.state.selectionLeftChar
-    }
-
-    if(this.replica.compareCharPos(this.state.selectionRightChar, line.end) > 0) {
-      right = line.end
+      // TODO change selection height and font size dynamically
+      let leftChars = this.replica.getTextRange(line.start, left)
+      selectionLeftX = TextFontMetrics.advanceXForChars(this.props.fontSize, leftChars)
     } else {
-      right = this.state.selectionRightChar
+      left = line.start
     }
-
-    // TODO change selection height and font size dynamically
-    let leftChars = this.replica.getTextRange(line.start, left)
-    let selectionLeftX = TextFontMetrics.advanceXForChars(this.props.fontSize, leftChars)
 
     let selectionWidthX
     let selectionAddSpace
-    if((right === EOF && line.isEof()) || (!line.isEof() && this.replica.charEq(right, line.end) && !this.replica.charEq(left, right))) {
-      // shortcut when we select to end of line, we already know the line advance from the flow algorithm
-      selectionWidthX = line.advance - selectionLeftX
-      selectionAddSpace = line.isEof() || line.end.char === '\n'
-    } else {
+
+    if(lineIndex === linesWithSelection.right) {
+      right = this.state.selectionRightChar
       let selectionChars = this.replica.getTextRange(left, right)
       if(selectionChars.length === 0) {
         return null
       }
       selectionWidthX = TextFontMetrics.advanceXForChars(this.props.fontSize, selectionChars)
       selectionAddSpace = selectionChars[selectionChars.length - 1].char === '\n'
+    } else {
+      right = line.end
+      selectionWidthX = line.advance - selectionLeftX
+      selectionAddSpace = line.isEof() || line.end.char === '\n'
     }
 
     if(selectionAddSpace) {
@@ -428,17 +430,15 @@ export default React.createClass({
     return this.state.lines.map(line => line.chunks.map(chunkToStyledText))
   },
 
-  _renderLine(line, index, lineHeight, shouldRenderSelection) {
+  _renderLine(line, index, lineHeight, linesWithSelection) {
     let blockHeight = 10000
     let blockTop = TextFontMetrics.top(this.props.fontSize) - blockHeight
-
-    let renderSelectionOverlay = () => shouldRenderSelection ? this._renderSelectionOverlay(index, lineHeight) : null
 
     // TODO set lineHeight based on font sizes used in line chunks
     // the span wrapper around the text is required so that the text does not shift up/down when using superscript/subscript
     return (
       <div className="text-lineview" style={{height: lineHeight, direction: 'ltr', textAlign: 'left'}} key={index}>
-        {renderSelectionOverlay()}
+        {this._renderSelectionOverlay(index, lineHeight, linesWithSelection)}
         <div className="text-lineview-content" style={{marginLeft: 0, paddingTop: 0}}>
           <span style={{display: 'inline-block', height: blockHeight}}></span>
           <span style={{display: 'inline-block', position: 'relative', top: blockTop}}>
@@ -538,17 +538,14 @@ export default React.createClass({
     let cursorPosition = this._cursorPosition(lineHeight)
     let linesWithSelection = this._searchLinesWithSelection()
 
-    let shouldRenderSelection = index =>
-      linesWithSelection != null && index >= linesWithSelection.left && index <= linesWithSelection.right
-
     return (
       <div>
         <div onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
           {this._renderInput(cursorPosition)}
           <div className="text-contents">
             { lines.length > 0 ?
-              lines.map((line, index) => this._renderLine(line, index, lineHeight, shouldRenderSelection(index)) ) :
-              this._renderLine(nbsp, 0, lineHeight, true)}
+              lines.map((line, index) => this._renderLine(line, index, lineHeight, linesWithSelection) ) :
+              this._renderLine(nbsp, 0, lineHeight)}
           </div>
           {this._renderCursor(cursorPosition, lineHeight)}
         </div>
