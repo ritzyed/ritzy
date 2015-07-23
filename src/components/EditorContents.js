@@ -424,10 +424,10 @@ export default React.createClass({
   _splitIntoLines() {
     if(!this.state.lines) return []
 
-    let chunkToStyledText = chunk => this._renderStyledText(chunk.text[0].id,
-      chunk.text.map(c => c.char === ' ' ? nbsp : c.char).join(''), chunk.attributes)
-
-    return this.state.lines.map(line => line.chunks.map(chunkToStyledText))
+    return this.state.lines.map(line => line.chunks.map(chunk => {
+      let chars = line.chars.slice(chunk.start, chunk.end)
+      return this._renderStyledText(chars[0].id, chars.map(c => c.char === ' ' ? nbsp : c.char).join(''), chunk.attributes)
+    }))
   },
 
   _renderLine(line, index, lineHeight, linesWithSelection) {

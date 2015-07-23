@@ -471,7 +471,6 @@ class EditorStore {
    *
    * Even though all of the state here can be calculated from the replica, this is not done at render time
    * because the line state must be available when user input such as clicks or selections are made.
-   * TODO Alternatively, consider just running this algorithm each time the lines/chunks are needed?
    *
    * TODO provide the location @ which changes happened, and only flow from that line forward to where
    * the lines match what they were before
@@ -480,6 +479,7 @@ class EditorStore {
     let lines = []
     let currentWord = {
       chars: [],
+      length: 0,
       pendingChunks: [],
       advance: 0,
       lineAdvance: 0,
@@ -489,6 +489,7 @@ class EditorStore {
 
       reset() {
         this.chars = []
+        this.length = 0
         this.pendingChunks = []
         this.advance = 0
         this.lineAdvance = 0
@@ -510,61 +511,76 @@ class EditorStore {
         }
         this.lineAdvance += charAdvance
         this.chars.push(c)
+        this.length++
       },
 
       popChar() {
+        this.length--
         return this.chars.pop()
       },
 
       pushChunks() {
-        if(this.chars.length > 0) {
+        if(this.length > 0) {
           this.pendingChunks.push({
-            text: this.chars,
+            length: this.length,
             attributes: this.attributes
           })
         }
-        this.chars = []
         this.attributes = null
+        this.length = 0
       }
     }
 
     let currentLine = {
-      chunks: [],
+      chars: [],
       charIds: new Set(),
+      chunks: [],
       advance: 0,
       start: BASE_CHAR,
       end: null,
 
       reset() {
-        this.chunks = []
+        this.chars = []
         this.charIds = new Set()
+        this.chunks = []
         this.advance = 0
         this.start = lines.length > 0 ? lines[lines.length - 1].end : BASE_CHAR
         this.end = null
       },
 
       pushWord(word) {
-        invariant(word.chars.length === 0, 'Must complete word before pushing.')
-        if(word.pendingChunks.length > 0) {
-          word.pendingChunks.forEach(chunk => chunk.text.forEach(char => this.charIds.add(char.id)))
+        pushArray(this.chars, word.chars)
+        word.chars.forEach(c => this.charIds.add(c.id))
 
-          // if the last chunk in the line matches attributes with the first word chunk, join them to avoid extra spans
-          if(this.chunks.length > 0
-            && attributesEqual(this.chunks[this.chunks.length - 1].attributes, word.pendingChunks[0].attributes)) {
-            pushArray(this.chunks[this.chunks.length - 1].text, word.pendingChunks[0].text)
+        let lastChunk
+        if(this.chunks.length > 0) {
+          lastChunk = this.chunks[this.chunks.length - 1]
+          // if the last chunk in the line matches attributes with the first word chunk, join them to minimize chunks
+          if(attributesEqual(lastChunk.attributes, word.pendingChunks[0].attributes)) {
+            lastChunk.end += word.pendingChunks[0].length
             word.pendingChunks.shift()
           }
-
-          pushArray(this.chunks, word.pendingChunks)
-          let lastChunk = this.chunks[this.chunks.length - 1]
-          this.end = lastChunk.text[lastChunk.text.length - 1]
         }
+
+        // set the start and end of each chunk, start and end are suitable for feeding to chars.slice i.e. end is exclusive
+        let start = lastChunk ? lastChunk.end : 0
+        word.pendingChunks.map(c => {
+          c.start = start
+          c.end = start + c.length
+          start = c.end
+          delete c.length
+          return c
+        })
+
+        pushArray(this.chunks, word.pendingChunks)
+        this.end = this.chars[this.chars.length - 1]
         this.advance += word.lineAdvance
         word.reset()
       },
 
       pushNewline(c) {
         invariant(c.char === '\n', 'pushNewline can only be called with a newline char.')
+        this.chars.push(c)
         this.charIds.add(c.id)
         this.end = c
       },
@@ -584,20 +600,22 @@ class EditorStore {
             return this.end === EOF
           },
           toString() {
-            let chunks = '-'
-            if(this.chunks && this.chunks.length > 0) {
-              let text = this.chunks[0].text.map(c => c.char)
-              if(text.length > 10) {
-                text = text.slice(0, 10)
-                chunks = text.join('') + '...'
+            let summary = '-'
+            if(this.chars.length > 0) {
+              let text = this.chars.map(c => c.char === '\n' ? '\\n' : c.char)
+              if(text.length > 13) {
+                let textBegin = text.slice(0, 5).join('')
+                let textEnd = text.slice(text.length - 5).join('')
+                summary = textBegin + '...' + textEnd
               } else {
-                chunks = text.join('')
+                summary = text.join('')
               }
             }
-            return `${chunks} chars=[${this.start.toString()} → ${this.end.toString()}] adv=${this.advance}}`
+            return `[${summary}] chars=[${this.start.toString()} → ${this.end.toString()}] adv=${this.advance}}`
           },
-          chunks: line.chunks,
+          chars: line.chars,
           charIds: line.charIds,
+          chunks: line.chunks,
           start: line.start,
           end: line.end,
           advance: line.advance
@@ -1182,40 +1200,21 @@ class EditorStore {
       }
     }
 
+    let line = this.state.lines[lineIndex]
     let position
     let positionEolStart
-    let line = this.state.lines[lineIndex]
-    let traversedX = 0
-    for(let chunk of line.chunks) {
-      let advanceX = TextFontMetrics.advanceXForChars(this.config.fontSize, chunk.text)
-      if(traversedX + advanceX >= x) {
-        let indexAndCursor = TextFontMetrics.indexAndCursorForXValue(this.config.fontSize, x - traversedX, chunk.text)
-        position = this._charPositionRelativeToIndex(indexAndCursor.index, chunk.text)
-
-        // if clicked a line beginning (char position is end of last line) then position beginning of clicked line
-        let cursorX = traversedX + indexAndCursor.cursorX
-        positionEolStart = cursorX === 0 || line.isEof()
-
-        // note that the cursorX is relative to the beginning of the line
-        return {
-          position: position,
-          positionEolStart: positionEolStart
-        }
-      } else {
-        traversedX += advanceX
-      }
-    }
 
     if(line.isEof()) {
       position = line.start
       positionEolStart = true
-    } else if(line.isHard() && (line.chunks.length > 0 || !this.replica.charEq(line.start, line.end))) {
-      // position just before the end newline
-      position = this._relativeChar(line.end, -1, 'limit')
-      positionEolStart = true
     } else {
-      position = line.end
-      positionEolStart = false
+      let indexAndCursor = TextFontMetrics.indexAndCursorForXValue(this.config.fontSize, x, line.chars)
+      position = this._charPositionRelativeToIndex(indexAndCursor.index, line.chars)
+
+      // if clicked a line beginning (char position is end of last line) then position beginning of clicked line
+      // note that the cursorX is relative to the beginning of the line
+      let cursorX = indexAndCursor.cursorX
+      positionEolStart = cursorX === 0 || line.isEof()
     }
 
     return {

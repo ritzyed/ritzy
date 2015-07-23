@@ -24,8 +24,9 @@ export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
         isEof() {
           return true
         },
-        chunks: [],
+        chars: [],
         charIds: new Set(),
+        chunks: [],
         start: BASE_CHAR,
         end: EOF,
         advance: 0
