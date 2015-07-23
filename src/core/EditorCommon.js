@@ -47,6 +47,41 @@ export class Line {
   isEof() {
     return this.end === EOF
   }
+
+  indexOf(char) {
+    for (let i = 0; i < this.chars.length; i++) {
+      if (this.chars[i].id === char.id) {
+        return i
+      }
+    }
+    return -1
+  }
+
+  /**
+   * Obtains chars between the given char (exclusive) to the given char (inclusive). Note the
+   * begin exclusivity operates differently than array slice (which is end exclusive), but corresponds
+   * generally with how character ranges in the editor are used.
+   * @param fromChar
+   * @param toChar
+   */
+  charsBetween(fromChar, toChar) {
+    let indexFrom = 0
+    let indexTo = this.chars.length
+
+    if(fromChar.id !== this.start.id) {
+      indexFrom = this.indexOf(fromChar) + 1
+    }
+
+    if(toChar !== EOF && toChar.id !== this.end.id) {
+      indexTo = this.indexOf(toChar) + 1
+    }
+
+    return this.chars.slice(indexFrom, indexTo)
+  }
+
+  charsTo(char) {
+    return this.chars.slice(0, this.indexOf(char) + 1)
+  }
 }
 
 const EMPTY_LINE = new Line([], new Set(), [], BASE_CHAR, EOF, 0)

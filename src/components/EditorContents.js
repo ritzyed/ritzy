@@ -252,6 +252,22 @@ export default React.createClass({
     EditorActions.focusInput()
   },
 
+  _dumpLinesWithSelection() {
+    let linesWithSelection = this._searchLinesWithSelection()
+    if(linesWithSelection) {
+      logInGroup('Lines with selection', () => {
+        for(let i = linesWithSelection.left; i <= linesWithSelection.right; i++) {
+          logInGroup(`Index ${i}`, () => {  // eslint-disable-line no-loop-func
+            console.log(this.state.lines[i].toString())
+          })
+        }
+      })
+    } else {
+      console.debug('No selected lines')
+    }
+    EditorActions.focusInput()
+  },
+
   _forceFlow() {
     EditorActions.replicaUpdated()
     EditorActions.focusInput()
@@ -341,32 +357,26 @@ export default React.createClass({
       return selectionDiv(0, TextFontMetrics.advanceXForSpace(this.props.fontSize))
     }
 
-    let left = null
-    let right = null
     let selectionLeftX = 0
-
-    if(lineIndex === linesWithSelection.left) {
-      left = this.state.selectionLeftChar
-      // TODO change selection height and font size dynamically
-      let leftChars = this.replica.getTextRange(line.start, left)
-      selectionLeftX = TextFontMetrics.advanceXForChars(this.props.fontSize, leftChars)
-    } else {
-      left = line.start
-    }
-
     let selectionWidthX
     let selectionAddSpace
 
+    if(lineIndex === linesWithSelection.left) {
+      // TODO change selection height and font size dynamically
+      selectionLeftX = TextFontMetrics.advanceXForChars(this.props.fontSize, line.charsTo(this.state.selectionLeftChar))
+    }
+
     if(lineIndex === linesWithSelection.right) {
-      right = this.state.selectionRightChar
-      let selectionChars = this.replica.getTextRange(left, right)
+      let selectionChars = selectionLeftX > 0 ?
+        line.charsBetween(this.state.selectionLeftChar, this.state.selectionRightChar) :
+        line.charsTo(this.state.selectionRightChar)
+
       if(selectionChars.length === 0) {
         return null
       }
       selectionWidthX = TextFontMetrics.advanceXForChars(this.props.fontSize, selectionChars)
       selectionAddSpace = selectionChars[selectionChars.length - 1].char === '\n'
     } else {
-      right = line.end
       selectionWidthX = line.advance - selectionLeftX
       selectionAddSpace = line.isEof() || line.end.char === '\n'
     }
@@ -470,7 +480,7 @@ export default React.createClass({
     if(!line || (endOfLine && this.state.positionEolStart && index < this.state.lines.length - 1)) {
       cursorAdvanceX = 0
     } else {
-      let positionChars = this.replica.getTextRange(line.start, this.state.position)
+      let positionChars = line.charsTo(this.state.position)
       cursorAdvanceX = TextFontMetrics.advanceXForChars(this.props.fontSize, positionChars)
     }
 
@@ -557,7 +567,8 @@ export default React.createClass({
           <button onClick={this._dumpPosition}>Position</button>&nbsp;
           <button onClick={this._dumpCurrentLine}>Line</button>&nbsp;
           <button onClick={this._dumpLines}>All Lines</button>&nbsp;
-          <button onClick={this._dumpSelection}>Selection</button><br/>
+          <button onClick={this._dumpSelection}>Selection</button>&nbsp;
+          <button onClick={this._dumpLinesWithSelection}>Lines with Selection</button><br/>
           <span>Force:&nbsp;</span>
           <button onClick={this._forceRender}>Render</button>&nbsp;
           <button onClick={this._forceFlow}>Flow</button><br/>

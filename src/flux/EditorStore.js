@@ -991,7 +991,7 @@ class EditorStore {
         newPosition = targetLine.start
         positionEolStart = true
       } else {
-        let chars = this.replica.getTextRange(targetLine.start, targetLine.end)
+        let chars = targetLine.chars
         let indexAndCursor = TextFontMetrics.indexAndCursorForXValue(this.config.fontSize, upDownAdvanceX, chars)
         newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
 
@@ -1060,7 +1060,7 @@ class EditorStore {
       let toChar = this._relativeChar(BASE_CHAR, -1)
       this._modifySelection(toChar, false)
       // at end of last line, reset the advanceX to the end of the line, and positionEolStart is now false
-      let chars = this.replica.getTextRange(line.start, line.end)
+      let chars = line.chars
       this.upDownAdvanceX = TextFontMetrics.advanceXForChars(this.config.fontSize, chars)
       this.upDownPositionEolStart = false
     } else if(targetIndex >= this.state.lines.length - 1 && this._lastLine().isEof()) {
@@ -1074,7 +1074,7 @@ class EditorStore {
         newPosition = targetLine.start
         positionEolStart = true
       } else {
-        let chars = this.replica.getTextRange(targetLine.start, targetLine.end)
+        let chars = targetLine.chars
         let indexAndCursor = TextFontMetrics.indexAndCursorForXValue(this.config.fontSize, upDownAdvanceX, chars)
         newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
 
@@ -1144,7 +1144,7 @@ class EditorStore {
     if(this.replica.charEq(BASE_CHAR, position) || (endOfLine && positionEolStart)) {
       advanceX = 0
     } else {
-      let chars = this.replica.getTextRange(line.start, position)
+      let chars = line.charsTo(position)
       advanceX = TextFontMetrics.advanceXForChars(this.config.fontSize, chars)
     }
 
