@@ -12,7 +12,7 @@ import { default as tokenizer, isWhitespace } from 'tokenizer'
 import writeHtml from '../core/htmlwriter'
 import writeText from '../core/textwriter'
 import TextFontMetrics from '../core/TextFontMetrics'
-import { lineContainingChar } from '../core/EditorUtils'
+import { Line, lineContainingChar } from '../core/EditorCommon'
 
 /**
  * The EditorStore is the editor's single source of truth for application state and logic related to the editor.
@@ -592,34 +592,7 @@ class EditorStore {
 
     let pushLine = (line) => {
       if(line.end) {
-        lines.push({
-          isHard() {
-            return this.end.char === '\n'
-          },
-          isEof() {
-            return this.end === EOF
-          },
-          toString() {
-            let summary = '-'
-            if(this.chars.length > 0) {
-              let text = this.chars.map(c => c.char === '\n' ? '\\n' : c.char)
-              if(text.length > 13) {
-                let textBegin = text.slice(0, 5).join('')
-                let textEnd = text.slice(text.length - 5).join('')
-                summary = textBegin + '...' + textEnd
-              } else {
-                summary = text.join('')
-              }
-            }
-            return `[${summary}] chars=[${this.start.toString()} → ${this.end.toString()}] adv=${this.advance}}`
-          },
-          chars: line.chars,
-          charIds: line.charIds,
-          chunks: line.chunks,
-          start: line.start,
-          end: line.end,
-          advance: line.advance
-        })
+        lines.push(new Line(line.chars, line.charIds, line.chunks, line.start, line.end, line.advance))
       }
       line.reset()
     }

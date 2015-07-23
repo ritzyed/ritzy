@@ -4,6 +4,54 @@ import _ from 'lodash'
 import { BASE_CHAR, EOF } from './RichText'
 
 /**
+ * Represents a Line which is created from the flow algorithm.
+ */
+export class Line {
+  /**
+   *
+   * @param {Array} chars
+   * @param {Set} charIds
+   * @param {Array} chunks
+   * @param {Char} start
+   * @param {Char} end
+   * @param {number} advance
+   */
+  constructor(chars, charIds, chunks, start, end, advance) {
+    this.chars = chars
+    this.charIds = charIds
+    this.chunks = chunks
+    this.start = start
+    this.end = end
+    this.advance = advance
+  }
+
+  toString() {
+    let summary = '-'
+    if(this.chars.length > 0) {
+      let text = this.chars.map(c => c.char === '\n' ? '\\n' : c.char)
+      if(text.length > 13) {
+        let textBegin = text.slice(0, 5).join('')
+        let textEnd = text.slice(text.length - 5).join('')
+        summary = textBegin + '...' + textEnd
+      } else {
+        summary = text.join('')
+      }
+    }
+    return `[${summary}] chars=[${this.start.toString()} → ${this.end.toString()}] adv=${this.advance}}`
+  }
+
+  isHard() {
+    return this.end.char === '\n'
+  }
+
+  isEof() {
+    return this.end === EOF
+  }
+}
+
+const EMPTY_LINE = new Line([], new Set(), [], BASE_CHAR, EOF, 0)
+
+/**
  * Search the given replica and line search space for the line containing the provided char. If the search
  * space is empty, an empty "virtual" line starting at BASE_CHAR and ending at EOF is returned.
  * @param replica The replica containing all the characters.
@@ -17,21 +65,9 @@ export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
 
   if(!searchSpace || searchSpace.length === 0) {
     return {
-      line: {
-        isHard() {
-          return false
-        },
-        isEof() {
-          return true
-        },
-        chars: [],
-        charIds: new Set(),
-        chunks: [],
-        start: BASE_CHAR,
-        end: EOF,
-        advance: 0
-      },
-      endOfLine: true
+      line: EMPTY_LINE,
+      index: -1,
+      endOfLine: null
     }
   }
 
