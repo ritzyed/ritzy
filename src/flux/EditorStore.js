@@ -1097,13 +1097,13 @@ class EditorStore {
         attr[attribute] = true
 
         for(let i = 0; i < charsWithAttrNotSet.length; i++) {
-          let currentAttrs = charsWithAttrNotSet[i].attributes
+          let currentAttrs = charsWithAttrNotSet[i].copyOfAttributes()
           if(exclusiveWith && currentAttrs && currentAttrs[exclusiveWith]) delete currentAttrs[exclusiveWith]
           setAttr[charsWithAttrNotSet[i].id] = currentAttrs ? _.merge(currentAttrs, attr) : attr
         }
       } else {
         for(let i = 0; i < selectionChars.length; i++) {
-          let currentAttrs = selectionChars[i].attributes
+          let currentAttrs = selectionChars[i].copyOfAttributes()
           delete currentAttrs[attribute]
           setAttr[selectionChars[i].id] = currentAttrs
         }
@@ -1121,7 +1121,7 @@ class EditorStore {
           activeAttributes[exclusiveWith] = false
         }
       } else if(this.state.position) {
-        let currentAttrs = this._relativeChar(this.state.position, 0, 'limit').attributes
+        let currentAttrs = this._relativeChar(this.state.position, 0, 'limit').copyOfAttributes()
         if(currentAttrs) {
           currentAttrs[attribute] = !currentAttrs[attribute]
           activeAttributes = currentAttrs

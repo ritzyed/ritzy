@@ -34,7 +34,7 @@ describe('RichText TextData', () => {
     assert.strictEqual(textData.text(), 'a')
     assert.strictEqual(textData.len(), 2)  // includes initial id
     assert.deepEqual(textData.getChar(0), BASE_CHAR)
-    assert.deepEqual(textData.getChar(1), new Char(charId, 'a'))
+    assert.deepEqual(textData.getChar(1), new Char(charId, 'a', null, null))
   })
 
   it('getting, inserting, or deleting a non-existent character throws an error', () => {
@@ -74,22 +74,22 @@ describe('RichText TextData', () => {
 
     assert.strictEqual(textData.text(),'123')
     assert.strictEqual(textData.len(), 4)  // includes initial id
-    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1'))
+    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', null, null))
 
     textData.deleteChar(2)
     assert.strictEqual(textData.text(), '13')
     assert.strictEqual(textData.len(), 3)  // includes initial id
-    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', ['00002+test']))
+    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', ['00002+test'], null))
 
     textData.deleteChar(2)
     assert.strictEqual(textData.text(), '1')
     assert.strictEqual(textData.len(), 2)  // includes initial id
-    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', ['00002+test', '00003+test']))
+    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', ['00002+test', '00003+test'], null))
 
     textData.deleteChar(1)
     assert.strictEqual(textData.text(), '')
     assert.strictEqual(textData.len(), 1)  // includes initial id
-    assert.deepEqual(textData.getChar(0), new Char(BASE_ID, '', ['00001+test', '00002+test', '00003+test']))
+    assert.deepEqual(textData.getChar(0), new Char(BASE_ID, '', ['00001+test', '00002+test', '00003+test'], null))
   })
 })
 
@@ -107,7 +107,7 @@ describe('RichText', () => {
 
     text.set('def')
     assert.strictEqual(text.data.text(), 'def')
-    assert.strictEqual(charAt(0).deletedIds.length, 9)
+    assert.strictEqual(charAt(0).deletedIds.size, 9)
   })
 
   it('can set a new text with attributes', () => {
@@ -132,7 +132,7 @@ describe('RichText', () => {
     for(let i = 1; i <= 3; i++) {
       assert.deepEqual(charAt(i).attributes, { bold: true, underline: true }, i)
     }
-    assert.strictEqual(charAt(0).deletedIds.length, 9)
+    assert.strictEqual(charAt(0).deletedIds.size, 9)
   })
 
   it('can apply deltas', () => {
@@ -165,8 +165,8 @@ describe('RichText', () => {
       { delete: 3 }
     ])
     assert.strictEqual(text.data.text(), 'DEFxyz')
-    assert.strictEqual(charAt(0).deletedIds.length, 3)
-    assert.strictEqual(charAt(3).deletedIds.length, 3)
+    assert.strictEqual(charAt(0).deletedIds.size, 3)
+    assert.strictEqual(charAt(3).deletedIds.size, 3)
 
     // insert and delete combinations
     text.applyDelta([
@@ -211,19 +211,19 @@ describe('RichText', () => {
     validate([
       {insert: 'A'}
     ])
-    assert.strictEqual(text.text, 'Aabcdef')
+    assert.strictEqual(text.text(), 'Aabcdef')
 
     validate([
       {retain: 2},
       {insert: 'B'}
     ])
-    assert.strictEqual(text.text, 'AaBbcdef')
+    assert.strictEqual(text.text(), 'AaBbcdef')
 
     validate([
       {retain: 8},
       {insert: 'G'}
     ])
-    assert.strictEqual(text.text, 'AaBbcdefG')
+    assert.strictEqual(text.text(), 'AaBbcdefG')
 
     validate([
       { retain: 4 },
@@ -231,7 +231,7 @@ describe('RichText', () => {
       { retain: 3 },
       { insert: 'FZZ' }
     ])
-    assert.strictEqual(text.text, 'AaBbCZZcdeFZZfG')
+    assert.strictEqual(text.text(), 'AaBbCZZcdeFZZfG')
 
     // handle a non-causal insert
     let ins = {}
@@ -259,19 +259,19 @@ describe('RichText', () => {
     validate([
       { delete: 1 }
     ])
-    assert.strictEqual(text.text, 'bcdef1234')
+    assert.strictEqual(text.text(), 'bcdef1234')
 
     validate([
       {retain: 2},
       {delete: 1}
     ])
-    assert.strictEqual(text.text, 'bcef1234')
+    assert.strictEqual(text.text(), 'bcef1234')
 
     validate([
       {retain: 2},
       {delete: 2}
     ])
-    assert.strictEqual(text.text, 'bc1234')
+    assert.strictEqual(text.text(), 'bc1234')
 
     validate([
       {retain: 2},
@@ -279,7 +279,7 @@ describe('RichText', () => {
       {retain: 1},
       {delete: 1}
     ])
-    assert.strictEqual(text.text, 'bc3')
+    assert.strictEqual(text.text(), 'bc3')
 
     // handle a non-causal delete
     let rm = {}
@@ -297,7 +297,7 @@ describe('RichText', () => {
     ins[charOfB.id] = { value: 'B' }
     text.insert(ins)
 
-    assert.strictEqual(text.text, "abBcdef")
+    assert.strictEqual(text.text(), "abBcdef")
   })
 
   it('inserts a character with attributes', () => {
@@ -310,10 +310,10 @@ describe('RichText', () => {
     ins[charOfB.id] = { value: 'B', attributes: { bold: true } }
     text.insert(ins)
 
-    assert.strictEqual(text.text, "abBcdef")
-    assert.isUndefined(text.getCharAt(2).attributes)
+    assert.strictEqual(text.text(), "abBcdef")
+    assert.isNull(text.getCharAt(2).attributes)
     assert.deepEqual(text.getCharAt(3).attributes, { bold: true })
-    assert.isUndefined(text.getCharAt(4).attributes)
+    assert.isNull(text.getCharAt(4).attributes)
   })
 
   it('inserted character attributes are not modifiable by reference', () => {
@@ -328,9 +328,12 @@ describe('RichText', () => {
     text.insert(ins)
 
     assert.deepEqual(text.getCharAt(3).attributes, { bold: true })
+    assert.throw(() => { attributes.italic = true }, `Can't add property italic, object is not extensible`)
+    assert.deepEqual(text.getCharAt(3).attributes, { bold: true })
 
-    attributes.italic = true
-    assert.deepEqual(attributes, { bold: true, italic: true })
+    let copyOfAttributes = text.getCharAt(3).copyOfAttributes()
+    assert.deepEqual(copyOfAttributes, { bold: true })
+    copyOfAttributes.italic = true
     assert.deepEqual(text.getCharAt(3).attributes, { bold: true })
   })
 
@@ -344,7 +347,7 @@ describe('RichText', () => {
     ins[charOfB.id] = { value: 'ZZZ' }
     text.insert(ins)
 
-    assert.strictEqual(text.text, "abZZZcdef")
+    assert.strictEqual(text.text(), "abZZZcdef")
   })
 
   it('inserts multiple characters with attributes', () => {
@@ -357,12 +360,12 @@ describe('RichText', () => {
     ins[charOfB.id] = { value: 'ZZZ', attributes: { bold: true } }
     text.insert(ins)
 
-    assert.strictEqual(text.text, "abZZZcdef")
-    assert.isUndefined(text.getCharAt(2).attributes)
+    assert.strictEqual(text.text(), "abZZZcdef")
+    assert.isNull(text.getCharAt(2).attributes)
     assert.deepEqual(text.getCharAt(3).attributes, { bold: true })
     assert.deepEqual(text.getCharAt(4).attributes, { bold: true })
     assert.deepEqual(text.getCharAt(5).attributes, { bold: true })
-    assert.isUndefined(text.getCharAt(6).attributes)
+    assert.isNull(text.getCharAt(6).attributes)
   })
 
   it('deletes a character and places the deleted id into the previous character\'s deletion list', () => {
@@ -376,7 +379,7 @@ describe('RichText', () => {
     rm[charOfB.id] = true
     text.remove(rm)
 
-    assert.deepEqual(text.getCharAt(1).deletedIds, [charOfB.id])
+    assert.deepEqual(text.getCharAt(1).deletedIds, new Set([charOfB.id]))
   })
 
   it('determines whether chars are equal', () => {
@@ -445,7 +448,7 @@ describe('RichText', () => {
     ins[charOfB.id] = { value: 'B' }
     text.insert(ins)
 
-    assert.strictEqual(text.text, "aBcdef")
+    assert.strictEqual(text.text(), "aBcdef")
   })
 
   it('can get char information at a position', () => {
@@ -643,9 +646,9 @@ describe('RichText', () => {
 
     var char2Attrs = charAt(2).attributes
     assert.deepEqual(char2Attrs, { bold: true })
-    char2Attrs.italic = true
-    assert.deepEqual(char2Attrs, { bold: true, italic: true })
+    assert.throw(() => { char2Attrs.italic = true }, `Can't add property italic, object is not extensible`)
     assert.deepEqual(charAt(2).attributes, { bold: true })
+    assert.deepEqual(charAt(2).copyOfAttributes(), { bold: true })
   })
 
   it('can set attributes of chars', () => {
@@ -663,15 +666,15 @@ describe('RichText', () => {
     attrs[charOfD.id] = { bold: true }
     text.setAttributes(attrs)
 
-    assert.isUndefined(charAt(1).attributes)
+    assert.isNull(charAt(1).attributes)
     assert.deepEqual(charAt(2).attributes, { bold: true })
     assert.deepEqual(charAt(3).attributes, { bold: true })
     assert.deepEqual(charAt(4).attributes, { bold: true })
-    assert.isUndefined(charAt(5).attributes)
-    assert.isUndefined(charAt(6).attributes)
+    assert.isNull(charAt(5).attributes)
+    assert.isNull(charAt(6).attributes)
   })
 
-  it('set character attributes are not modifiable by reference', () => {
+  it('set character attributes are not modifiable by reference but are modifiable locally', () => {
     let text = new Text('/Text#1')
     text.reset()
     text.set('abcdef')
@@ -685,6 +688,7 @@ describe('RichText', () => {
 
     assert.deepEqual(charAt(2).attributes, { bold: true })
 
+    // make sure our set attributes can still be changed (they are not frozen)
     attrsOfB.italic = true
     assert.deepEqual(attrsOfB, { bold: true, italic: true })
     assert.deepEqual(charAt(2).attributes, { bold: true })
