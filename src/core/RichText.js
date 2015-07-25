@@ -340,7 +340,7 @@ let Text = Syncable.extend('Text', {
 
   /**
    * Insert chars with optional attributes at a given position.
-   * @param {object} char The position at which to insert.
+   * @param {Char} char The position at which to insert.
    * @param {string} value The string value to insert.
    * @param {object} [attributes] Attributes to set, or no attributes if not set. The attributes are
    *   cloned before setting so that they cannot be modified by simply changing the object reference.
@@ -357,7 +357,7 @@ let Text = Syncable.extend('Text', {
 
   /**
    * Delete the given chars.
-   * @param {char[]} chars
+   * @param {Char|Char[]} chars
    */
   rmChars(chars) {
     if(!chars) return
@@ -393,7 +393,7 @@ let Text = Syncable.extend('Text', {
   /**
    * Gets the char for the given char or id. Can be used to "refresh" the char information which is
    * a snapshot with the latest replica information.
-   * @param {char|number} charOrId
+   * @param {Char|number} charOrId
    * @returns {*}
    */
   getChar(charOrId) {
@@ -412,6 +412,8 @@ let Text = Syncable.extend('Text', {
 
   /**
    * Determines whether two chars are the same or not.
+   * @param {Char|number} charOrId1
+   * @param {Char|number} charOrId2
    */
   charEq(charOrId1, charOrId2) {
     if(charOrId1 === EOF && charOrId2 === EOF) return charOrId1 === charOrId2
@@ -425,7 +427,7 @@ let Text = Syncable.extend('Text', {
   /**
    * Returns the index of a given char or ID. Index 0 is always the BASE_CHAR. If the char is not
    * found, returns -1.
-   * @param {char|number} charOrId
+   * @param {Char|number} charOrId
    * @param {boolean} [includeDeleted=true] Whether to include deletec chars in the match.
    * @returns number
    */
@@ -442,7 +444,7 @@ let Text = Syncable.extend('Text', {
    * Gets a character relative to another character. Relative can be positive or
    * negative. If the position becomes out of bound, the position can wrap, limit to
    * the end, or error (depending on the last parameter).
-   * @param {char|number} charOrId
+   * @param {Char|string} charOrId
    * @param {number} relative
    * @param {string} [wrap='wrap'] The behavior when the index is out of bounds. Must be one
    *   of 'wrap', 'limit', 'eof', or 'error'. 'eof' returns EOF (-1) if past the end.
@@ -493,8 +495,8 @@ let Text = Syncable.extend('Text', {
   /**
    * Gets all the chars from a given ID (exclusive) to a given ID (inclusive). The length of the returned
    * range is going to be `pos(toChar) - pos(fromChar)`.
-   * @param fromCharOrId
-   * @param toCharOrId If the to char does not exist, then to char is the last char.
+   * @param {Char|string} fromCharOrId
+   * @param {Char|string} [toCharOrId = last] If the to char does not exist, then to char is the last char.
    * @returns {Array}
    */
   getTextRange(fromCharOrId, toCharOrId) {
@@ -534,8 +536,8 @@ let Text = Syncable.extend('Text', {
    * (http://docs.oracle.com/javase/8/docs/api/java/util/Comparator.html#compare-T-T-) and returns
    * a negative integer, zero, or a positive integer as the first argument is positioned before,
    * equal to, or positioned after the second.
-   * @param charOrId1
-   * @param charOrId2
+   * @param {Char|string} charOrId1
+   * @param {Char|string} charOrId2
    * @return {number}
    */
   compareCharPos(charOrId1, charOrId2) {
