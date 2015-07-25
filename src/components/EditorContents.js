@@ -231,7 +231,8 @@ export default React.createClass({
 
   _dumpLines() {
     if(this.state.lines) {
-      console.debug('Current lines:', this.state.lines)
+      console.debug('Lines as Objects:', this.state.lines)
+      this._dumpLinesFormatted('Lines', this.state.lines)
     } else {
       console.debug('No lines')
     }
@@ -255,17 +256,23 @@ export default React.createClass({
   _dumpLinesWithSelection() {
     let linesWithSelection = this._searchLinesWithSelection()
     if(linesWithSelection) {
-      logInGroup('Lines with selection', () => {
-        for(let i = linesWithSelection.left; i <= linesWithSelection.right; i++) {
-          logInGroup(`Index ${i}`, () => {  // eslint-disable-line no-loop-func
-            console.log(this.state.lines[i].toString())
-          })
-        }
-      })
+      let lines = this.state.lines.slice(linesWithSelection.left, linesWithSelection.right + 1)
+      console.debug('Lines with selection as Objects:', lines)
+      this._dumpLinesFormatted('Lines with selection', lines)
     } else {
       console.debug('No selected lines')
     }
     EditorActions.focusInput()
+  },
+
+  _dumpLinesFormatted(logText, lines) {
+    logInGroup(logText, () => {
+      for(let i = 0; i < lines.length; i++) {
+        logInGroup(`Index ${i}`, () => {  // eslint-disable-line no-loop-func
+          console.debug(lines[i].toString())
+        })
+      }
+    })
   },
 
   _forceFlow() {

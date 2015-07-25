@@ -28,16 +28,22 @@ export class Line {
   toString() {
     let summary = '-'
     if(this.chars.length > 0) {
-      let text = this.chars.map(c => c.char === '\n' ? '\\n' : c.char)
+      let text = this.chars.map(c => c.char === '\n' ? '↵' : c.char)
       if(text.length > 13) {
         let textBegin = text.slice(0, 5).join('')
         let textEnd = text.slice(text.length - 5).join('')
-        summary = textBegin + '...' + textEnd
+        summary = textBegin + '…' + textEnd
       } else {
         summary = text.join('')
       }
     }
-    return `[${summary}] chars=[${this.start.toString()} → ${this.end.toString()}] adv=${this.advance}}`
+    let first = this.chars.length > 1 ? this.first().toString() : ''
+    let second = this.chars.length > 2 ? this.chars[1].toString() : ''
+    let summaryBegin = first.length > 0 && second.length > 0 ? first + ' ' + second : first + second
+    let penultimate = this.chars.length > 1 ? this.chars[this.chars.length - 2].toString() : ''
+    let summaryEnd = penultimate.length > 0 ? penultimate + ' ' + this.end.toString() : this.end.toString()
+    let summaryChars = summaryBegin.length > 0 ? `${summaryBegin} … ${summaryEnd}` : summaryEnd
+    return `[${summary}] start=${this.start.toString()} chars=[${summaryChars}] adv=${this.advance}}`
   }
 
   isHard() {

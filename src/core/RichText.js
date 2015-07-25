@@ -25,7 +25,7 @@ class Char {
   }
 
   toString() {
-    let char = this.char.replace('\n', '\\n').replace(' ', '_')
+    let char = this.char.replace('\n', '↵').replace(' ', '␣')
     return `${char} (${this.id})}`
   }
 }
