@@ -1,3 +1,4 @@
+import 'babel/polyfill'
 import _ from 'lodash'
 import invariant from 'react/lib/invariant'
 
@@ -11,7 +12,12 @@ import { default as tokenizer, isWhitespace } from 'tokenizer'
 import writeHtml from '../core/htmlwriter'
 import writeText from '../core/textwriter'
 import TextFontMetrics from '../core/TextFontMetrics'
-import { lineContainingChar } from '../core/EditorUtils'
+import { Line, lineContainingChar, charArrayEq } from '../core/EditorCommon'
+
+const FLOW_DEBUG = false
+const ACTION_DELETE = 'delete'
+const ACTION_INSERT = 'insert'
+const ACTION_ATTRIBUTES = 'attributes'
 
 /**
  * The EditorStore is the editor's single source of truth for application state and logic related to the editor.
@@ -45,6 +51,7 @@ class EditorStore {
   }
 
   replicaUpdated() {
+    // TODO can we determine what changed and do a more focused flow via the modifications parameter?
     this._flow()
   }
 
@@ -287,11 +294,12 @@ class EditorStore {
   }
 
   insertCharsBatch(chunks) {
+    let firstInsertPosition = this.state.position
     let insertPosition = null
     chunks.forEach(c => {
       insertPosition = this._insertChars(c.text, c.attrs || {}, insertPosition, false)
     })
-    this._flow()
+    this._flow({start: firstInsertPosition, end: insertPosition, action: 'insert'})
   }
 
   eraseCharBack() {
@@ -300,7 +308,7 @@ class EditorStore {
     } else if(!this.replica.charEq(this.state.position, BASE_CHAR)) {
       let position = this._relativeChar(this.state.position, -1)
       this.replica.rmChars(this.state.position)
-      this._flow()
+      this._flow({ start: position, end: this.state.position, action: ACTION_DELETE})
 
       let endOfLine = lineContainingChar(this.replica, this.state.lines, position).endOfLine
       this._setPosition(position, endOfLine)
@@ -313,7 +321,7 @@ class EditorStore {
     } else if(!this._cursorAtEnd()) {
       let next = this._relativeChar(this.state.position, 1, 'limit')
       this.replica.rmChars(next)
-      this._flow()
+      this._flow({ start: this.state.position, end: next, action: ACTION_DELETE})
 
       let endOfLine = lineContainingChar(this.replica, this.state.lines, this.state.position).endOfLine
       this._setPosition(this.state.position, endOfLine)
@@ -339,7 +347,7 @@ class EditorStore {
 
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
-      this._flow()
+      this._flow({ start: wordChars[0], end: wordChars[wordChars.length - 1], action: ACTION_DELETE})
 
       let endOfLine = lineContainingChar(this.replica, this.state.lines, position).endOfLine
       this._setPosition(position, endOfLine)
@@ -369,7 +377,7 @@ class EditorStore {
 
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
-      this._flow()
+      this._flow({ start: wordChars[0], end: wordChars[wordChars.length - 1], action: ACTION_DELETE})
 
       let endOfLine = lineContainingChar(this.replica, this.state.lines, position).endOfLine
       this._setPosition(position, endOfLine)
@@ -410,9 +418,6 @@ class EditorStore {
     if(_.isUndefined(reflow)) reflow = true
     let position
 
-    // if the last char is a newline, then we want to position on the start of the next line
-    let positionEolStart = value.slice(-1) === '\n'
-
     if(this.state.selectionActive) {
       position = this.state.selectionLeftChar
       this._eraseSelection()
@@ -442,11 +447,14 @@ class EditorStore {
 
     this.replica.insertCharsAt(position, value, attributes)
 
-    if(reflow) this._flow()
-
     let relativeMove = value.length
     let newPosition = this._relativeChar(position, relativeMove)
-    this._setPosition(newPosition, positionEolStart)
+    // if the last char is a newline, then we want to position on the start of the next line
+    let newPositionEolStart = value.slice(-1) === '\n'
+
+    if(reflow) this._flow({start: position, end: newPosition, action: ACTION_INSERT})
+
+    this._setPosition(newPosition, newPositionEolStart)
     this.activeAttributes = attributes
 
     // return the new position so that multiple insertChars calls can be made in sequence
@@ -470,15 +478,51 @@ class EditorStore {
    *
    * Even though all of the state here can be calculated from the replica, this is not done at render time
    * because the line state must be available when user input such as clicks or selections are made.
-   * TODO Alternatively, consider just running this algorithm each time the lines/chunks are needed?
    *
-   * TODO provide the location @ which changes happened, and only flow from that line forward to where
-   * the lines match what they were before
+   * Because the algorithm to shortcut the flow before and after the changed area is complex, and can fail
+   * without causing an obvious problem other than performance, debug statements are included and can be
+   * enabled by setting FLOW_DEBUG to true.
    */
-  _flow() {
+  _flow(modification) {
     let lines = []
+
+    let modStartAtLine
+    let startChar
+    if(modification) {
+      let startLineIndex = 0
+      modStartAtLine = lineContainingChar(this.replica, this.state.lines, modification.start, true)
+
+      // shortcut beginning of flow, start at the line prior to the one containing the modification position
+      if(modStartAtLine && modStartAtLine.index > 0) {
+        startLineIndex = modStartAtLine.index - 1
+        // if the previous line is a hard return, we can ignore it --> no changes on this line could affect it
+        if(this.state.lines[startLineIndex].isHard()) {
+          startLineIndex = modStartAtLine.index
+        }
+        pushArray(lines, this.state.lines.slice(0, startLineIndex))
+        startChar = this.state.lines[startLineIndex].start
+      } else {
+        startChar = BASE_CHAR
+      }
+    } else {
+      startChar = BASE_CHAR
+    }
+
+    if(FLOW_DEBUG) {
+      let modificationSummary
+      if(modification) {
+        modificationSummary = modification.action + ' ' + modification.start.toString() + ' … ' + modification.end.toString()
+      } else {
+        modificationSummary = 'n/a'
+      }
+      console.group(`FLOW: modification=${modificationSummary} startChar=${startChar.toString()}`)
+    }
+
+    let newLine = false
+
     let currentWord = {
       chars: [],
+      length: 0,
       pendingChunks: [],
       advance: 0,
       lineAdvance: 0,
@@ -488,6 +532,7 @@ class EditorStore {
 
       reset() {
         this.chars = []
+        this.length = 0
         this.pendingChunks = []
         this.advance = 0
         this.lineAdvance = 0
@@ -509,31 +554,35 @@ class EditorStore {
         }
         this.lineAdvance += charAdvance
         this.chars.push(c)
+        this.length++
       },
 
       popChar() {
+        this.length--
         return this.chars.pop()
       },
 
       pushChunks() {
-        if(this.chars.length > 0) {
+        if(this.length > 0) {
           this.pendingChunks.push({
-            text: this.chars,
+            length: this.length,
             attributes: this.attributes
           })
         }
-        this.chars = []
         this.attributes = null
+        this.length = 0
       }
     }
 
     let currentLine = {
+      chars: [],
       chunks: [],
       advance: 0,
-      start: BASE_CHAR,
+      start: null,
       end: null,
 
       reset() {
+        this.chars = []
         this.chunks = []
         this.advance = 0
         this.start = lines.length > 0 ? lines[lines.length - 1].end : BASE_CHAR
@@ -541,25 +590,37 @@ class EditorStore {
       },
 
       pushWord(word) {
-        invariant(word.chars.length === 0, 'Must complete word before pushing.')
-        if(word.pendingChunks.length > 0) {
-          // if the last chunk in the line matches attributes with the first word chunk, join them to avoid extra spans
-          if(this.chunks.length > 0
-            && attributesEqual(this.chunks[this.chunks.length - 1].attributes, word.pendingChunks[0].attributes)) {
-            pushArray(this.chunks[this.chunks.length - 1].text, word.pendingChunks[0].text)
+        pushArray(this.chars, word.chars)
+
+        let lastChunk
+        if(this.chunks.length > 0) {
+          lastChunk = this.chunks[this.chunks.length - 1]
+          // if the last chunk in the line matches attributes with the first word chunk, join them to minimize chunks
+          if(attributesEqual(lastChunk.attributes, word.pendingChunks[0].attributes)) {
+            lastChunk.end += word.pendingChunks[0].length
             word.pendingChunks.shift()
           }
-
-          pushArray(this.chunks, word.pendingChunks)
-          let lastChunk = this.chunks[this.chunks.length - 1]
-          this.end = lastChunk.text[lastChunk.text.length - 1]
         }
+
+        // set the start and end of each chunk, start and end are suitable for feeding to chars.slice i.e. end is exclusive
+        let start = lastChunk ? lastChunk.end : 0
+        word.pendingChunks.map(c => {
+          c.start = start
+          c.end = start + c.length
+          start = c.end
+          delete c.length
+          return c
+        })
+
+        pushArray(this.chunks, word.pendingChunks)
+        this.end = this.chars[this.chars.length - 1]
         this.advance += word.lineAdvance
         word.reset()
       },
 
       pushNewline(c) {
         invariant(c.char === '\n', 'pushNewline can only be called with a newline char.')
+        this.chars.push(c)
         this.end = c
       },
 
@@ -570,36 +631,79 @@ class EditorStore {
 
     let pushLine = (line) => {
       if(line.end) {
-        lines.push({
-          isHard() {
-            return this.end.char === '\n'
-          },
-          isEof() {
-            return this.end === EOF
-          },
-          toString() {
-            let chunks = '-'
-            if(this.chunks && this.chunks.length > 0) {
-              let text = this.chunks[0].text.map(c => c.char)
-              if(text.length > 10) {
-                text = text.slice(0, 10)
-                chunks = text.join('') + '...'
-              } else {
-                chunks = text.join('')
-              }
-            }
-            return `${chunks} chars=[${this.start.toString()} → ${this.end.toString()}] adv=${this.advance}}`
-          },
-          chunks: line.chunks,
-          start: line.start,
-          end: line.end,
-          advance: line.advance
-        })
+        let l = new Line(line.chars, line.chunks, line.start, line.end, line.advance)
+        lines.push(l)
+        if(FLOW_DEBUG) {
+          console.debug(`PUSHED LINE (index=${lines.length - 1}): ${l.toString()}`)
+        }
+        newLine = true
       }
       line.reset()
     }
 
+    let modLineOffset
+
     let processChar = (c) => {
+      if(newLine && modification && this.state.lines) {
+        // Shortcut the flow algorithm if we know and are past the line after the modifications, and
+        // any existing lines past that point match up with our current buffer (word + char). Once modLineOffset
+        // is defined, we'll keep doing the search for each pushed line
+        if(_.isUndefined(modLineOffset)) {
+          if(modification.action === ACTION_INSERT) {
+            if(lines[lines.length - 1].hasChar(modification.end)) {
+              // the number of lines inserted
+              modLineOffset = lines.length - modStartAtLine.index
+              if(modification.end.char === '\n') modLineOffset++
+            }
+          } else if(modification.action === ACTION_DELETE) {
+            if(lines.length > modStartAtLine.index) {
+              let modEndAtLine = lineContainingChar(this.replica, this.state.lines, modification.end)
+              modLineOffset = modStartAtLine.index - modEndAtLine.index
+            }
+          } else if(modification.action === ACTION_ATTRIBUTES) {
+            if(lines[lines.length - 1].hasChar(modification.end)) {
+              // the number of lines less or more based on the attributes change
+              let modEndAtLine = lineContainingChar(this.replica, this.state.lines, modification.end)
+              modLineOffset = lines.length - modEndAtLine.index
+            }
+          }
+        }
+        if(!_.isUndefined(modLineOffset)) {
+          let startIndex = lines.length - modLineOffset
+          let matchChars = _.clone(currentWord.chars)
+          matchChars.push(c)
+
+          if(FLOW_DEBUG) {
+            console.group(`MATCH ATTEMPT: chars=[${matchChars.map(ch => ch.char === '\n' ? '↵' : ch.char).join('')}] modLineOffset=${modLineOffset}`)
+          }
+          let iterations = 0
+          let matched = false
+          for(let i = startIndex; i < this.state.lines.length && !matched; i++) {
+            iterations++
+            if(FLOW_DEBUG) {
+              console.debug(this.state.lines[i].toString())
+            }
+            if(charArrayEq(matchChars, this.state.lines[i].chars.slice(0, matchChars.length))) {
+              // line matches, so just grab the rest of the lines from the current state, setting start to match end
+              let existingLines = this.state.lines.slice(i)
+              existingLines[0].start = lines[lines.length - 1].end
+              pushArray(lines, existingLines)
+              matched = true
+            }
+            // No point in checking more if past a hard return
+            if(i > startIndex && this.state.lines[i - 1].isHard()) break
+          }
+          if(FLOW_DEBUG) {
+            console.debug(`Match ${matched ? 'succeeded' : 'failed'} in ${iterations} iterations.`)
+            console.groupEnd()
+          }
+          if(matched) {
+            return false
+          }
+        }
+        newLine = false
+      }
+
       if (!attributesEqual(currentWord.attributes, c.attributes)) {
         currentWord.pushChunks()
       }
@@ -626,29 +730,40 @@ class EditorStore {
         currentWord.pushChunks()
         currentLine.pushWord(currentWord)
         pushLine(currentLine)
-        processChar(lastChar)
+        return processChar(lastChar)
       } else if (currentLine.advance + currentWord.advance > this.config.width) {
+        pushLine(currentLine)
+      }
+      return true
+    }
+
+    currentLine.start = startChar
+    let contentIterator = this.replica.getTextRange(startChar)[Symbol.iterator]()
+    let e
+    let completed = false
+    while(!(e = contentIterator.next()).done && !completed) {
+      if(!processChar(e.value)) {
+        completed = true
+      }
+    }
+
+    if(!completed) {
+      currentWord.pushChunks()
+      currentLine.pushWord(currentWord)
+      pushLine(currentLine)
+
+      // add an empty last line if the last line ended with a newline
+      if(lines.length > 0 && lines[lines.length - 1].isHard()) {
+        currentLine.pushEof()
         pushLine(currentLine)
       }
     }
 
-    let contentIterator = this.replica.getTextRange(BASE_CHAR)[Symbol.iterator]()
-    let e
-    while(!(e = contentIterator.next()).done) {
-      processChar(e.value)
-    }
-
-    currentWord.pushChunks()
-    currentLine.pushWord(currentWord)
-    pushLine(currentLine)
-
-    // add an empty last line if the last line ended with a newline
-    if(lines.length > 0 && lines[lines.length - 1].isHard()) {
-      currentLine.pushEof()
-      pushLine(currentLine)
-    }
-
     this.setState({lines: lines})
+
+    if(FLOW_DEBUG) {
+      console.groupEnd()
+    }
   }
 
   /**
@@ -912,7 +1027,7 @@ class EditorStore {
 
     let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
     this.replica.rmChars(selectionChars)
-    this._flow()
+    this._flow({ start: this.state.selectionLeftChar, end: this.state.selectionRightChar, action: ACTION_DELETE})
 
     let endOfLine = lineContainingChar(this.replica, this.state.lines, position).endOfLine
     this._setPosition(position, endOfLine)
@@ -993,7 +1108,7 @@ class EditorStore {
         newPosition = targetLine.start
         positionEolStart = true
       } else {
-        let chars = this.replica.getTextRange(targetLine.start, targetLine.end)
+        let chars = targetLine.chars
         let indexAndCursor = TextFontMetrics.indexAndCursorForXValue(this.config.fontSize, upDownAdvanceX, chars)
         newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
 
@@ -1062,7 +1177,7 @@ class EditorStore {
       let toChar = this._relativeChar(BASE_CHAR, -1)
       this._modifySelection(toChar, false)
       // at end of last line, reset the advanceX to the end of the line, and positionEolStart is now false
-      let chars = this.replica.getTextRange(line.start, line.end)
+      let chars = line.chars
       this.upDownAdvanceX = TextFontMetrics.advanceXForChars(this.config.fontSize, chars)
       this.upDownPositionEolStart = false
     } else if(targetIndex >= this.state.lines.length - 1 && this._lastLine().isEof()) {
@@ -1076,7 +1191,7 @@ class EditorStore {
         newPosition = targetLine.start
         positionEolStart = true
       } else {
-        let chars = this.replica.getTextRange(targetLine.start, targetLine.end)
+        let chars = targetLine.chars
         let indexAndCursor = TextFontMetrics.indexAndCursorForXValue(this.config.fontSize, upDownAdvanceX, chars)
         newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
 
@@ -1099,20 +1214,20 @@ class EditorStore {
         attr[attribute] = true
 
         for(let i = 0; i < charsWithAttrNotSet.length; i++) {
-          let currentAttrs = charsWithAttrNotSet[i].attributes
+          let currentAttrs = charsWithAttrNotSet[i].copyOfAttributes()
           if(exclusiveWith && currentAttrs && currentAttrs[exclusiveWith]) delete currentAttrs[exclusiveWith]
           setAttr[charsWithAttrNotSet[i].id] = currentAttrs ? _.merge(currentAttrs, attr) : attr
         }
       } else {
         for(let i = 0; i < selectionChars.length; i++) {
-          let currentAttrs = selectionChars[i].attributes
+          let currentAttrs = selectionChars[i].copyOfAttributes()
           delete currentAttrs[attribute]
           setAttr[selectionChars[i].id] = currentAttrs
         }
       }
 
       this.replica.setAttributes(setAttr)
-      this._flow()
+      this._flow({ start: this.state.selectionLeftChar, end: this.state.selectionRightChar, action: ACTION_ATTRIBUTES})
     } else {
       // TODO set the state of the toolbar so the toolbar button can be rendered accordingly
       // no selection so we are either toggling the explicitly set state, or setting the state explicitly
@@ -1123,7 +1238,7 @@ class EditorStore {
           activeAttributes[exclusiveWith] = false
         }
       } else if(this.state.position) {
-        let currentAttrs = this._relativeChar(this.state.position, 0, 'limit').attributes
+        let currentAttrs = this._relativeChar(this.state.position, 0, 'limit').copyOfAttributes()
         if(currentAttrs) {
           currentAttrs[attribute] = !currentAttrs[attribute]
           activeAttributes = currentAttrs
@@ -1146,7 +1261,7 @@ class EditorStore {
     if(this.replica.charEq(BASE_CHAR, position) || (endOfLine && positionEolStart)) {
       advanceX = 0
     } else {
-      let chars = this.replica.getTextRange(line.start, position)
+      let chars = line.charsTo(position)
       advanceX = TextFontMetrics.advanceXForChars(this.config.fontSize, chars)
     }
 
@@ -1175,40 +1290,21 @@ class EditorStore {
       }
     }
 
+    let line = this.state.lines[lineIndex]
     let position
     let positionEolStart
-    let line = this.state.lines[lineIndex]
-    let traversedX = 0
-    for(let chunk of line.chunks) {
-      let advanceX = TextFontMetrics.advanceXForChars(this.config.fontSize, chunk.text)
-      if(traversedX + advanceX >= x) {
-        let indexAndCursor = TextFontMetrics.indexAndCursorForXValue(this.config.fontSize, x - traversedX, chunk.text)
-        position = this._charPositionRelativeToIndex(indexAndCursor.index, chunk.text)
-
-        // if clicked a line beginning (char position is end of last line) then position beginning of clicked line
-        let cursorX = traversedX + indexAndCursor.cursorX
-        positionEolStart = cursorX === 0 || line.isEof()
-
-        // note that the cursorX is relative to the beginning of the line
-        return {
-          position: position,
-          positionEolStart: positionEolStart
-        }
-      } else {
-        traversedX += advanceX
-      }
-    }
 
     if(line.isEof()) {
       position = line.start
       positionEolStart = true
-    } else if(line.isHard() && (line.chunks.length > 0 || !this.replica.charEq(line.start, line.end))) {
-      // position just before the end newline
-      position = this._relativeChar(line.end, -1, 'limit')
-      positionEolStart = true
     } else {
-      position = line.end
-      positionEolStart = false
+      let indexAndCursor = TextFontMetrics.indexAndCursorForXValue(this.config.fontSize, x, line.chars)
+      position = this._charPositionRelativeToIndex(indexAndCursor.index, line.chars)
+
+      // if clicked a line beginning (char position is end of last line) then position beginning of clicked line
+      // note that the cursorX is relative to the beginning of the line
+      let cursorX = indexAndCursor.cursorX
+      positionEolStart = cursorX === 0 || line.isEof()
     }
 
     return {
