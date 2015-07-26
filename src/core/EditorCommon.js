@@ -10,19 +10,36 @@ export class Line {
   /**
    *
    * @param {Array} chars
-   * @param {Set} charIds
    * @param {Array} chunks
    * @param {Char} start
    * @param {Char} end
    * @param {number} advance
    */
-  constructor(chars, charIds, chunks, start, end, advance) {
+  constructor(chars, chunks, start, end, advance) {
     this.chars = chars
-    this.charIds = charIds
     this.chunks = chunks
     this.start = start
     this.end = end
     this.advance = advance
+  }
+
+  hasChar(char) {
+    if(!char) return false
+    // lazy evaluation of charIds if necessary
+    if(!this._charIds) {
+      this._charIds = new Set()
+      this.chars.forEach(c => this._charIds.add(c.id))
+    }
+    return this._charIds.has(char.id)
+  }
+
+  /**
+   * The first character of the line. This is not equal to "start" since start is the *position* at which the
+   * first character is present (i.e. the previous char === the previous line.end).
+   * @returns {Char}
+   */
+  first() {
+    return this.chars.length > 0 ? this.chars[0] : null
   }
 
   toString() {
@@ -90,7 +107,7 @@ export class Line {
   }
 }
 
-const EMPTY_LINE = new Line([], new Set(), [], BASE_CHAR, EOF, 0)
+const EMPTY_LINE = new Line([], [], BASE_CHAR, EOF, 0)
 
 /**
  * Search the given replica and line search space for the line containing the provided char. If the search
@@ -129,7 +146,7 @@ export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
 
   for(let i = 0; i < searchSpace.length; i++) {
     let line = searchSpace[i]
-    if(line.charIds.has(char.id)) {
+    if(line.hasChar(char)) {
       let index = i
       let endOfLine = replica.charEq(char, line.end)
       if(nextIfEol && endOfLine && !line.isEof() && searchSpace.length - 1 > i) {
@@ -146,4 +163,23 @@ export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
   }
 
   return null
+}
+
+export function charEq(charOrId1, charOrId2) {
+  if(charOrId1 === charOrId2) return true
+  if(!charOrId1) return Object.is(charOrId1, charOrId2)
+
+  let char1Id = _.has(charOrId1, 'id') ? charOrId1.id : charOrId1
+  let char2Id = _.has(charOrId2, 'id') ? charOrId2.id : charOrId2
+  return char1Id === char2Id
+}
+
+export function charArrayEq(cArr1, cArr2) {
+  if(cArr1 === cArr2) return true
+  if(!cArr1 || !_.isArray(cArr1)) return Object.is(cArr1, cArr2)
+  if(cArr1.length !== cArr2.length) return false
+  for(let i = 0; i < cArr1.length; i++) {
+    if(!charEq(cArr1[i], cArr2[i])) return false
+  }
+  return true
 }
