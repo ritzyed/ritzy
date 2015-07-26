@@ -12,7 +12,7 @@ import { default as tokenizer, isWhitespace } from 'tokenizer'
 import writeHtml from '../core/htmlwriter'
 import writeText from '../core/textwriter'
 import TextFontMetrics from '../core/TextFontMetrics'
-import { Line, lineContainingChar, charArrayEq } from '../core/EditorCommon'
+import { charEq, charArrayEq, Line, lineContainingChar } from '../core/EditorCommon'
 
 const FLOW_DEBUG = false
 const ACTION_DELETE = 'delete'
@@ -100,7 +100,7 @@ class EditorStore {
       return
     }
 
-    let {line} = lineContainingChar(this.replica, this.state.lines, this.state.position, this.state.positionEolStart)
+    let {line} = lineContainingChar(this.state.lines, this.state.position, this.state.positionEolStart)
     this._setPosition(line.start, true)
   }
 
@@ -123,7 +123,7 @@ class EditorStore {
       return
     }
 
-    let {line} = lineContainingChar(this.replica, this.state.lines, this.state.position, this.state.positionEolStart)
+    let {line} = lineContainingChar(this.state.lines, this.state.position, this.state.positionEolStart)
     let position
     let positionEolStart = false
     if(line.isEof() || line.chunks.length === 0) {
@@ -188,7 +188,7 @@ class EditorStore {
   }
 
   selectionStartLine() {
-    let {line} = lineContainingChar(this.replica, this.state.lines, this.state.position, this.state.positionEolStart)
+    let {line} = lineContainingChar(this.state.lines, this.state.position, this.state.positionEolStart)
     this._modifySelection(line.start, true)
   }
 
@@ -211,7 +211,7 @@ class EditorStore {
    * We implement the Google docs behavior here, which seems a bit more intuitive.
    */
   selectionEndLine() {
-    let {line} = lineContainingChar(this.replica, this.state.lines, this.state.position, this.state.positionEolStart)
+    let {line} = lineContainingChar(this.state.lines, this.state.position, this.state.positionEolStart)
     let toChar
     let positionEolStart = false
     if(line.isEof()) {
@@ -233,14 +233,14 @@ class EditorStore {
       positionEolStart = true
     } else {
       position = this._wordStartRelativeTo(this.state.position)
-      positionEolStart = !lineContainingChar(this.replica, this.state.lines, this.state.position).endOfLine
+      positionEolStart = !lineContainingChar(this.state.lines, this.state.position).endOfLine
     }
     this._modifySelection(position, positionEolStart)
   }
 
   selectionWordRight() {
     let position = this._wordEndRelativeTo(this.state.position)
-    let endOfLine = lineContainingChar(this.replica, this.state.lines, this.state.position).endOfLine
+    let endOfLine = lineContainingChar(this.state.lines, this.state.position).endOfLine
 
     this._modifySelection(position, !endOfLine)
   }
@@ -270,7 +270,7 @@ class EditorStore {
    */
   selectWordAtCurrentPosition() {
     if(this.state.lines.length === 0
-      || lineContainingChar(this.replica, this.state.lines, this.state.position, true).line.isEof()) {
+      || lineContainingChar(this.state.lines, this.state.position, true).line.isEof()) {
       this._setPosition(this.state.position)
       this._modifySelection(EOF, true)
     } else {
@@ -305,12 +305,12 @@ class EditorStore {
   eraseCharBack() {
     if(this.state.selectionActive) {
       this._eraseSelection()
-    } else if(!this.replica.charEq(this.state.position, BASE_CHAR)) {
+    } else if(!charEq(this.state.position, BASE_CHAR)) {
       let position = this._relativeChar(this.state.position, -1)
       this.replica.rmChars(this.state.position)
       this._flow({ start: position, end: this.state.position, action: ACTION_DELETE})
 
-      let endOfLine = lineContainingChar(this.replica, this.state.lines, position).endOfLine
+      let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
       this._setPosition(position, endOfLine)
     }
   }
@@ -323,7 +323,7 @@ class EditorStore {
       this.replica.rmChars(next)
       this._flow({ start: this.state.position, end: next, action: ACTION_DELETE})
 
-      let endOfLine = lineContainingChar(this.replica, this.state.lines, this.state.position).endOfLine
+      let endOfLine = lineContainingChar(this.state.lines, this.state.position).endOfLine
       this._setPosition(this.state.position, endOfLine)
     }
   }
@@ -335,7 +335,7 @@ class EditorStore {
       let position = this.state.position
       let start = this._wordStartRelativeTo(position)
       let end = position
-      if(this.replica.charEq(start, position)) {
+      if(charEq(start, position)) {
         // beginning of word, move to the previous word
         let previousStart = this._wordStartRelativeTo(this._relativeChar(position, -1, 'limit'))
         // no previous word, nothing to delete
@@ -349,7 +349,7 @@ class EditorStore {
       this.replica.rmChars(wordChars)
       this._flow({ start: wordChars[0], end: wordChars[wordChars.length - 1], action: ACTION_DELETE})
 
-      let endOfLine = lineContainingChar(this.replica, this.state.lines, position).endOfLine
+      let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
       this._setPosition(position, endOfLine)
     }
   }
@@ -365,7 +365,7 @@ class EditorStore {
       }
       let start = position
       let end = this._wordEndRelativeTo(start, options)
-      if(this.replica.charEq(end, position)) {
+      if(charEq(end, position)) {
         // ending of word, move to the next word
         let nextEnd = this._wordEndRelativeTo(this._relativeChar(position, 1, 'limit'), options)
         // no next word, nothing to delete
@@ -379,7 +379,7 @@ class EditorStore {
       this.replica.rmChars(wordChars)
       this._flow({ start: wordChars[0], end: wordChars[wordChars.length - 1], action: ACTION_DELETE})
 
-      let endOfLine = lineContainingChar(this.replica, this.state.lines, position).endOfLine
+      let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
       this._setPosition(position, endOfLine)
     }
   }
@@ -490,7 +490,7 @@ class EditorStore {
     let startChar
     if(modification) {
       let startLineIndex = 0
-      modStartAtLine = lineContainingChar(this.replica, this.state.lines, modification.start, true)
+      modStartAtLine = lineContainingChar(this.state.lines, modification.start, true)
 
       // shortcut beginning of flow, start at the line prior to the one containing the modification position
       if(modStartAtLine && modStartAtLine.index > 0) {
@@ -657,13 +657,13 @@ class EditorStore {
             }
           } else if(modification.action === ACTION_DELETE) {
             if(lines.length > modStartAtLine.index) {
-              let modEndAtLine = lineContainingChar(this.replica, this.state.lines, modification.end)
+              let modEndAtLine = lineContainingChar(this.state.lines, modification.end)
               modLineOffset = modStartAtLine.index - modEndAtLine.index
             }
           } else if(modification.action === ACTION_ATTRIBUTES) {
             if(lines[lines.length - 1].hasChar(modification.end)) {
               // the number of lines less or more based on the attributes change
-              let modEndAtLine = lineContainingChar(this.replica, this.state.lines, modification.end)
+              let modEndAtLine = lineContainingChar(this.state.lines, modification.end)
               modLineOffset = lines.length - modEndAtLine.index
             }
           }
@@ -833,13 +833,13 @@ class EditorStore {
 
   _emptyEditor() {
     return this.state.lines.length === 0
-      && (this.state.position === EOF || this.replica.charEq(this.state.position, BASE_CHAR))
+      && (this.state.position === EOF || charEq(this.state.position, BASE_CHAR))
   }
 
   _cursorAtEnd() {
     return this._emptyEditor()
-      || this.replica.charEq(this.state.position, this._lastLine().end)
-      || (this._lastLine().isEof() && this.replica.charEq(this.state.position, this._lastLine().start))
+      || charEq(this.state.position, this._lastLine().end)
+      || (this._lastLine().isEof() && charEq(this.state.position, this._lastLine().start))
   }
 
   _getSelection() {
@@ -914,7 +914,7 @@ class EditorStore {
 
     this.setState((previousState) => {
       if(previousState.selectionActive) {
-        if(this.replica.charEq(previousState.selectionAnchorChar, previousState.selectionLeftChar)) {
+        if(charEq(previousState.selectionAnchorChar, previousState.selectionLeftChar)) {
           let compareAnchorPos = this.replica.compareCharPos(toChar, previousState.selectionAnchorChar)
           if(compareAnchorPos < 0) {
             return {
@@ -981,7 +981,7 @@ class EditorStore {
 
   _wordRelativeTo(char, options) {
     let textChars = this.replica.getTextRange(BASE_CHAR)
-    let charIndex = textChars.findIndex(e => this.replica.charEq(e, char)) + 1
+    let charIndex = textChars.findIndex(e => charEq(e, char)) + 1
     let tokenRanges = tokenizer(textChars.map(c => c.char), options)
     for(let i = 0; i < tokenRanges.length; i++) {
       if(charIndex >= tokenRanges[i].start && charIndex < tokenRanges[i].end) {
@@ -1029,7 +1029,7 @@ class EditorStore {
     this.replica.rmChars(selectionChars)
     this._flow({ start: this.state.selectionLeftChar, end: this.state.selectionRightChar, action: ACTION_DELETE})
 
-    let endOfLine = lineContainingChar(this.replica, this.state.lines, position).endOfLine
+    let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
     this._setPosition(position, endOfLine)
   }
 
@@ -1049,7 +1049,7 @@ class EditorStore {
     } else {
       position = this._relativeChar(this.state.position, charCount, 'limit')
     }
-    let endOfLine = lineContainingChar(this.replica, this.state.lines, position).endOfLine
+    let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
     this._setPosition(position, endOfLine)
   }
 
@@ -1113,7 +1113,7 @@ class EditorStore {
         newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
 
         // if the new position is the start of the line, position the cursor at the start of the line
-        positionEolStart = this.replica.charEq(newPosition, targetLine.start)
+        positionEolStart = charEq(newPosition, targetLine.start)
       }
       this._setPosition(newPosition, positionEolStart, false)
     }
@@ -1137,12 +1137,12 @@ class EditorStore {
     }
     let relativeTo = _.bind(wordCount < 0 ? this._wordStartRelativeTo : this._wordEndRelativeTo, this)
     position = relativeTo(position)
-    let endOfLine = lineContainingChar(this.replica, this.state.lines, position).endOfLine
+    let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
     this._setPosition(position, endOfLine)
   }
 
   _selectionLeftRight(charCount) {
-    let endOfLine = lineContainingChar(this.replica, this.state.lines, this.state.position).endOfLine
+    let endOfLine = lineContainingChar(this.state.lines, this.state.position).endOfLine
     let toChar = this._relativeChar(this.state.position, charCount, 'eof')
     if(toChar === EOF && this._lastLine() && !this._lastLine().isEof()) {
       toChar = this._lastLine().end
@@ -1196,7 +1196,7 @@ class EditorStore {
         newPosition = this._charPositionRelativeToIndex(indexAndCursor.index, chars)
 
         // if the new position is the start of the line, position the cursor at the start of the line
-        positionEolStart = this.replica.charEq(newPosition, targetLine.start)
+        positionEolStart = charEq(newPosition, targetLine.start)
       }
       this._modifySelection(newPosition, positionEolStart, false)
     }
@@ -1255,10 +1255,10 @@ class EditorStore {
   }
 
   _lineAndAdvanceAtPosition(position, positionEolStart) {
-    let {line, index, endOfLine} = lineContainingChar(this.replica, this.state.lines, position, positionEolStart)
+    let {line, index, endOfLine} = lineContainingChar(this.state.lines, position, positionEolStart)
     let advanceX
 
-    if(this.replica.charEq(BASE_CHAR, position) || (endOfLine && positionEolStart)) {
+    if(charEq(BASE_CHAR, position) || (endOfLine && positionEolStart)) {
       advanceX = 0
     } else {
       let chars = line.charsTo(position)

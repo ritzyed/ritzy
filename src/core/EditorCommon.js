@@ -110,15 +110,44 @@ export class Line {
 const EMPTY_LINE = new Line([], [], BASE_CHAR, EOF, 0)
 
 /**
- * Search the given replica and line search space for the line containing the provided char. If the search
+ * Determines whether two chars are the same or not.
+ * @param {Char|number} charOrId1
+ * @param {Char|number} charOrId2
+ */
+export function charEq(charOrId1, charOrId2) {
+  if(charOrId1 === charOrId2) return true
+  if(!charOrId1) return Object.is(charOrId1, charOrId2)
+
+  let char1Id = _.has(charOrId1, 'id') ? charOrId1.id : charOrId1
+  let char2Id = _.has(charOrId2, 'id') ? charOrId2.id : charOrId2
+  return char1Id === char2Id
+}
+
+/**
+ * Determines whether two char arrays are the same or not i.e. that the arrays refer to the
+ * same chars. Will also return true if both arrays are undefined or both are null.
+ * @param {Char[]} cArr1
+ * @param {Char[]} cArr2
+ */
+export function charArrayEq(cArr1, cArr2) {
+  if(cArr1 === cArr2) return true
+  if(!cArr1 || !_.isArray(cArr1)) return Object.is(cArr1, cArr2)
+  if(cArr1.length !== cArr2.length) return false
+  for(let i = 0; i < cArr1.length; i++) {
+    if(!charEq(cArr1[i], cArr2[i])) return false
+  }
+  return true
+}
+
+/**
+ * Search the given search space for the line containing the provided char. If the search
  * space is empty, an empty "virtual" line starting at BASE_CHAR and ending at EOF is returned.
- * @param replica The replica containing all the characters.
  * @param searchSpace The set of lines to search.
  * @param char The char to search for.
  * @param  {boolean} [nextIfEol=false] If at end of line, return the next line.
  * @returns {*}
  */
-export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
+export function lineContainingChar(searchSpace, char, nextIfEol) {
   if(_.isUndefined(nextIfEol)) nextIfEol = false
 
   if(!searchSpace || searchSpace.length === 0) {
@@ -130,13 +159,13 @@ export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
   }
 
   // shortcut searches at the beginning or end of the searchSpace, this is used often and these comparisons are fast
-  if(replica.charEq(searchSpace[0].start, char)) {
+  if(charEq(searchSpace[0].start, char)) {
     return {
       line: searchSpace[0],
       index: 0,
-      endOfLine: !replica.charEq(char, BASE_CHAR)
+      endOfLine: !charEq(char, BASE_CHAR)
     }
-  } else if(replica.charEq(searchSpace[searchSpace.length - 1].end, char)) {
+  } else if(charEq(searchSpace[searchSpace.length - 1].end, char)) {
     return {
       line: searchSpace[searchSpace.length - 1],
       index: searchSpace.length - 1,
@@ -148,7 +177,7 @@ export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
     let line = searchSpace[i]
     if(line.hasChar(char)) {
       let index = i
-      let endOfLine = replica.charEq(char, line.end)
+      let endOfLine = charEq(char, line.end)
       if(nextIfEol && endOfLine && !line.isEof() && searchSpace.length - 1 > i) {
         index++
         line = searchSpace[index]
@@ -163,23 +192,4 @@ export function lineContainingChar(replica, searchSpace, char, nextIfEol) {
   }
 
   return null
-}
-
-export function charEq(charOrId1, charOrId2) {
-  if(charOrId1 === charOrId2) return true
-  if(!charOrId1) return Object.is(charOrId1, charOrId2)
-
-  let char1Id = _.has(charOrId1, 'id') ? charOrId1.id : charOrId1
-  let char2Id = _.has(charOrId2, 'id') ? charOrId2.id : charOrId2
-  return char1Id === char2Id
-}
-
-export function charArrayEq(cArr1, cArr2) {
-  if(cArr1 === cArr2) return true
-  if(!cArr1 || !_.isArray(cArr1)) return Object.is(cArr1, cArr2)
-  if(cArr1.length !== cArr2.length) return false
-  for(let i = 0; i < cArr1.length; i++) {
-    if(!charEq(cArr1[i], cArr2[i])) return false
-  }
-  return true
 }

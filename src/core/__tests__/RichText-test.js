@@ -1,6 +1,7 @@
 import { assert } from 'chai'
 import _ from 'lodash'
 import Text, { BASE_CHAR, EOF, Char, TextData } from '../RichText'
+import { charEq } from '../EditorCommon'
 import Swarm from 'swarm'
 
 Swarm.env.localhost = new Swarm.Host('test~0')
@@ -392,15 +393,15 @@ describe('RichText', () => {
     let undef
     let nullVar = null
 
-    assert.isTrue(text.charEq(charOfA, charOfA))
-    assert.isTrue(text.charEq(charOfA, charOfA.id))
-    assert.isTrue(text.charEq(charOfA.id, charOfA))
-    assert.isTrue(text.charEq(EOF, EOF))
-    assert.isFalse(text.charEq(charOfA.id, charOfF.id))
-    assert.isFalse(text.charEq(charOfA, charOfF))
-    assert.isFalse(text.charEq(EOF, charOfF))
-    assert.isFalse(text.charEq(charOfA, undef))
-    assert.isFalse(text.charEq(charOfA, nullVar))
+    assert.isTrue(charEq(charOfA, charOfA))
+    assert.isTrue(charEq(charOfA, charOfA.id))
+    assert.isTrue(charEq(charOfA.id, charOfA))
+    assert.isTrue(charEq(EOF, EOF))
+    assert.isFalse(charEq(charOfA.id, charOfF.id))
+    assert.isFalse(charEq(charOfA, charOfF))
+    assert.isFalse(charEq(EOF, charOfF))
+    assert.isFalse(charEq(charOfA, undef))
+    assert.isFalse(charEq(charOfA, nullVar))
   })
 
   it('returns the proper index of characters, including or excluding deleted', () => {

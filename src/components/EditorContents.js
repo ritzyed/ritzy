@@ -10,7 +10,7 @@ import { elementPosition, scrollByToVisible } from 'dom'
 import TextReplicaMixin from './TextReplicaMixin'
 import TextInput from './TextInput'
 import {ATTR, hasAttributeFor} from '../core/attributes'
-import { lineContainingChar } from '../core/EditorCommon'
+import { charEq, lineContainingChar } from '../core/EditorCommon'
 import { sourceOf } from '../core/replica'
 import TextFontMetrics from '../core/TextFontMetrics'
 import { logInGroup } from '../core/utils'
@@ -203,7 +203,7 @@ export default React.createClass({
       if(this.state.lines) {
         let printLine = l => console.debug(l.toString())
 
-        let currentLine = lineContainingChar(this.replica, this.state.lines, this.state.position, this.state.positionEolStart)
+        let currentLine = lineContainingChar(this.state.lines, this.state.position, this.state.positionEolStart)
         if(!currentLine) {
           console.log(null)
         } else {
@@ -302,8 +302,8 @@ export default React.createClass({
       return null
     }
 
-    let left = lineContainingChar(this.replica, this.state.lines, this.replica.getCharRelativeTo(this.state.selectionLeftChar, 1, 'eof'))
-    let right = lineContainingChar(this.replica, this.state.lines.slice(left.index), this.state.selectionRightChar, null)
+    let left = lineContainingChar(this.state.lines, this.replica.getCharRelativeTo(this.state.selectionLeftChar, 1, 'eof'))
+    let right = lineContainingChar(this.state.lines.slice(left.index), this.state.selectionRightChar, null)
 
     return {
       left: left.index,
@@ -359,8 +359,8 @@ export default React.createClass({
 
     // empty editor (no line and selection is from BASE_CHAR to EOF)
     if(!line
-      && this.replica.charEq(this.state.selectionLeftChar, BASE_CHAR)
-      && this.replica.charEq(this.state.selectionRightChar, EOF)) {
+      && charEq(this.state.selectionLeftChar, BASE_CHAR)
+      && charEq(this.state.selectionRightChar, EOF)) {
       return selectionDiv(0, TextFontMetrics.advanceXForSpace(this.props.fontSize))
     }
 
@@ -472,14 +472,14 @@ export default React.createClass({
       return null
     }
 
-    if(this.replica.charEq(BASE_CHAR, this.state.position) || this.state.lines.length === 0) {
+    if(charEq(BASE_CHAR, this.state.position) || this.state.lines.length === 0) {
       return {
         left: this.props.margin,
         top: 0
       }
     }
 
-    let {line, index, endOfLine} = lineContainingChar(this.replica, this.state.lines, this.state.position, this.state.positionEolStart)
+    let {line, index, endOfLine} = lineContainingChar(this.state.lines, this.state.position, this.state.positionEolStart)
     let previousLineHeights = line ? lineHeight * index : 0
 
     let cursorAdvanceX
