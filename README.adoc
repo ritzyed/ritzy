@@ -198,20 +198,15 @@ added over time.
 https://github.com/rocketraman/ritzy-editor/blob/master/CONTRIBUTIONS.adoc[Contributions]
 are welcome.
 
-* Basic features:
-** undo/redo
-
 * Multiple colored/labeled cursors (medium).
-
-* Right-click menu support (medium).
 
 * Tests (many, see GitHub issue xx) (hard!).
 
 * Once tests are in place, refactoring to make the editor code more modular /
 easier to understand (hard).
 
-* Performance improvements. Performance is pretty poor right now but much can
-be done to improve it. Some ideas:
+* Performance improvements. Performance is not bad right now, but much can
+be done to improve it further. Some ideas:
 ** Create finer-grained React components (see refactor above) to avoid
 re-rendering the entire editor on updates (this should be a big win).
 ** Implement `shouldComponentUpdate` and/or `PureRenderMixin` to avoid
@@ -220,6 +215,8 @@ unnecessary component renders.
 ** Use immutable collections as much as possible e.g.
 http://facebook.github.io/immutable-js/
 ** Cache frequently used / slow operations where possible.
+
+* Undo/redo
 
 * Module loader support i.e. inclusion via Browserify, Webpack, etc. (medium).
 
@@ -249,6 +246,8 @@ simpler (easy).
 possible without sacrificing clarity and maintainability.
 
 * Search/replace
+
+* Right-click menu support (medium).
 
 [[commercial_features]]
 == Commercial Features (Future)
