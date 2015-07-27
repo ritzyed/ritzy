@@ -1293,7 +1293,10 @@ class EditorStore {
     let position
     let positionEolStart
 
-    if(line.isEof()) {
+    if(!line) {
+      position = BASE_CHAR
+      positionEolStart = false
+    } else if(line.isEof()) {
       position = line.start
       positionEolStart = true
     } else {
