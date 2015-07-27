@@ -18,6 +18,7 @@
     "opentype.js": "0.4.9",
     "react": "0.13.3",
     "react-spinkit": "1.1.2",
+    "redis": "^0.12.1",
     "swarm": "0.3.25",
     "swarm-restapi": "0.3.24",
     "webfontloader": "1.6.4",
