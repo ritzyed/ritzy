@@ -520,15 +520,10 @@ class EditorStore {
 
     let newLine = false
 
-    let currentWord = {
-      chars: [],
-      length: 0,
-      pendingChunks: [],
-      advance: 0,
-      lineAdvance: 0,
-      attributes: null,
-      fontSize: null,
-      lastCharSpace: false,
+    class CurrentWord {
+      constructor() {
+        this.reset()
+      }
 
       reset() {
         this.chars = []
@@ -538,7 +533,7 @@ class EditorStore {
         this.lineAdvance = 0
         this.attributes = null
         this.lastCharSpace = false
-      },
+      }
 
       pushChar(c, fontSize) {
         if(!this.attributes) {
@@ -555,12 +550,12 @@ class EditorStore {
         this.lineAdvance += charAdvance
         this.chars.push(c)
         this.length++
-      },
+      }
 
       popChar() {
         this.length--
         return this.chars.pop()
-      },
+      }
 
       pushChunks() {
         if(this.length > 0) {
@@ -574,20 +569,18 @@ class EditorStore {
       }
     }
 
-    let currentLine = {
-      chars: [],
-      chunks: [],
-      advance: 0,
-      start: null,
-      end: null,
+    class CurrentLine {
+      constructor() {
+        this.reset()
+      }
 
       reset() {
         this.chars = []
         this.chunks = []
         this.advance = 0
-        this.start = lines.length > 0 ? lines[lines.length - 1].end : BASE_CHAR
+        this.start = null
         this.end = null
-      },
+      }
 
       pushWord(word) {
         pushArray(this.chars, word.chars)
@@ -616,18 +609,21 @@ class EditorStore {
         this.end = this.chars[this.chars.length - 1]
         this.advance += word.lineAdvance
         word.reset()
-      },
+      }
 
       pushNewline(c) {
         invariant(c.char === '\n', 'pushNewline can only be called with a newline char.')
         this.chars.push(c)
         this.end = c
-      },
+      }
 
       pushEof() {
         this.end = EOF
       }
     }
+
+    let currentWord = new CurrentWord()
+    let currentLine = new CurrentLine()
 
     let pushLine = (line) => {
       if(line.end) {
@@ -639,6 +635,7 @@ class EditorStore {
         newLine = true
       }
       line.reset()
+      line.start = lines.length > 0 ? lines[lines.length - 1].end : BASE_CHAR
     }
 
     let modLineOffset
