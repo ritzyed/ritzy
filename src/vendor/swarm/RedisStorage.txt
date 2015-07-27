@@ -1,0 +1,3 @@
+RedisStorage.js [1], with local modifications.
+
+[1] https://github.com/gritzko/swarm/blob/b2c21add3b36f211ad48d4d80707967d9083a9e9/lib/RedisStorage.js
