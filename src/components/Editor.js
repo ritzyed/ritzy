@@ -123,8 +123,6 @@ export default React.createClass({
   },
 
   _doOnSingleClick(e) {
-    EditorActions.focusInput()
-
     let coordinates = this._mouseEventToCoordinates(e)
     if(!coordinates) {
       return
@@ -142,6 +140,10 @@ export default React.createClass({
   },
 
   _onMouseDown(e) {
+    if(!this.state.focus) {
+      EditorActions.focusInput()
+    }
+
     if(this.clickReset) {
       clearTimeout(this.clickReset)
       this.clickReset = null
@@ -164,6 +166,10 @@ export default React.createClass({
   },
 
   _onMouseMove(e) {
+    if(!this.state.focus) {
+      EditorActions.focusInput()
+    }
+
     if(e.buttons !== 1) return
 
     let coordinates = this._mouseEventToCoordinates(e)
