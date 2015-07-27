@@ -43,8 +43,6 @@ export default React.createClass({
     focused: T.bool.isRequired
   },
 
-  mixins: [React.addons.PureRenderMixin],
-
   componentDidMount() {
     this.input = React.findDOMNode(this.refs.input)
     this.hiddenContainer = React.findDOMNode(this.refs.hiddenContainer)
@@ -92,6 +90,10 @@ export default React.createClass({
     }
   },
 
+  shouldComponentUpdate(nextProps) {
+    return this.props.focused !== nextProps.focused || this.props.position !== nextProps.position
+  },
+
   componentDidUpdate() {
     if(this.props.focused) {
       this._focus()
@@ -100,19 +102,13 @@ export default React.createClass({
 
   _focus() {
     this._checkEmptyValue()
-    this.input.focus()
+
+    this.ieClipboardDivFocus = false
 
     // IE requires a non-empty selection in order to fire the copy event, annoying
     this.input.value = ' '
-    this._selectNodeContents(this.input)
-  },
-
-  _selectNodeContents(node) {
-    let range = document.createRange()
-    range.selectNodeContents(node)
-    let selection = window.getSelection()
-    selection.removeAllRanges()
-    selection.addRange(range)
+    this.input.focus()
+    this.input.select()
   },
 
   _checkEmptyValue() {
@@ -300,7 +296,9 @@ export default React.createClass({
   },
 
   _onInputFocusLost() {
-    EditorActions.inputFocusLost()
+    if(!this.ieClipboardDivFocus) {
+      EditorActions.inputFocusLost()
+    }
   },
 
   _onCopy(e) {
@@ -330,7 +328,7 @@ export default React.createClass({
     window.clipboardData.setData('Text', copiedText)
     this.ieClipboardDiv.innerHTML = copiedHtml
     this._focusIeClipboardDiv()
-    this._selectNodeContents(this.ieClipboardDiv)
+    this._selectIeClipboardDivContents()
     setTimeout(() => {
       emptyNode(this.ieClipboardDiv)
       this._focus()
@@ -388,14 +386,23 @@ export default React.createClass({
   },
 
   _focusIeClipboardDiv() {
+    this.ieClipboardDivFocus = true
     this.ieClipboardDiv.focus()
+  },
+
+  _selectIeClipboardDivContents() {
+    let range = document.createRange()
+    range.selectNodeContents(this.ieClipboardDiv)
+    let selection = window.getSelection()
+    selection.removeAllRanges()
+    selection.addRange(range)
   },
 
   _onInput(e) {
     // catch inputs that our keyboard handler doesn't catch e.g. compose key, IME inputs, etc.
     let value = e.target.value
-    e.target.value = ' '
     EditorActions.insertChars(value)
+    this._focus()
   },
 
   render() {

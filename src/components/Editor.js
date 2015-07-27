@@ -166,11 +166,11 @@ export default React.createClass({
   },
 
   _onMouseMove(e) {
+    if(e.buttons !== 1) return
+
     if(!this.state.focus) {
       EditorActions.focusInput()
     }
-
-    if(e.buttons !== 1) return
 
     let coordinates = this._mouseEventToCoordinates(e)
     if(!coordinates) return
