@@ -38,7 +38,8 @@ class EditorStore {
       positionEolStart: true,
       cursorMotion: false,
       selectionActive: false,
-      focus: false
+      focus: false,
+      loaded: false
     }
   }
 
@@ -48,6 +49,11 @@ class EditorStore {
     this.replica = replica
 
     this.setState({focus: config.initialFocus})
+  }
+
+  replicaInitialized() {
+    this.setState({loaded: true})
+    this._flow()
   }
 
   replicaUpdated() {

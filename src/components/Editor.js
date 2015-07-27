@@ -2,6 +2,7 @@ import 'babel/polyfill'
 
 import React from 'react/addons'
 import classNames from 'classnames'
+import Spinner from 'react-spinkit'
 
 import EditorActions from '../flux/EditorActions'
 import EditorStore from '../flux/EditorStore'
@@ -97,7 +98,7 @@ export default React.createClass({
   _replicaInitCb(spec, op, replica) {  // eslint-disable-line no-unused-vars
     // set our own replica for future use
     this.replicaSource = sourceOf(spec)
-    EditorActions.replicaUpdated()
+    EditorActions.replicaInitialized()
   },
 
   _replicaUpdateCb(spec, op, replica) {  // eslint-disable-line no-unused-vars
@@ -547,20 +548,14 @@ export default React.createClass({
     )
   },
 
-  render() {
-    //console.trace('render')
-    let lineHeight = TextFontMetrics.lineHeight(this.props.fontSize)
-    let lines = this._splitIntoLines()
-    let cursorPosition = this._cursorPosition(lineHeight)
-    let linesWithSelection = this._searchLinesWithSelection()
+  _renderEditorContents() {
+    if(this.state.loaded) {
+      let lines = this._splitIntoLines()
+      let lineHeight = TextFontMetrics.lineHeight(this.props.fontSize)
+      let cursorPosition = this._cursorPosition(lineHeight)
+      let linesWithSelection = this._searchLinesWithSelection()
 
-    let wrapperStyle = {
-      width: this.props.width,
-      padding: `${this.props.marginV}px ${this.props.marginH}px`
-    }
-
-    return (
-      <div className="text-content-wrapper" style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
+      return (
         <div>
           {this._renderInput(cursorPosition)}
           <div className="text-contents">
@@ -570,6 +565,24 @@ export default React.createClass({
           </div>
           {this._renderCursor(cursorPosition, lineHeight)}
         </div>
+      )
+    } else {
+      return (
+        <Spinner spinnerName='three-bounce' noFadeIn/>
+      )
+    }
+  },
+
+  render() {
+    //console.trace('render')
+    let wrapperStyle = {
+      width: this.props.width,
+      padding: `${this.props.marginV}px ${this.props.marginH}px`
+    }
+
+    return (
+      <div className="text-content-wrapper" style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
+        {this._renderEditorContents()}
         {/*
         <div style={{position: 'relative', zIndex: 100, paddingTop: 30}}>
           <span>Dump:&nbsp;</span>

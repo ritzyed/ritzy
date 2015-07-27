@@ -8,6 +8,10 @@ class EditorActions {
     this.dispatch({config, replica})
   }
 
+  replicaInitialized() {
+    this.dispatch()
+  }
+
   replicaUpdated() {
     this.dispatch()
   }

@@ -86,6 +86,10 @@ export default React.createClass({
     keyBindings.bind('alt+shift+5', this._handleKeyStrikethrough)
     keyBindings.bind('ctrl+.', this._handleKeySuperscript)
     keyBindings.bind('ctrl+,', this._handleKeySubscript)
+
+    if(this.props.focused) {
+      this._focus()
+    }
   },
 
   componentDidUpdate() {

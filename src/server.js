@@ -24,17 +24,10 @@ const pageTemplate = _.template(fs.readFileSync(pageTemplateFile, 'utf8'))
 server.get('/', (req, res) => {
   let data = {
     description: '',
-    title: 'Write Tutorial Title'
+    title: 'Ritzy Editor'
   }
 
-/*
-  let todoItemFactory = React.createFactory(require('./components/TodoItem'))
-  data.content = React.renderToString(
-    todoItemFactory({done: false, name: 'Write Tutorial'})
-  )
-*/
-
-  data.content = '<p>Server-side rendered.</p>'
+  data.content = ''
 
   let html = pageTemplate(data)
   res.send(html)
