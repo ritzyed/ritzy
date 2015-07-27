@@ -1,7 +1,9 @@
+/*eslint-disable */
+
 "use strict";
-var env = require('./env');
-var Spec = require('./Spec');
-var Storage = require('./Storage');
+var env = require('swarm/lib/env');
+var Spec = require('swarm/lib/Spec');
+var Storage = require('swarm/lib/Storage');
 
 /**
  * Adaptor for Redis
@@ -49,7 +51,7 @@ RedisStorage.prototype.open = function (callback) {
     } else {
         this.db = this.redis.createClient(params.port || 6379, params.host || '127.0.0.1', params.options || {});
     }
-    this.db.once('ready', callback);
+    if(callback) this.db.on('ready', callback);
 };
 
 RedisStorage.prototype.writeState = function (spec, state, cb) {
