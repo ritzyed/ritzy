@@ -23,7 +23,7 @@ var Storage = require('swarm/lib/Storage');
  *
  * @TODO storage opening by host
  */
-function RedisStorage (id, options) {
+function RedisStorage (options) {
     Storage.call(this);
     this.options = options;
     this._host = null; // will be set by the Host
@@ -35,7 +35,6 @@ function RedisStorage (id, options) {
         options: {}
     };
     this.db = null;
-    this._id = id;
     this.logtails = {};
 }
 RedisStorage.prototype = new Storage();
