@@ -1,9 +1,9 @@
 /*
 import { assert } from 'chai'
 import _ from 'lodash'
-import EditorContents from '../EditorContents'
+import Editor from '../Editor'
 
-describe('EditorContents component', () => {
+describe('Editor component', () => {
   it('can render content', () => {
     let content = [
       { char: 'a' },

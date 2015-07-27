@@ -1275,16 +1275,12 @@ class EditorStore {
     let lineHeight = TextFontMetrics.lineHeight(this.config.fontSize)
     let lineIndex = Math.floor(y / lineHeight)
 
-    if(lineIndex > this.state.lines.length - 1) {
+    if(lineIndex < 0) {
+      // clicked before the first line, set cursor on the first line
+      lineIndex = 0
+    } else if (lineIndex > this.state.lines.length - 1) {
       // clicked after the last line, set cursor on the last line
       lineIndex = this.state.lines.length - 1
-    }
-
-    if(lineIndex < 0) {
-      return {
-        position: BASE_CHAR,
-        positionEolStart: true
-      }
     }
 
     let line = this.state.lines[lineIndex]

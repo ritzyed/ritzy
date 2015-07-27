@@ -15,7 +15,8 @@ let renderEditor = function(fonts, unitsPerEm, minFontSize) {
       minFontSize: minFontSize,
       unitsPerEm: unitsPerEm,
       width: 600,
-      margin: 20
+      marginH: 30,
+      marginV: 35
     }),
     editorRenderTarget
   )
