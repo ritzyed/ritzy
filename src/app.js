@@ -4,6 +4,9 @@ import OpenType from 'opentype.js'
 import Editor from './components/Editor'
 import { detectMinFontSize } from './core/dom'
 
+// skinning, this could be imported in the HTML in the traditional way as well
+require('default-skin.less')
+
 let renderEditor = function(fonts, unitsPerEm, minFontSize) {
   const editorFactory = React.createFactory(Editor)
   const editorRenderTarget = document.getElementById('content')

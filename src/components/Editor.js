@@ -16,8 +16,7 @@ import { charEq, lineContainingChar } from '../core/EditorCommon'
 import { sourceOf } from '../core/replica'
 import TextFontMetrics from '../core/TextFontMetrics'
 
-// TODO do this as a require or just make it part of the js or make it global?
-require('text.less')
+require('internal.less')
 
 const T = React.PropTypes
 const nbsp = String.fromCharCode(160)
@@ -222,7 +221,7 @@ export default React.createClass({
       }
 
       return (
-        <div className="text-selection-overlay text-htmloverlay ui-unprintable text-htmloverlay-under-text"
+        <div className="ritzy-internal-text-selection-overlay text-selection-overlay ritzy-internal-text-htmloverlay ritzy-internal-text-htmloverlay-under-text ritzy-internal-ui-unprintable"
           style={selectionStyle}></div>
       )
     }
@@ -340,12 +339,12 @@ export default React.createClass({
     // TODO set lineHeight based on font sizes used in line chunks
     // the span wrapper around the text is required so that the text does not shift up/down when using superscript/subscript
     return (
-      <div className="text-lineview" style={{height: lineHeight, direction: 'ltr', textAlign: 'left'}} key={index}>
+      <div className="ritzy-internal-text-lineview text-lineview" style={{height: lineHeight, direction: 'ltr', textAlign: 'left'}} key={index}>
         {this._renderSelectionOverlay(index, lineHeight, linesWithSelection)}
-        <div className="text-lineview-content" style={{marginLeft: 0, paddingTop: 0}}>
+        <div className="ritzy-internal-text-lineview-content text-lineview-content" style={{marginLeft: 0, paddingTop: 0}}>
           <span style={{display: 'inline-block', height: blockHeight}}></span>
           <span style={{display: 'inline-block', position: 'relative', top: blockTop}}>
-            <span key="text" className="editor-inline-block text-lineview-text-block">{line}</span>
+            <span key="text" className="ritzy-internal-editor-inline-block ritzy-internal-text-lineview-text-block">{line}</span>
           </span>
         </div>
       </div>
@@ -397,16 +396,16 @@ export default React.createClass({
       return null
     }
 
-    let cursorClasses = classNames('text-cursor', 'ui-unprintable', {
-      'text-cursor-blink': !this.state.cursorMotion
+    let cursorClasses = classNames('ritzy-internal-text-cursor text-cursor', 'ritzy-internal-ui-unprintable', {
+      'ritzy-internal-text-cursor-blink': !this.state.cursorMotion
     })
 
     let italicAtPosition = this.state.position.attributes && this.state.position.attributes[ATTR.ITALIC]
     let italicActive = this.state.activeAttributes && this.state.activeAttributes[ATTR.ITALIC]
     let italicInactive = this.state.activeAttributes && !this.state.activeAttributes[ATTR.ITALIC]
 
-    let caretClasses = classNames('text-cursor-caret', {
-      'text-cursor-italic': italicActive || (italicAtPosition && !italicInactive)
+    let caretClasses = classNames('ritzy-internal-text-cursor-caret text-cursor-caret', {
+      'ritzy-internal-text-cursor-italic': italicActive || (italicAtPosition && !italicInactive)
     })
 
     let cursorStyle = {
@@ -426,8 +425,8 @@ export default React.createClass({
     return (
       <div className={cursorClasses} style={cursorStyle} key="cursor" ref="cursor">
         <div className={caretClasses} style={{borderColor: 'black', height: cursorHeight}} key="caret" ref="caret"></div>
-        <div className="text-cursor-top" style={{opacity: 0, display: 'none'}}></div>
-        <div className="text-cursor-name" style={{opacity: 0, display: 'none'}}></div>
+        <div className="ritzy-internal-text-cursor-top text-cursor-top" style={{opacity: 0, display: 'none'}}></div>
+        <div className="ritzy-internal-text-cursor-name text-cursor-name" style={{opacity: 0, display: 'none'}}></div>
       </div>
     )
   },
@@ -442,7 +441,7 @@ export default React.createClass({
       return (
         <div>
           {this._renderInput(cursorPosition)}
-          <div className="text-contents">
+          <div className="ritzy-internal-text-contents text-contents" style={{position: 'relative'}}>
             { lines.length > 0 ?
               lines.map((line, index) => this._renderLine(line, index, lineHeight, linesWithSelection) ) :
               this._renderLine(nbsp, 0, lineHeight)}
@@ -466,10 +465,12 @@ export default React.createClass({
 
     return (
       <div>
-        <div className="text-content-wrapper" style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
+        <div className="ritzy-internal-text-content-wrapper text-content-wrapper"
+          style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
           {this._renderEditorContents()}
         </div>
         {/*<DebugEditor editorState={this.state} replica={this.replica} searchLinesWithSelection={this._searchLinesWithSelection}/>*/}
+        <DebugEditor editorState={this.state} replica={this.replica} searchLinesWithSelection={this._searchLinesWithSelection}/>
       </div>
     )
   }

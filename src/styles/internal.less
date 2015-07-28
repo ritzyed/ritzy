@@ -1,10 +1,10 @@
 @media print {
-  .ui-unprintable {
+  .ritzy-internal-ui-unprintable {
     display: none!important;
   }
 }
 
-.text-content-wrapper {
+.ritzy-internal-text-content-wrapper {
   cursor: text;
   overflow: hidden;
   position: relative;
@@ -17,31 +17,31 @@
   }
 }
 
-.text-contents {
+.ritzy-internal-text-contents {
   position: relative;
 }
 
-.text-lineview {
+.ritzy-internal-text-lineview {
   position: relative;
 }
 
-.text-lineview-content {
+.ritzy-internal-text-lineview-content {
   white-space: nowrap;
   position: absolute;
   z-index: 15;
 }
 
-.text-lineview-text-block {
+.ritzy-internal-text-lineview-text-block {
   white-space: nowrap;
 }
 
-.text-cursor {
+.ritzy-internal-text-cursor {
   cursor: text;
   position: absolute;
   z-index: 24;
 }
 
-.text-cursor-caret {
+.ritzy-internal-text-cursor-caret {
   position: absolute;
   width: 0;
   border-left: 2px solid;
@@ -49,7 +49,7 @@
   pointer-events: none;
 }
 
-.text-cursor-top {
+.ritzy-internal-text-cursor-top {
   position: absolute;
   width: 6px;
   left: -2px;
@@ -58,7 +58,7 @@
   font-size: 0;
 }
 
-.text-cursor-name {
+.ritzy-internal-text-cursor-name {
   position: absolute;
   font-size: 10px;
   color: #fff;
@@ -68,18 +68,18 @@
   white-space: nowrap;
 }
 
-.text-cursor-italic {
+.ritzy-internal-text-cursor-italic {
   display: inline;
   transform: rotate(13deg);
 }
 
-.text-cursor-blink {
+.ritzy-internal-text-cursor-blink {
   animation-duration: 1s;
   animation-iteration-count: infinite;
-  animation-name: text-cursor-fadeoutin;
+  animation-name: ritzy-internal-text-cursor-fadeoutin;
 }
 
-@keyframes text-cursor-fadeoutin {
+@keyframes ritzy-internal-text-cursor-fadeoutin {
   from {
     opacity: 1;
   }
@@ -97,25 +97,21 @@
   }
 }
 
-.text-selection-overlay {
-  background-color: #76a7fa;
-  border-top: 1px solid #76a7fa;
-  border-bottom: 1px solid #76a7fa;
-  opacity: 0.50;
+.ritzy-internal-text-selection-overlay {
   z-index: 20;
 }
 
-.text-selection-overlay.text-htmloverlay-under-text {
+.ritzy-internal-text-selection-overlay.ritzy-internal-text-htmloverlay-under-text {
   z-index: 12;
 }
 
-.text-htmloverlay {
+.ritzy-internal-text-htmloverlay {
   position: absolute;
   z-index: 17;
   top: 0;
 }
 
-.editor-inline-block {
+.ritzy-internal-editor-inline-block {
   position: relative;
   display: inline-block;
 }
