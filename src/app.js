@@ -10,6 +10,12 @@ require('default-skin.less')
 let renderEditor = function(fonts, unitsPerEm, minFontSize) {
   const editorFactory = React.createFactory(Editor)
   const editorRenderTarget = document.getElementById('content')
+
+  let localUser = window.localStorage.getItem('localuser') || 'A' + parseInt(Math.random() * 10000).toString(16)
+  window.localStorage.setItem('localuser', localUser)
+
+  let userName = 'Name of ' + localUser
+
   React.render(
     editorFactory({
       id: 10,
@@ -19,7 +25,9 @@ let renderEditor = function(fonts, unitsPerEm, minFontSize) {
       unitsPerEm: unitsPerEm,
       width: 600,
       marginH: 30,
-      marginV: 35
+      marginV: 35,
+      userId: localUser,
+      userName: userName
     }),
     editorRenderTarget
   )
@@ -72,6 +80,6 @@ Promise.all([
   }, fonts[0].unitsPerEm, detectMinFontSize())
 }).catch(function(err) {
   // TODO handle error by just using a sans-serif fallback and dealing with either or both of opentype/webfont fails
-  console.error('Font loading failed.', err)
+  console.error('Editor loading failed.', err)
   document.getElementById('content').innerHTML = 'Oops, I couldn\'t load the editor.'
 })

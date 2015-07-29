@@ -36,6 +36,8 @@ export default React.createClass({
     width: T.number.isRequired,
     marginH: T.number.isRequired,
     marginV: T.number.isRequired,
+    userId: T.string.isRequired,
+    userName: T.string,
     initialFocus: T.bool
   },
 
