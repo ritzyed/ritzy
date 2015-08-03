@@ -12,7 +12,8 @@ let storage = new RedisStorage({
     port: 6379,
     host: '127.0.0.1',
     options: {}
-  }
+  },
+  debug: false
 })
 storage.open()
 

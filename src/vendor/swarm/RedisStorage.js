@@ -54,7 +54,7 @@ RedisStorage.prototype.open = function (callback) {
 };
 
 RedisStorage.prototype.writeState = function (spec, state, cb) {
-    console.log('>STATE',state);
+    if(this.options.debug) console.log('>STATE',state);
     var self = this;
     var ti = spec.filter('/#');
     //var save = JSON.stringify(state, undefined, 2);
@@ -67,10 +67,10 @@ RedisStorage.prototype.writeState = function (spec, state, cb) {
     var cleanup = this.logtails[ti] || [];
     delete this.logtails[ti];
 
-    console.log('>FLUSH',json,cleanup.length);
+    if(this.options.debug) console.log('>FLUSH',json,cleanup.length);
     self.db.set(ti, json, function onSave(err) {
         if (!err && cleanup.length && self.db) {
-            console.log('>CLEAN',cleanup);
+            if(self.options.debug) console.log('>CLEAN',cleanup);
             cleanup.unshift(ti + TAIL_FIELD_SUFFIX);
             self.db.hdel(cleanup, function (err, entriesRemoved) {
                 err && console.error('log trimming failed',err);
@@ -87,7 +87,7 @@ RedisStorage.prototype.writeOp = function (spec, value, cb) {
     var vo = spec.filter('!.');
     spec = spec.toString();
     var json = JSON.stringify(value);
-    console.log('>OP', spec, json);
+    if(this.options.debug) console.log('>OP', spec, json);
 
     // store spec in logtail
     var log = this.logtails[ti] || (this.logtails[ti] = []);
@@ -113,7 +113,7 @@ RedisStorage.prototype.readState = function (ti, callback) {
             value = JSON.parse(value);
         }
 
-        console.log('<STATE', self._host && self._host._id, value);
+        if(self.options.debug) console.log('<STATE', self._host && self._host._id, value);
         callback(null, value);
     });
 };
@@ -125,7 +125,7 @@ RedisStorage.prototype.readOps = function (ti, callback) {
         if (err) {
             return callback(err);
         }
-        console.log('<TAIL', self._host && self._host._id, tail);
+        if(self.options.debug) console.log('<TAIL', self._host && self._host._id, tail);
         var tail = {};
         var log =  self.logtails[ti] || (self.logtails[ti] = []);
         if (res) {
