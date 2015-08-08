@@ -3,6 +3,7 @@ import 'babel/polyfill'
 import React from 'react/addons'
 import classNames from 'classnames'
 import Spinner from 'react-spinkit'
+import _ from 'lodash'
 
 import EditorActions from '../flux/EditorActions'
 import EditorStore from '../flux/EditorStore'
@@ -40,6 +41,7 @@ export default React.createClass({
     marginV: T.number.isRequired,
     userId: T.string.isRequired,
     userName: T.string,
+    cursorColorSpace: T.arrayOf(T.string), // TODO allow it to be a function as well
     initialFocus: T.bool
   },
 
@@ -47,7 +49,25 @@ export default React.createClass({
 
   getDefaultProps() {
     return {
-      initialFocus: true
+      initialFocus: true,
+      // The default cursor color space is a less harsh variation of the 11 Boynton colors:
+      // http://alumni.media.mit.edu/~wad/color/palette.html
+      // See also:
+      // http://stackoverflow.com/a/4382138/430128
+      // https://eleanormaclure.files.wordpress.com/2011/03/colour-coding.pdf
+      cursorColorSpace: [
+        'rgb(29, 105, 20)',   // green
+        'rgb(129, 38, 192)',  // purple,
+        'rgb(42, 75, 215)',   // blue
+        'rgb(41, 208, 208)',  // cyan
+        'rgb(173, 35, 35)',   // red
+        'rgb(255, 146, 51)',  // orange
+        'rgb(129, 197, 122)', // light green
+        'rgb(157, 175, 255)', // light blue
+        'rgb(255, 205, 243)', // pink
+        'rgb(255, 238, 51)',  // yellow
+        'rgb(129, 74, 25)'    // brown
+      ]
     }
   },
 
@@ -110,12 +130,6 @@ export default React.createClass({
   },
 
   _mouseEventToCoordinates(e) {
-    // hack: if the user clicks or rolls over their own cursor sometimes that becomes the target element (in browsers
-    // that don't support pointer-events: none, like IE < 11): BUT we know the cursor is the current position
-    if(e.target.className.indexOf('text-cursor-caret') >= 0) {
-      return null
-    }
-
     // target is the particular element within the editor clicked on, current target is the entire editor div
     let targetPosition = elementPosition(e.currentTarget)
 
@@ -184,6 +198,13 @@ export default React.createClass({
     e.stopPropagation()
   },
 
+  _remoteCursorHover(id, e) {
+    EditorActions.revealRemoteCursorName(this.state.remoteCursors[id])
+
+    e.preventDefault()
+    e.stopPropagation()
+  },
+
   // RENDERING ---------------------------------------------------------------------------------------------------------
 
   _searchLinesWithSelection() {
@@ -216,6 +237,7 @@ export default React.createClass({
         height: height
       }
 
+      // named selection border and bg colors same as cursor, opacity somewhere around 0.15 (then keeps reducing about every second by 0.001), no color attribute
       if(!this.state.focus) {
         selectionStyle.borderTopColor = 'rgb(0, 0, 0)'
         selectionStyle.borderBottomColor = 'rgb(0, 0, 0)'
@@ -355,32 +377,40 @@ export default React.createClass({
     )
   },
 
-  _cursorPosition(lineHeight) {
+  _cursorPosition(lineHeight, position, positionEolStart) {
     // the initial render before the component is mounted has no position or lines
-    if (!this.state.position || !this.state.lines) {
+    if (!position || !this.state.lines) {
       return null
     }
 
-    if(charEq(BASE_CHAR, this.state.position) || this.state.lines.length === 0) {
+    if(charEq(BASE_CHAR, position) || this.state.lines.length === 0) {
       return {
+        position: position,
+        positionEolStart: positionEolStart,
         left: this.props.marginH,
         top: this.props.marginV
       }
     }
 
-    let {line, index, endOfLine} = lineContainingChar(this.state.lines, this.state.position, this.state.positionEolStart)
+    let result = lineContainingChar(this.state.lines, position, positionEolStart)
+    if(!result) {
+      return null
+    }
+    let {line, index, endOfLine} = result
     let previousLineHeights = line ? lineHeight * index : 0
 
     let cursorAdvanceX
 
-    if(!line || (endOfLine && this.state.positionEolStart && index < this.state.lines.length - 1)) {
+    if(!line || (endOfLine && positionEolStart && index < this.state.lines.length - 1)) {
       cursorAdvanceX = 0
     } else {
-      let positionChars = line.charsTo(this.state.position)
+      let positionChars = line.charsTo(position)
       cursorAdvanceX = TextFontMetrics.advanceXForChars(this.props.fontSize, positionChars)
     }
 
     return {
+      position: position,
+      positionEolStart: positionEolStart,
       left: this.props.marginH + cursorAdvanceX,
       top: this.props.marginV + previousLineHeights
     }
@@ -394,19 +424,19 @@ export default React.createClass({
     )
   },
 
-  _renderCursor(cursorPosition, lineHeight) {
+  _renderCursor(cursorPosition, lineHeight, remote) {
     // the initial render before the component is mounted has no position
     if (!cursorPosition) {
       return null
     }
 
     let cursorClasses = classNames('ritzy-internal-text-cursor text-cursor', 'ritzy-internal-ui-unprintable', {
-      'ritzy-internal-text-cursor-blink': !this.state.cursorMotion
+      'ritzy-internal-text-cursor-blink': !this.state.cursorMotion && !remote
     })
 
-    let italicAtPosition = this.state.position.attributes && this.state.position.attributes[ATTR.ITALIC]
-    let italicActive = this.state.activeAttributes && this.state.activeAttributes[ATTR.ITALIC]
-    let italicInactive = this.state.activeAttributes && !this.state.activeAttributes[ATTR.ITALIC]
+    let italicAtPosition = cursorPosition.position.attributes && cursorPosition.position.attributes[ATTR.ITALIC]
+    let italicActive = this.state.activeAttributes && this.state.activeAttributes[ATTR.ITALIC] && !remote
+    let italicInactive = this.state.activeAttributes && !this.state.activeAttributes[ATTR.ITALIC] && !remote
 
     let caretClasses = classNames('ritzy-internal-text-cursor-caret text-cursor-caret', {
       'ritzy-internal-text-cursor-italic': italicActive || (italicAtPosition && !italicInactive)
@@ -417,7 +447,7 @@ export default React.createClass({
       top: cursorPosition.top
     }
 
-    if (this.state.selectionActive || !this.state.focus) {
+    if (!remote && (this.state.selectionActive || !this.state.focus)) {
       cursorStyle.opacity = 0
       cursorStyle.visibility = 'hidden'
     } else {
@@ -426,20 +456,64 @@ export default React.createClass({
 
     let cursorHeight = Math.round(lineHeight * 10) / 10
 
-    return (
-      <div className={cursorClasses} style={cursorStyle} key="cursor" ref="cursor">
-        <div className={caretClasses} style={{borderColor: 'black', height: cursorHeight}} key="caret" ref="caret"></div>
-        <div className="ritzy-internal-text-cursor-top text-cursor-top" style={{opacity: 0, display: 'none'}}></div>
-        <div className="ritzy-internal-text-cursor-name text-cursor-name" style={{opacity: 0, display: 'none'}}></div>
-      </div>
-    )
+    if(remote) {
+      let id = remote.model._id
+      let key = `cursor-${id}`
+      let remoteCursorHover = _.partial(this._remoteCursorHover, id)
+      let revealName = this.state.remoteNameReveal.indexOf(id) > -1
+      let cursorTopStyle = {
+        backgroundColor: remote.color,
+        opacity: 1
+      }
+      let cursorNameStyle = {
+        backgroundColor: remote.color
+      }
+      if(revealName) {
+        cursorTopStyle.display = 'none'
+        cursorNameStyle.opacity = 1
+      } else {
+        cursorNameStyle.opacity = 0
+        cursorNameStyle.display = 'none'
+      }
+
+      return (
+        <div className={cursorClasses} style={cursorStyle} key={key}>
+          <div className={caretClasses} style={{borderColor: remote.color, height: cursorHeight}} onMouseOver={remoteCursorHover}></div>
+          <div className="ritzy-internal-text-cursor-top text-cursor-top" style={cursorTopStyle} onMouseOver={remoteCursorHover}></div>
+          <div className="ritzy-internal-text-cursor-name text-cursor-name" style={cursorNameStyle}>{remote.model.name}</div>
+        </div>
+      )
+    } else {
+      return (
+        <div className={cursorClasses} style={cursorStyle} key="cursor" ref="cursor">
+          <div className={caretClasses} style={{borderColor: 'black', height: cursorHeight}} key="caret" ref="caret"></div>
+          <div className="ritzy-internal-text-cursor-top text-cursor-top" style={{opacity: 1}}></div>
+          <div className="ritzy-internal-text-cursor-name text-cursor-name" style={{opacity: 1}}></div>
+        </div>
+      )
+    }
+  },
+
+  _renderRemoteCursors(lineHeight) {
+    return Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].model.position).map(id => {
+      let remoteCursor = this.state.remoteCursors[id]
+      let remotePosition
+      try {
+        remotePosition = this.replica.getChar(remoteCursor.model.position)
+      } catch (e) {
+        console.warn('Error obtaining remote position, ignoring.', e)
+        return null
+      }
+      let cursorPosition = this._cursorPosition(lineHeight, remotePosition, remoteCursor.model.positionEolStart)
+      return this._renderCursor(cursorPosition, lineHeight, remoteCursor)
+    })
   },
 
   _renderEditorContents() {
     if(this.state.loaded) {
       let lines = this._splitIntoLines()
       let lineHeight = TextFontMetrics.lineHeight(this.props.fontSize)
-      let cursorPosition = this._cursorPosition(lineHeight)
+      let cursorPosition = this._cursorPosition(lineHeight, this.state.position, this.state.positionEolStart)
       let linesWithSelection = this._searchLinesWithSelection()
 
       return (
@@ -451,6 +525,7 @@ export default React.createClass({
               this._renderLine(nbsp, 0, lineHeight)}
           </div>
           {this._renderCursor(cursorPosition, lineHeight)}
+          {this._renderRemoteCursors(lineHeight)}
         </div>
       )
     } else {
