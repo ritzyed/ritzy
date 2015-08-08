@@ -8,6 +8,17 @@ export function charId(charOrId) {
 }
 
 /**
+ * Determines whether two chars are the same or not.
+ * @param {Char|number} charOrId1
+ * @param {Char|number} charOrId2
+ */
+export function charEq(charOrId1, charOrId2) {
+  if(charOrId1 === charOrId2) return true
+  if(!charOrId1) return Object.is(charOrId1, charOrId2)
+  return charId(charOrId1) === charId(charOrId2)
+}
+
+/**
  * Represents a Line which is created from the flow algorithm.
  */
 export class Line {
@@ -75,9 +86,9 @@ export class Line {
     return this.end === EOF
   }
 
-  indexOf(char) {
+  indexOf(charOrId) {
     for (let i = 0; i < this.chars.length; i++) {
-      if (this.chars[i].id === char.id) {
+      if (charEq(this.chars[i], charOrId)) {
         return i
       }
     }
@@ -88,41 +99,30 @@ export class Line {
    * Obtains chars between the given char (exclusive) to the given char (inclusive). Note the
    * begin exclusivity operates differently than array slice (which is end exclusive), but corresponds
    * generally with how character ranges in the editor are used.
-   * @param fromChar
-   * @param toChar
+   * @param fromCharOrId
+   * @param toCharOrId
    */
-  charsBetween(fromChar, toChar) {
+  charsBetween(fromCharOrId, toCharOrId) {
     let indexFrom = 0
     let indexTo = this.chars.length
 
-    if(fromChar.id !== this.start.id) {
-      indexFrom = this.indexOf(fromChar) + 1
+    if(!charEq(fromCharOrId, this.start)) {
+      indexFrom = this.indexOf(fromCharOrId) + 1
     }
 
-    if(toChar !== EOF && toChar.id !== this.end.id) {
-      indexTo = this.indexOf(toChar) + 1
+    if(toCharOrId !== EOF && !charEq(toCharOrId, this.end)) {
+      indexTo = this.indexOf(toCharOrId) + 1
     }
 
     return this.chars.slice(indexFrom, indexTo)
   }
 
-  charsTo(char) {
-    return this.chars.slice(0, this.indexOf(char) + 1)
+  charsTo(charOrId) {
+    return this.chars.slice(0, this.indexOf(charOrId) + 1)
   }
 }
 
 const EMPTY_LINE = new Line([], [], BASE_CHAR, EOF, 0)
-
-/**
- * Determines whether two chars are the same or not.
- * @param {Char|number} charOrId1
- * @param {Char|number} charOrId2
- */
-export function charEq(charOrId1, charOrId2) {
-  if(charOrId1 === charOrId2) return true
-  if(!charOrId1) return Object.is(charOrId1, charOrId2)
-  return charId(charOrId1) === charId(charOrId2)
-}
 
 /**
  * Determines whether two char arrays are the same or not i.e. that the arrays refer to the

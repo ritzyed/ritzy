@@ -207,13 +207,21 @@ export default React.createClass({
 
   // RENDERING ---------------------------------------------------------------------------------------------------------
 
-  _searchLinesWithSelection() {
-    if(!this.state.lines || this.state.lines.length === 0 || !this.state.selectionActive) {
+  _searchLinesWithSelection(selection) {
+    if(!selection) {
+      selection = {
+        selectionActive: this.state.selectionActive,
+        selectionLeftChar: this.state.selectionLeftChar,
+        selectionRightChar: this.state.selectionRightChar
+      }
+    }
+
+    if(!this.state.lines || this.state.lines.length === 0 || !selection.selectionActive) {
       return null
     }
 
-    let left = lineContainingChar(this.state.lines, this.replica.getCharRelativeTo(this.state.selectionLeftChar, 1, 'eof'))
-    let right = lineContainingChar(this.state.lines.slice(left.index), this.state.selectionRightChar, null)
+    let left = lineContainingChar(this.state.lines, this.replica.getCharRelativeTo(selection.selectionLeftChar, 1, 'eof'))
+    let right = lineContainingChar(this.state.lines.slice(left.index), selection.selectionRightChar, null)
 
     return {
       left: left.index,
@@ -221,10 +229,15 @@ export default React.createClass({
     }
   },
 
-  _renderSelectionOverlay(lineIndex, lineHeight, linesWithSelection) {
+  _renderSelectionOverlay(lineIndex, lineHeight, selection, remote) {
+    if(!selection.selectionActive) {
+      return null
+    }
+
+    let linesWithSelection = this._searchLinesWithSelection(selection)
+
     // lines outside the selection range
-    if(!this.state.selectionActive
-      || (linesWithSelection && (lineIndex < linesWithSelection.left || lineIndex > linesWithSelection.right))) {
+    if(linesWithSelection && (lineIndex < linesWithSelection.left || lineIndex > linesWithSelection.right)) {
       return null
     }
 
@@ -238,17 +251,32 @@ export default React.createClass({
       }
 
       // named selection border and bg colors same as cursor, opacity somewhere around 0.15 (then keeps reducing about every second by 0.001), no color attribute
-      if(!this.state.focus) {
-        selectionStyle.borderTopColor = 'rgb(0, 0, 0)'
-        selectionStyle.borderBottomColor = 'rgb(0, 0, 0)'
-        selectionStyle.backgroundColor = 'rgb(0, 0, 0)'
+      let setColor
+      if(remote) {
+        setColor = remote.color
+      } else if(!this.state.focus) {
+        setColor = 'rgb(0, 0, 0)'
+      }
+
+      if(setColor) {
+        selectionStyle.borderTopColor = setColor
+        selectionStyle.borderBottomColor = setColor
+        selectionStyle.backgroundColor = setColor
         selectionStyle.opacity = 0.15
-        selectionStyle.color = 'black'
+        selectionStyle.color = setColor
+      }
+
+      let key
+      if(remote) {
+        let id = remote.model._id
+        key = `selection-${lineIndex}-${id}`
+      } else {
+        key = `selection-${lineIndex}`
       }
 
       return (
         <div className="ritzy-internal-text-selection-overlay text-selection-overlay ritzy-internal-text-htmloverlay ritzy-internal-text-htmloverlay-under-text ritzy-internal-ui-unprintable"
-          style={selectionStyle}></div>
+          style={selectionStyle} key={key}></div>
       )
     }
 
@@ -264,14 +292,14 @@ export default React.createClass({
     }
 
     // last line with EOF
-    if(line && line.isEof() && this.state.selectionRightChar === EOF) {
+    if(line && line.isEof() && selection.selectionRightChar === EOF) {
       return selectionDiv(0, TextFontMetrics.advanceXForSpace(this.props.fontSize))
     }
 
     // empty editor (no line and selection is from BASE_CHAR to EOF)
     if(!line
-      && charEq(this.state.selectionLeftChar, BASE_CHAR)
-      && charEq(this.state.selectionRightChar, EOF)) {
+      && charEq(selection.selectionLeftChar, BASE_CHAR)
+      && charEq(selection.selectionRightChar, EOF)) {
       return selectionDiv(0, TextFontMetrics.advanceXForSpace(this.props.fontSize))
     }
 
@@ -281,13 +309,13 @@ export default React.createClass({
 
     if(lineIndex === linesWithSelection.left) {
       // TODO change selection height and font size dynamically
-      selectionLeftX = TextFontMetrics.advanceXForChars(this.props.fontSize, line.charsTo(this.state.selectionLeftChar))
+      selectionLeftX = TextFontMetrics.advanceXForChars(this.props.fontSize, line.charsTo(selection.selectionLeftChar))
     }
 
     if(lineIndex === linesWithSelection.right) {
       let selectionChars = selectionLeftX > 0 ?
-        line.charsBetween(this.state.selectionLeftChar, this.state.selectionRightChar) :
-        line.charsTo(this.state.selectionRightChar)
+        line.charsBetween(selection.selectionLeftChar, selection.selectionRightChar) :
+        line.charsTo(selection.selectionRightChar)
 
       if(selectionChars.length === 0) {
         return null
@@ -304,6 +332,18 @@ export default React.createClass({
     }
 
     return selectionDiv(selectionLeftX, selectionWidthX)
+  },
+
+  _renderRemoteSelectionOverlays(lineIndex, lineHeight) {
+    return Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].model.selectionActive).map(id => {
+      let remoteCursor = this.state.remoteCursors[id]
+      let remoteSelection = {
+        selectionActive: remoteCursor.model.selectionActive,
+        selectionLeftChar: remoteCursor.model.selectionLeftChar,
+        selectionRightChar: remoteCursor.model.selectionRightChar
+      }
+      return this._renderSelectionOverlay(lineIndex, lineHeight, remoteSelection, remoteCursor)
+    })
   },
 
   _renderStyledText(id, text, attributes) {
@@ -358,15 +398,21 @@ export default React.createClass({
     }))
   },
 
-  _renderLine(line, index, lineHeight, linesWithSelection) {
+  _renderLine(line, index, lineHeight) {
     let blockHeight = 10000
     let blockTop = TextFontMetrics.top(this.props.fontSize) - blockHeight
+    let selection = {
+      selectionActive: this.state.selectionActive,
+      selectionLeftChar: this.state.selectionLeftChar,
+      selectionRightChar: this.state.selectionRightChar
+    }
 
     // TODO set lineHeight based on font sizes used in line chunks
     // the span wrapper around the text is required so that the text does not shift up/down when using superscript/subscript
     return (
       <div className="ritzy-internal-text-lineview text-lineview" style={{height: lineHeight, direction: 'ltr', textAlign: 'left'}} key={index}>
-        {this._renderSelectionOverlay(index, lineHeight, linesWithSelection)}
+        {this._renderSelectionOverlay(index, lineHeight, selection)}
+        {this._renderRemoteSelectionOverlays(index, lineHeight)}
         <div className="ritzy-internal-text-lineview-content text-lineview-content" style={{marginLeft: 0, paddingTop: 0}}>
           <span style={{display: 'inline-block', height: blockHeight}}></span>
           <span style={{display: 'inline-block', position: 'relative', top: blockTop}}>
@@ -514,14 +560,13 @@ export default React.createClass({
       let lines = this._splitIntoLines()
       let lineHeight = TextFontMetrics.lineHeight(this.props.fontSize)
       let cursorPosition = this._cursorPosition(lineHeight, this.state.position, this.state.positionEolStart)
-      let linesWithSelection = this._searchLinesWithSelection()
 
       return (
         <div>
           {this._renderInput(cursorPosition)}
           <div className="ritzy-internal-text-contents text-contents" style={{position: 'relative'}}>
             { lines.length > 0 ?
-              lines.map((line, index) => this._renderLine(line, index, lineHeight, linesWithSelection) ) :
+              lines.map((line, index) => this._renderLine(line, index, lineHeight) ) :
               this._renderLine(nbsp, 0, lineHeight)}
           </div>
           {this._renderCursor(cursorPosition, lineHeight)}
