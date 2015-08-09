@@ -20,7 +20,8 @@ storage.open()
 Swarm.host = new Swarm.Host('swarm~nodejs', 0, storage)
 Swarm.env.localhost = Swarm.host
 
-let cursorSet = new Swarm.CursorSet('/CursorSet#all')
+// TODO lookup all editor ids
+let cursorSet = new Swarm.CursorSet('/CursorSet#10')
 
 function cursorSetClean() {
   let online = {}

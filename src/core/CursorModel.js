@@ -2,7 +2,6 @@ import Model from 'swarm/lib/Model'
 
 export default Model.extend('Cursor', {
   defaults: {
-    id: '',
     name: '',
     position: null,
     positionEolStart: false,

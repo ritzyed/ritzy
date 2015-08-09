@@ -1,8 +1,7 @@
-import Swarm from 'swarmclient'
-
 export default {
-  createTextReplica(id) {
-    this.replica = new Swarm.Text('/Text#' + id)
+  createTextReplica() {
+    let Text = this.swarmClient.Swarm.Text
+    this.replica = new Text('/Text#' + this.props.id)
   },
 
   registerCb(initCb, updateCb) {

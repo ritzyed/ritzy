@@ -9,7 +9,9 @@ import EditorStore from '../flux/EditorStore'
 import DebugEditor from './DebugEditor'
 import { BASE_CHAR, EOF } from 'RichText'
 import { elementPosition, scrollByToVisible } from 'dom'
+import SwarmClientMixin from './SwarmClientMixin'
 import TextReplicaMixin from './TextReplicaMixin'
+import SharedCursorMixin from './SharedCursorMixin'
 import TextInput from './TextInput'
 import {ATTR, hasAttributeFor} from '../core/attributes'
 import { charEq, lineContainingChar } from '../core/EditorCommon'
@@ -41,7 +43,7 @@ export default React.createClass({
     initialFocus: T.bool
   },
 
-  mixins: [TextReplicaMixin],
+  mixins: [SwarmClientMixin, TextReplicaMixin, SharedCursorMixin],
 
   getDefaultProps() {
     return {
@@ -90,9 +92,8 @@ export default React.createClass({
     this.setState(state)
   },
 
-  // todo should the replica stuff be in the store?
   _createReplica() {
-    this.createTextReplica(this.props.id)
+    this.createTextReplica()
     this.registerCb(this._replicaInitCb, this._replicaUpdateCb)
   },
 
@@ -100,6 +101,7 @@ export default React.createClass({
     // set our own replica for future use
     this.replicaSource = sourceOf(spec)
     EditorActions.replicaInitialized()
+    this.createSharedCursor()
   },
 
   _replicaUpdateCb(spec, op, replica) {  // eslint-disable-line no-unused-vars

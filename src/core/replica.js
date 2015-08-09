@@ -1,9 +1,9 @@
 /**
- * Returns the source from within a replica spec.
+ * Parses a Swarm spec and returns its data as an object.
  * @param spec
- * @returns {*}
+ * @returns {{source: *, op: *}}
  */
-export function sourceOf(spec) {
+export function parseSpec(spec) {
   // spec seems to have some internal parsing state "index" which prevents accessing it consistently
   // https://github.com/gritzko/swarm/issues/53
   let oldIndex = spec.index
@@ -12,8 +12,26 @@ export function sourceOf(spec) {
   try {
     source = spec.source()
   } catch (e) {
-    return null
+    source = null
+  }
+  let op
+  try {
+    op = spec.op()
+  } catch (e) {
+    op = null
   }
   spec.index = oldIndex
-  return source
+  return {
+    source: source,
+    op: op
+  }
+}
+
+/**
+ * Returns the source from within a Swarm spec.
+ * @param spec
+ * @returns {*}
+ */
+export function sourceOf(spec) {
+  return parseSpec(spec).source
 }

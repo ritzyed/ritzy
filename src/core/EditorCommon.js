@@ -3,7 +3,7 @@ import _ from 'lodash'
 
 import { BASE_CHAR, EOF } from './RichText'
 
-function idOf(charOrId) {
+export function charId(charOrId) {
   return _.has(charOrId, 'id') ? charOrId.id : charOrId
 }
 
@@ -34,7 +34,7 @@ export class Line {
       this._charIds = new Set()
       this.chars.forEach(c => this._charIds.add(c.id))
     }
-    return this._charIds.has(idOf(charOrId))
+    return this._charIds.has(charId(charOrId))
   }
 
   /**
@@ -121,7 +121,7 @@ const EMPTY_LINE = new Line([], [], BASE_CHAR, EOF, 0)
 export function charEq(charOrId1, charOrId2) {
   if(charOrId1 === charOrId2) return true
   if(!charOrId1) return Object.is(charOrId1, charOrId2)
-  return idOf(charOrId1) === idOf(charOrId2)
+  return charId(charOrId1) === charId(charOrId2)
 }
 
 /**

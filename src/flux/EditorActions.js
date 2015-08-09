@@ -8,6 +8,10 @@ class EditorActions {
     this.dispatch({config, replica})
   }
 
+  initializeCursorModel(cursorSet, cursorModel) {
+    this.dispatch({cursorSet, cursorModel})
+  }
+
   replicaInitialized() {
     this.dispatch()
   }
@@ -22,6 +26,18 @@ class EditorActions {
 
   inputFocusLost() {
     this.dispatch()
+  }
+
+  setRemoteCursorPosition(remoteCursor) {
+    this.dispatch(remoteCursor)
+  }
+
+  unsetRemoteCursorPosition(remoteCursor) {
+    this.dispatch(remoteCursor)
+  }
+
+  revealRemoteCursorName(remoteCursor) {
+    this.dispatch(remoteCursor)
   }
 
   // navigation actions

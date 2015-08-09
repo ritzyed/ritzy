@@ -12,7 +12,7 @@ import { default as tokenizer, isWhitespace } from 'tokenizer'
 import writeHtml from '../core/htmlwriter'
 import writeText from '../core/textwriter'
 import TextFontMetrics from '../core/TextFontMetrics'
-import { charEq, charArrayEq, Line, lineContainingChar } from '../core/EditorCommon'
+import { charEq, charArrayEq, charId, Line, lineContainingChar } from '../core/EditorCommon'
 
 const FLOW_DEBUG = false
 const ACTION_DELETE = 'delete'
@@ -38,6 +38,8 @@ class EditorStore {
       positionEolStart: true,
       cursorMotion: false,
       selectionActive: false,
+      remoteCursors: {},
+      remoteNameReveal: [],
       focus: false,
       loaded: false
     }
@@ -49,6 +51,12 @@ class EditorStore {
     this.replica = replica
 
     this.setState({focus: config.initialFocus})
+  }
+
+  initializeCursorModel({cursorSet, cursorModel}) {
+    this.cursorSet = cursorSet
+    this.cursorModel = cursorModel
+    this._setRemoteCursorModel()
   }
 
   replicaInitialized() {
@@ -68,6 +76,35 @@ class EditorStore {
 
   inputFocusLost() {
     this.setState({focus: false})
+  }
+
+  setRemoteCursorPosition(remoteCursor) {
+    let id = remoteCursor.model._id
+    // some bug in Swarm.js: sometimes the id is blank if a lot of cursor events have happened quickly in succession
+    if(!id) return
+    let remoteCursors = this.state.remoteCursors
+    remoteCursors[id] = remoteCursor
+    this.setState({remoteCursors: remoteCursors})
+    this._delayedRemoteCursorNameReveal(id)
+  }
+
+  unsetRemoteCursorPosition(remoteCursor) {
+    let id = remoteCursor.model._id
+    // some bug in Swarm.js: sometimes the id is blank if a lot of cursor events have happened quickly in succession
+    if(!id) return
+    let remoteCursors = this.state.remoteCursors
+    if(id in remoteCursors) {
+      delete remoteCursors[id]
+      this.setState({remoteCursors: remoteCursors})
+    }
+  }
+
+  updateRemoteCursorModel() {
+    this._setRemoteCursorModel()
+  }
+
+  revealRemoteCursorName(remoteCursor) {
+    this._delayedRemoteCursorNameReveal(remoteCursor.model._id)
   }
 
   navigateLeft() {
@@ -769,6 +806,28 @@ class EditorStore {
     }
   }
 
+  _setRemoteCursorModel() {
+    if(!this.cursorModel) return
+
+    let updatedModel = {
+      position: this.state.position.id,
+      positionEolStart: this.state.positionEolStart,
+      selectionActive: this.state.selectionActive,
+      selectionLeftChar: this.state.selectionActive ? charId(this.state.selectionLeftChar) : null,
+      selectionRightChar: this.state.selectionActive ? charId(this.state.selectionRightChar) : null,
+      ms: Date.now()
+    }
+
+    // do the remote work at the end of the event queue to avoid UI latency
+    setTimeout(() => {
+      // add the cursor model back into the set if it is not there (reaped due to idleness?)
+      if (this.cursorSet.list().findIndex(e => e._id === this.cursorModel._id) < 0) {
+        this.cursorSet.addObject(this.cursorModel)
+      }
+      this.cursorModel.set(updatedModel)
+    }, 0)
+  }
+
   /**
    * Sets the character and cursor position within the text. The position is relative to an existing
    * character given by its replica id. The cursor position is calculated based on the character
@@ -809,6 +868,7 @@ class EditorStore {
     }
 
     this._delayedCursorBlink()
+    this._setRemoteCursorModel()
   }
 
   _resetPosition() {
@@ -820,13 +880,26 @@ class EditorStore {
 
     this.setState({cursorMotion: true})
 
-    // in a second, reset the cursor blink, clear any previous resets to avoid unnecessary state changes
+    // after timeout, reset the cursor blink, clear any previous resets to avoid unnecessary state changes
     if(this.cursorMotionTimeout) {
       clearTimeout(this.cursorMotionTimeout)
     }
     this.cursorMotionTimeout = setTimeout(() => {
       this.setState({cursorMotion: false})
       this.cursorMotionTimeout = null
+    }, timeout)
+  }
+
+  _delayedRemoteCursorNameReveal(id, timeout) {
+    if(_.isUndefined(timeout)) timeout = 2000
+
+    this.state.remoteNameReveal.push(id)
+    this.setState({remoteNameReveal: this.state.remoteNameReveal})
+
+    setTimeout(() => {
+      // this should never be false
+      if(this.state.remoteNameReveal.length > 0) this.state.remoteNameReveal.shift()
+      this.setState({remoteNameReveal: this.state.remoteNameReveal})
     }, timeout)
   }
 
@@ -972,6 +1045,7 @@ class EditorStore {
       this.upDownAdvanceX = null
       this.upDownPositionEolStart = null
     }
+    this._setRemoteCursorModel()
   }
 
   _charPositionRelativeToIndex(charIndex, textChars) {
