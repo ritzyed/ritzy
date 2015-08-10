@@ -1,4 +1,3 @@
-import 'babel/polyfill'
 import _ from 'lodash'
 
 import { BASE_CHAR, EOF } from './RichText'

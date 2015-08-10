@@ -1,5 +1,3 @@
-import 'babel/polyfill'
-
 import _ from 'lodash'
 import React from 'react/addons'
 import getEventKey from 'react/lib/getEventKey'

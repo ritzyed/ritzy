@@ -1,5 +1,3 @@
-import 'babel/polyfill'
-
 import React from 'react/addons'
 
 import EditorActions from '../flux/EditorActions'

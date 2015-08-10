@@ -1,4 +1,3 @@
-import 'babel/polyfill'
 import invariant from 'react/lib/invariant'
 
 // http://stackoverflow.com/a/4156156/430128
