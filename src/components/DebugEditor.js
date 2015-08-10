@@ -22,7 +22,7 @@ export default React.createClass({
   },
 
   _dumpState() {
-    console.debug('Current state contents (NOTE: state.focus always false due to debug button click):')
+    console.debug('Current state contents (Use React Devtools 0.14+ for real-time state view/edit):')
     console.dir(this.edState)
     EditorActions.focusInput()
   },
