@@ -116,7 +116,7 @@ gulp.task('build:watch', function(cb) {
 // Launch a Node.js/Express server
 gulp.task('serve', ['build:watch'], function(cb) {
   src.server = [
-    options.builddir + '/app.js',
+    options.builddir + '/client.js',
     options.builddir + '/server.js',
     options.builddir + '/templates/**/*'
   ]

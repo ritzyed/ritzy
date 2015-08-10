@@ -1,3 +1,5 @@
+import 'babel/polyfill'
+
 import React from 'react/addons'
 import WebFont from 'webfontloader'
 import OpenType from 'opentype.js'
