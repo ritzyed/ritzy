@@ -3,13 +3,16 @@ import 'babel/polyfill'
 import React from 'react/addons'
 import classNames from 'classnames'
 import Spinner from 'react-spinkit'
+import _ from 'lodash'
 
 import EditorActions from '../flux/EditorActions'
 import EditorStore from '../flux/EditorStore'
 import DebugEditor from './DebugEditor'
 import { BASE_CHAR, EOF } from 'RichText'
 import { elementPosition, scrollByToVisible } from 'dom'
+import SwarmClientMixin from './SwarmClientMixin'
 import TextReplicaMixin from './TextReplicaMixin'
+import SharedCursorMixin from './SharedCursorMixin'
 import TextInput from './TextInput'
 import {ATTR, hasAttributeFor} from '../core/attributes'
 import { charEq, lineContainingChar } from '../core/EditorCommon'
@@ -36,14 +39,35 @@ export default React.createClass({
     width: T.number.isRequired,
     marginH: T.number.isRequired,
     marginV: T.number.isRequired,
+    userId: T.string.isRequired,
+    userName: T.string,
+    cursorColorSpace: T.arrayOf(T.string), // TODO allow it to be a function as well
     initialFocus: T.bool
   },
 
-  mixins: [TextReplicaMixin],
+  mixins: [SwarmClientMixin, TextReplicaMixin, SharedCursorMixin],
 
   getDefaultProps() {
     return {
-      initialFocus: true
+      initialFocus: true,
+      // The default cursor color space is a less harsh variation of the 11 Boynton colors:
+      // http://alumni.media.mit.edu/~wad/color/palette.html
+      // See also:
+      // http://stackoverflow.com/a/4382138/430128
+      // https://eleanormaclure.files.wordpress.com/2011/03/colour-coding.pdf
+      cursorColorSpace: [
+        'rgb(29, 105, 20)',   // green
+        'rgb(129, 38, 192)',  // purple,
+        'rgb(42, 75, 215)',   // blue
+        'rgb(41, 208, 208)',  // cyan
+        'rgb(173, 35, 35)',   // red
+        'rgb(255, 146, 51)',  // orange
+        'rgb(129, 197, 122)', // light green
+        'rgb(157, 175, 255)', // light blue
+        'rgb(255, 205, 243)', // pink
+        'rgb(255, 238, 51)',  // yellow
+        'rgb(129, 74, 25)'    // brown
+      ]
     }
   },
 
@@ -88,9 +112,8 @@ export default React.createClass({
     this.setState(state)
   },
 
-  // todo should the replica stuff be in the store?
   _createReplica() {
-    this.createTextReplica(this.props.id)
+    this.createTextReplica()
     this.registerCb(this._replicaInitCb, this._replicaUpdateCb)
   },
 
@@ -98,6 +121,7 @@ export default React.createClass({
     // set our own replica for future use
     this.replicaSource = sourceOf(spec)
     EditorActions.replicaInitialized()
+    this.createSharedCursor()
   },
 
   _replicaUpdateCb(spec, op, replica) {  // eslint-disable-line no-unused-vars
@@ -106,12 +130,6 @@ export default React.createClass({
   },
 
   _mouseEventToCoordinates(e) {
-    // hack: if the user clicks or rolls over their own cursor sometimes that becomes the target element (in browsers
-    // that don't support pointer-events: none, like IE < 11): BUT we know the cursor is the current position
-    if(e.target.className.indexOf('text-cursor-caret') >= 0) {
-      return null
-    }
-
     // target is the particular element within the editor clicked on, current target is the entire editor div
     let targetPosition = elementPosition(e.currentTarget)
 
@@ -180,15 +198,30 @@ export default React.createClass({
     e.stopPropagation()
   },
 
+  _remoteCursorHover(id, e) {
+    EditorActions.revealRemoteCursorName(this.state.remoteCursors[id])
+
+    e.preventDefault()
+    e.stopPropagation()
+  },
+
   // RENDERING ---------------------------------------------------------------------------------------------------------
 
-  _searchLinesWithSelection() {
-    if(!this.state.lines || this.state.lines.length === 0 || !this.state.selectionActive) {
+  _searchLinesWithSelection(selection) {
+    if(!selection) {
+      selection = {
+        selectionActive: this.state.selectionActive,
+        selectionLeftChar: this.state.selectionLeftChar,
+        selectionRightChar: this.state.selectionRightChar
+      }
+    }
+
+    if(!this.state.lines || this.state.lines.length === 0 || !selection.selectionActive) {
       return null
     }
 
-    let left = lineContainingChar(this.state.lines, this.replica.getCharRelativeTo(this.state.selectionLeftChar, 1, 'eof'))
-    let right = lineContainingChar(this.state.lines.slice(left.index), this.state.selectionRightChar, null)
+    let left = lineContainingChar(this.state.lines, this.replica.getCharRelativeTo(selection.selectionLeftChar, 1, 'eof'))
+    let right = lineContainingChar(this.state.lines.slice(left.index), selection.selectionRightChar, null)
 
     return {
       left: left.index,
@@ -196,10 +229,15 @@ export default React.createClass({
     }
   },
 
-  _renderSelectionOverlay(lineIndex, lineHeight, linesWithSelection) {
+  _renderSelectionOverlay(lineIndex, lineHeight, selection, remote) {
+    if(!selection.selectionActive) {
+      return null
+    }
+
+    let linesWithSelection = this._searchLinesWithSelection(selection)
+
     // lines outside the selection range
-    if(!this.state.selectionActive
-      || (linesWithSelection && (lineIndex < linesWithSelection.left || lineIndex > linesWithSelection.right))) {
+    if(linesWithSelection && (lineIndex < linesWithSelection.left || lineIndex > linesWithSelection.right)) {
       return null
     }
 
@@ -212,17 +250,33 @@ export default React.createClass({
         height: height
       }
 
-      if(!this.state.focus) {
-        selectionStyle.borderTopColor = 'rgb(0, 0, 0)'
-        selectionStyle.borderBottomColor = 'rgb(0, 0, 0)'
-        selectionStyle.backgroundColor = 'rgb(0, 0, 0)'
+      // named selection border and bg colors same as cursor, opacity somewhere around 0.15 (then keeps reducing about every second by 0.001), no color attribute
+      let setColor
+      if(remote) {
+        setColor = remote.color
+      } else if(!this.state.focus) {
+        setColor = 'rgb(0, 0, 0)'
+      }
+
+      if(setColor) {
+        selectionStyle.borderTopColor = setColor
+        selectionStyle.borderBottomColor = setColor
+        selectionStyle.backgroundColor = setColor
         selectionStyle.opacity = 0.15
-        selectionStyle.color = 'black'
+        selectionStyle.color = setColor
+      }
+
+      let key
+      if(remote) {
+        let id = remote.model._id
+        key = `selection-${lineIndex}-${id}`
+      } else {
+        key = `selection-${lineIndex}`
       }
 
       return (
         <div className="ritzy-internal-text-selection-overlay text-selection-overlay ritzy-internal-text-htmloverlay ritzy-internal-text-htmloverlay-under-text ritzy-internal-ui-unprintable"
-          style={selectionStyle}></div>
+          style={selectionStyle} key={key}></div>
       )
     }
 
@@ -238,14 +292,14 @@ export default React.createClass({
     }
 
     // last line with EOF
-    if(line && line.isEof() && this.state.selectionRightChar === EOF) {
+    if(line && line.isEof() && selection.selectionRightChar === EOF) {
       return selectionDiv(0, TextFontMetrics.advanceXForSpace(this.props.fontSize))
     }
 
     // empty editor (no line and selection is from BASE_CHAR to EOF)
     if(!line
-      && charEq(this.state.selectionLeftChar, BASE_CHAR)
-      && charEq(this.state.selectionRightChar, EOF)) {
+      && charEq(selection.selectionLeftChar, BASE_CHAR)
+      && charEq(selection.selectionRightChar, EOF)) {
       return selectionDiv(0, TextFontMetrics.advanceXForSpace(this.props.fontSize))
     }
 
@@ -255,13 +309,13 @@ export default React.createClass({
 
     if(lineIndex === linesWithSelection.left) {
       // TODO change selection height and font size dynamically
-      selectionLeftX = TextFontMetrics.advanceXForChars(this.props.fontSize, line.charsTo(this.state.selectionLeftChar))
+      selectionLeftX = TextFontMetrics.advanceXForChars(this.props.fontSize, line.charsTo(selection.selectionLeftChar))
     }
 
     if(lineIndex === linesWithSelection.right) {
       let selectionChars = selectionLeftX > 0 ?
-        line.charsBetween(this.state.selectionLeftChar, this.state.selectionRightChar) :
-        line.charsTo(this.state.selectionRightChar)
+        line.charsBetween(selection.selectionLeftChar, selection.selectionRightChar) :
+        line.charsTo(selection.selectionRightChar)
 
       if(selectionChars.length === 0) {
         return null
@@ -278,6 +332,18 @@ export default React.createClass({
     }
 
     return selectionDiv(selectionLeftX, selectionWidthX)
+  },
+
+  _renderRemoteSelectionOverlays(lineIndex, lineHeight) {
+    return Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].model.selectionActive).map(id => {
+      let remoteCursor = this.state.remoteCursors[id]
+      let remoteSelection = {
+        selectionActive: remoteCursor.model.selectionActive,
+        selectionLeftChar: remoteCursor.model.selectionLeftChar,
+        selectionRightChar: remoteCursor.model.selectionRightChar
+      }
+      return this._renderSelectionOverlay(lineIndex, lineHeight, remoteSelection, remoteCursor)
+    })
   },
 
   _renderStyledText(id, text, attributes) {
@@ -332,15 +398,21 @@ export default React.createClass({
     }))
   },
 
-  _renderLine(line, index, lineHeight, linesWithSelection) {
+  _renderLine(line, index, lineHeight) {
     let blockHeight = 10000
     let blockTop = TextFontMetrics.top(this.props.fontSize) - blockHeight
+    let selection = {
+      selectionActive: this.state.selectionActive,
+      selectionLeftChar: this.state.selectionLeftChar,
+      selectionRightChar: this.state.selectionRightChar
+    }
 
     // TODO set lineHeight based on font sizes used in line chunks
     // the span wrapper around the text is required so that the text does not shift up/down when using superscript/subscript
     return (
       <div className="ritzy-internal-text-lineview text-lineview" style={{height: lineHeight, direction: 'ltr', textAlign: 'left'}} key={index}>
-        {this._renderSelectionOverlay(index, lineHeight, linesWithSelection)}
+        {this._renderSelectionOverlay(index, lineHeight, selection)}
+        {this._renderRemoteSelectionOverlays(index, lineHeight)}
         <div className="ritzy-internal-text-lineview-content text-lineview-content" style={{marginLeft: 0, paddingTop: 0}}>
           <span style={{display: 'inline-block', height: blockHeight}}></span>
           <span style={{display: 'inline-block', position: 'relative', top: blockTop}}>
@@ -351,32 +423,40 @@ export default React.createClass({
     )
   },
 
-  _cursorPosition(lineHeight) {
+  _cursorPosition(lineHeight, position, positionEolStart) {
     // the initial render before the component is mounted has no position or lines
-    if (!this.state.position || !this.state.lines) {
+    if (!position || !this.state.lines) {
       return null
     }
 
-    if(charEq(BASE_CHAR, this.state.position) || this.state.lines.length === 0) {
+    if(charEq(BASE_CHAR, position) || this.state.lines.length === 0) {
       return {
+        position: position,
+        positionEolStart: positionEolStart,
         left: this.props.marginH,
         top: this.props.marginV
       }
     }
 
-    let {line, index, endOfLine} = lineContainingChar(this.state.lines, this.state.position, this.state.positionEolStart)
+    let result = lineContainingChar(this.state.lines, position, positionEolStart)
+    if(!result) {
+      return null
+    }
+    let {line, index, endOfLine} = result
     let previousLineHeights = line ? lineHeight * index : 0
 
     let cursorAdvanceX
 
-    if(!line || (endOfLine && this.state.positionEolStart && index < this.state.lines.length - 1)) {
+    if(!line || (endOfLine && positionEolStart && index < this.state.lines.length - 1)) {
       cursorAdvanceX = 0
     } else {
-      let positionChars = line.charsTo(this.state.position)
+      let positionChars = line.charsTo(position)
       cursorAdvanceX = TextFontMetrics.advanceXForChars(this.props.fontSize, positionChars)
     }
 
     return {
+      position: position,
+      positionEolStart: positionEolStart,
       left: this.props.marginH + cursorAdvanceX,
       top: this.props.marginV + previousLineHeights
     }
@@ -390,19 +470,19 @@ export default React.createClass({
     )
   },
 
-  _renderCursor(cursorPosition, lineHeight) {
+  _renderCursor(cursorPosition, lineHeight, remote) {
     // the initial render before the component is mounted has no position
     if (!cursorPosition) {
       return null
     }
 
     let cursorClasses = classNames('ritzy-internal-text-cursor text-cursor', 'ritzy-internal-ui-unprintable', {
-      'ritzy-internal-text-cursor-blink': !this.state.cursorMotion
+      'ritzy-internal-text-cursor-blink': !this.state.cursorMotion && !remote
     })
 
-    let italicAtPosition = this.state.position.attributes && this.state.position.attributes[ATTR.ITALIC]
-    let italicActive = this.state.activeAttributes && this.state.activeAttributes[ATTR.ITALIC]
-    let italicInactive = this.state.activeAttributes && !this.state.activeAttributes[ATTR.ITALIC]
+    let italicAtPosition = cursorPosition.position.attributes && cursorPosition.position.attributes[ATTR.ITALIC]
+    let italicActive = this.state.activeAttributes && this.state.activeAttributes[ATTR.ITALIC] && !remote
+    let italicInactive = this.state.activeAttributes && !this.state.activeAttributes[ATTR.ITALIC] && !remote
 
     let caretClasses = classNames('ritzy-internal-text-cursor-caret text-cursor-caret', {
       'ritzy-internal-text-cursor-italic': italicActive || (italicAtPosition && !italicInactive)
@@ -413,7 +493,7 @@ export default React.createClass({
       top: cursorPosition.top
     }
 
-    if (this.state.selectionActive || !this.state.focus) {
+    if (!remote && (this.state.selectionActive || !this.state.focus)) {
       cursorStyle.opacity = 0
       cursorStyle.visibility = 'hidden'
     } else {
@@ -422,31 +502,75 @@ export default React.createClass({
 
     let cursorHeight = Math.round(lineHeight * 10) / 10
 
-    return (
-      <div className={cursorClasses} style={cursorStyle} key="cursor" ref="cursor">
-        <div className={caretClasses} style={{borderColor: 'black', height: cursorHeight}} key="caret" ref="caret"></div>
-        <div className="ritzy-internal-text-cursor-top text-cursor-top" style={{opacity: 0, display: 'none'}}></div>
-        <div className="ritzy-internal-text-cursor-name text-cursor-name" style={{opacity: 0, display: 'none'}}></div>
-      </div>
-    )
+    if(remote) {
+      let id = remote.model._id
+      let key = `cursor-${id}`
+      let remoteCursorHover = _.partial(this._remoteCursorHover, id)
+      let revealName = this.state.remoteNameReveal.indexOf(id) > -1
+      let cursorTopStyle = {
+        backgroundColor: remote.color,
+        opacity: 1
+      }
+      let cursorNameStyle = {
+        backgroundColor: remote.color
+      }
+      if(revealName) {
+        cursorTopStyle.display = 'none'
+        cursorNameStyle.opacity = 1
+      } else {
+        cursorNameStyle.opacity = 0
+        cursorNameStyle.display = 'none'
+      }
+
+      return (
+        <div className={cursorClasses} style={cursorStyle} key={key}>
+          <div className={caretClasses} style={{borderColor: remote.color, height: cursorHeight}} onMouseOver={remoteCursorHover}></div>
+          <div className="ritzy-internal-text-cursor-top text-cursor-top" style={cursorTopStyle} onMouseOver={remoteCursorHover}></div>
+          <div className="ritzy-internal-text-cursor-name text-cursor-name" style={cursorNameStyle}>{remote.model.name}</div>
+        </div>
+      )
+    } else {
+      return (
+        <div className={cursorClasses} style={cursorStyle} key="cursor" ref="cursor">
+          <div className={caretClasses} style={{borderColor: 'black', height: cursorHeight}} key="caret" ref="caret"></div>
+          <div className="ritzy-internal-text-cursor-top text-cursor-top" style={{opacity: 1}}></div>
+          <div className="ritzy-internal-text-cursor-name text-cursor-name" style={{opacity: 1}}></div>
+        </div>
+      )
+    }
+  },
+
+  _renderRemoteCursors(lineHeight) {
+    return Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].model.position).map(id => {
+      let remoteCursor = this.state.remoteCursors[id]
+      let remotePosition
+      try {
+        remotePosition = this.replica.getChar(remoteCursor.model.position)
+      } catch (e) {
+        console.warn('Error obtaining remote position, ignoring.', e)
+        return null
+      }
+      let cursorPosition = this._cursorPosition(lineHeight, remotePosition, remoteCursor.model.positionEolStart)
+      return this._renderCursor(cursorPosition, lineHeight, remoteCursor)
+    })
   },
 
   _renderEditorContents() {
     if(this.state.loaded) {
       let lines = this._splitIntoLines()
       let lineHeight = TextFontMetrics.lineHeight(this.props.fontSize)
-      let cursorPosition = this._cursorPosition(lineHeight)
-      let linesWithSelection = this._searchLinesWithSelection()
+      let cursorPosition = this._cursorPosition(lineHeight, this.state.position, this.state.positionEolStart)
 
       return (
         <div>
           {this._renderInput(cursorPosition)}
           <div className="ritzy-internal-text-contents text-contents" style={{position: 'relative'}}>
             { lines.length > 0 ?
-              lines.map((line, index) => this._renderLine(line, index, lineHeight, linesWithSelection) ) :
+              lines.map((line, index) => this._renderLine(line, index, lineHeight) ) :
               this._renderLine(nbsp, 0, lineHeight)}
           </div>
           {this._renderCursor(cursorPosition, lineHeight)}
+          {this._renderRemoteCursors(lineHeight)}
         </div>
       )
     } else {

@@ -3,6 +3,21 @@ import _ from 'lodash'
 
 import { BASE_CHAR, EOF } from './RichText'
 
+export function charId(charOrId) {
+  return _.has(charOrId, 'id') ? charOrId.id : charOrId
+}
+
+/**
+ * Determines whether two chars are the same or not.
+ * @param {Char|number} charOrId1
+ * @param {Char|number} charOrId2
+ */
+export function charEq(charOrId1, charOrId2) {
+  if(charOrId1 === charOrId2) return true
+  if(!charOrId1) return Object.is(charOrId1, charOrId2)
+  return charId(charOrId1) === charId(charOrId2)
+}
+
 /**
  * Represents a Line which is created from the flow algorithm.
  */
@@ -23,14 +38,14 @@ export class Line {
     this.advance = advance
   }
 
-  hasChar(char) {
-    if(!char) return false
+  hasChar(charOrId) {
+    if(!charOrId) return false
     // lazy evaluation of charIds if necessary
     if(!this._charIds) {
       this._charIds = new Set()
       this.chars.forEach(c => this._charIds.add(c.id))
     }
-    return this._charIds.has(char.id)
+    return this._charIds.has(charId(charOrId))
   }
 
   /**
@@ -71,9 +86,9 @@ export class Line {
     return this.end === EOF
   }
 
-  indexOf(char) {
+  indexOf(charOrId) {
     for (let i = 0; i < this.chars.length; i++) {
-      if (this.chars[i].id === char.id) {
+      if (charEq(this.chars[i], charOrId)) {
         return i
       }
     }
@@ -84,44 +99,30 @@ export class Line {
    * Obtains chars between the given char (exclusive) to the given char (inclusive). Note the
    * begin exclusivity operates differently than array slice (which is end exclusive), but corresponds
    * generally with how character ranges in the editor are used.
-   * @param fromChar
-   * @param toChar
+   * @param fromCharOrId
+   * @param toCharOrId
    */
-  charsBetween(fromChar, toChar) {
+  charsBetween(fromCharOrId, toCharOrId) {
     let indexFrom = 0
     let indexTo = this.chars.length
 
-    if(fromChar.id !== this.start.id) {
-      indexFrom = this.indexOf(fromChar) + 1
+    if(!charEq(fromCharOrId, this.start)) {
+      indexFrom = this.indexOf(fromCharOrId) + 1
     }
 
-    if(toChar !== EOF && toChar.id !== this.end.id) {
-      indexTo = this.indexOf(toChar) + 1
+    if(toCharOrId !== EOF && !charEq(toCharOrId, this.end)) {
+      indexTo = this.indexOf(toCharOrId) + 1
     }
 
     return this.chars.slice(indexFrom, indexTo)
   }
 
-  charsTo(char) {
-    return this.chars.slice(0, this.indexOf(char) + 1)
+  charsTo(charOrId) {
+    return this.chars.slice(0, this.indexOf(charOrId) + 1)
   }
 }
 
 const EMPTY_LINE = new Line([], [], BASE_CHAR, EOF, 0)
-
-/**
- * Determines whether two chars are the same or not.
- * @param {Char|number} charOrId1
- * @param {Char|number} charOrId2
- */
-export function charEq(charOrId1, charOrId2) {
-  if(charOrId1 === charOrId2) return true
-  if(!charOrId1) return Object.is(charOrId1, charOrId2)
-
-  let char1Id = _.has(charOrId1, 'id') ? charOrId1.id : charOrId1
-  let char2Id = _.has(charOrId2, 'id') ? charOrId2.id : charOrId2
-  return char1Id === char2Id
-}
 
 /**
  * Determines whether two char arrays are the same or not i.e. that the arrays refer to the
@@ -143,11 +144,11 @@ export function charArrayEq(cArr1, cArr2) {
  * Search the given search space for the line containing the provided char. If the search
  * space is empty, an empty "virtual" line starting at BASE_CHAR and ending at EOF is returned.
  * @param searchSpace The set of lines to search.
- * @param char The char to search for.
+ * @param charOrId The char or char id to search for.
  * @param  {boolean} [nextIfEol=false] If at end of line, return the next line.
  * @returns {*}
  */
-export function lineContainingChar(searchSpace, char, nextIfEol) {
+export function lineContainingChar(searchSpace, charOrId, nextIfEol) {
   if(_.isUndefined(nextIfEol)) nextIfEol = false
 
   if(!searchSpace || searchSpace.length === 0) {
@@ -159,13 +160,13 @@ export function lineContainingChar(searchSpace, char, nextIfEol) {
   }
 
   // shortcut searches at the beginning or end of the searchSpace, this is used often and these comparisons are fast
-  if(charEq(searchSpace[0].start, char)) {
+  if(charEq(searchSpace[0].start, charOrId)) {
     return {
       line: searchSpace[0],
       index: 0,
-      endOfLine: !charEq(char, BASE_CHAR)
+      endOfLine: !charEq(charOrId, BASE_CHAR)
     }
-  } else if(charEq(searchSpace[searchSpace.length - 1].end, char)) {
+  } else if(charEq(searchSpace[searchSpace.length - 1].end, charOrId)) {
     return {
       line: searchSpace[searchSpace.length - 1],
       index: searchSpace.length - 1,
@@ -175,9 +176,9 @@ export function lineContainingChar(searchSpace, char, nextIfEol) {
 
   for(let i = 0; i < searchSpace.length; i++) {
     let line = searchSpace[i]
-    if(line.hasChar(char)) {
+    if(line.hasChar(charOrId)) {
       let index = i
-      let endOfLine = charEq(char, line.end)
+      let endOfLine = charEq(charOrId, line.end)
       if(nextIfEol && endOfLine && !line.isEof() && searchSpace.length - 1 > i) {
         index++
         line = searchSpace[index]

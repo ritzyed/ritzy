@@ -34,7 +34,9 @@ server.get('/', (req, res) => {
 })
 
 // example of calling this:
-// http://localhost:5000/sapi/Mouse%23A0017r to return the state of Mouse A0017r
+// http://localhost:5000/sapi/Text%2310 to return a Text replica 10
+// http://localhost:5000/sapi/CursorSet%2310 to return a set of Cursors for editor 10
+// http://localhost:5000/sapi/Cursor%2310_A0017r to return the state of Cursor for user id A0017r in editor 10
 var apiHandler = require('swarm-restapi').createHandler({
   route: '/sapi',
   host: Swarm.host,
