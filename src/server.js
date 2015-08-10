@@ -37,7 +37,7 @@ server.get('/', (req, res) => {
 // http://localhost:5000/sapi/Text%2310 to return a Text replica 10
 // http://localhost:5000/sapi/CursorSet%2310 to return a set of Cursors for editor 10
 // http://localhost:5000/sapi/Cursor%2310_A0017r to return the state of Cursor for user id A0017r in editor 10
-var apiHandler = require('swarm-restapi').createHandler({
+let apiHandler = require('swarm-restapi').createHandler({
   route: '/sapi',
   host: Swarm.host,
   authenticate: function(req, cb) {cb(null, null)} // no auth, to implement see sample auth function in swarm-restapi/index.js
@@ -46,7 +46,7 @@ server.get(/^\/sapi\//, apiHandler)
 server.post(/^\/sapi\//, apiHandler)
 server.put(/^\/sapi\//, apiHandler)
 
-var httpServer = http.createServer(server)
+let httpServer = http.createServer(server)
 
 httpServer.listen(server.get('port'), function(err) {
   if (err) {
@@ -64,13 +64,13 @@ httpServer.listen(server.get('port'), function(err) {
 })
 
 // start WebSocket server
-var wsServer = new WebSocket.Server({
+let wsServer = new WebSocket.Server({
   server: httpServer
 })
 
 // accept pipes on connection
 wsServer.on('connection', function(ws) {
-  var params = url.parse(ws.upgradeReq.url, true)
+  let params = url.parse(ws.upgradeReq.url, true)
   console.log('Incoming websocket %s', params.path, ws.upgradeReq.connection.remoteAddress)
   if (!Swarm.host) {
     return ws.close()
@@ -92,7 +92,7 @@ function onExit(exitCode) {
   }
 
   console.log('Closing swarm host...')
-  var forcedExit = setTimeout(function() {
+  let forcedExit = setTimeout(function() {
     console.log('Swarm host close timeout, forcing exit.')
     process.exit(exitCode)
   }, 5000)
