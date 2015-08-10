@@ -18,7 +18,7 @@ var options = require('minimist')(process.argv.slice(2), {
     release: false,
     debug: false,
     verbose: false,
-    builddir: './build/site'
+    builddir: './dist'
   }
 })
 
