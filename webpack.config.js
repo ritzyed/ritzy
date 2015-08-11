@@ -7,7 +7,7 @@ module.exports = function(options) {
   // define these as globals in all packed files
   var GLOBALS = {
     'process.env.NODE_ENV': options.release ? '"production"' : '"development"',
-    '__DEV__': ! options.release
+    '__DEV__': !options.release
   }
 
   var AUTOPREFIXER_LOADER = 'autoprefixer-loader?{browsers:' + JSON.stringify(options.autoprefixer) + '}'
@@ -24,8 +24,8 @@ module.exports = function(options) {
       sourcePrefix: '  '
     },
 
-    cache: ! options.release,
-    debug: ! options.release,
+    cache: !options.release,
+    debug: !options.release,
     devtool: options.release ? false : '#inline-source-map',
 
     stats: {
@@ -83,11 +83,11 @@ module.exports = function(options) {
         },
         {
           test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-          loader: "url-loader?limit=10000&minetype=application/font-woff"
+          loader: 'url-loader?limit=10000&minetype=application/font-woff'
         },
         {
           test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-          loader: "file-loader"
+          loader: 'file-loader'
         }
       ]
     },

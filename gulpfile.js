@@ -1,3 +1,5 @@
+/* global argv */
+
 // Include Gulp and other build automation tools and utilities
 // See: https://github.com/gulpjs/gulp/blob/master/docs/API.md
 var gulp = require('gulp')
@@ -37,7 +39,7 @@ var watch = false
 var browserSync
 
 // Check the version of node currently being used
-gulp.task('node-version', function(cb) {
+gulp.task('node-version', function(cb) { // eslint-disable-line no-unused-vars
   return require('child_process').fork(null, {execArgv: ['--version']})
 })
 
@@ -82,8 +84,8 @@ gulp.task('bundle', function(cb) {
     if(jsonStats.warnings.length > 0 || options.verbose) {
       $.util.log('[webpack]', stats.toString({colors: true}))
     }
-    if(jsonStats.errors.length == 0 && jsonStats.warnings.length == 0) {
-      $.util.log('[webpack]', "No errors or warnings.")
+    if(jsonStats.errors.length === 0 && jsonStats.warnings.length === 0) {
+      $.util.log('[webpack]', 'No errors or warnings.')
     }
 
     if (!started) {
@@ -174,7 +176,7 @@ gulp.task('sync', ['serve'], function(cb) {
   })
 
   gulp.watch([options.builddir + '/**/*.*'].concat(
-    src.server.map(function(file) {return '!' + file;})
+    src.server.map(function(file) { return '!' + file })
   ), function(file) {
     browserSync.reload(path.relative(__dirname, file.path))
   })

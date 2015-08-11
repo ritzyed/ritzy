@@ -3,9 +3,9 @@ import _ from 'lodash'
 import tokenizer from '../tokenizer'
 
 const rangeSub_ = function(text, ranges) {
-  return _.partial((text, ranges, index) => {
-    let range = ranges[index]
-    return text.substring(range.start, range.end)
+  return _.partial((t, r, index) => {
+    let range = r[index]
+    return t.substring(range.start, range.end)
   }, text, ranges)
 }
 

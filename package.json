@@ -81,8 +81,9 @@
   },
   "scripts": {
     "start": "gulp",
-    "lint": "eslint src/ gulpfile.js webpack.config.js",
     "test": "mocha --compilers js:compiler.js src/**/*-test.js",
+    "lint": "eslint src/",
+    "lintdev": "eslint -c .eslintdevrc gulpfile.js webpack.config.js",
     "testb": "karma start",
     "preupdate-webdriver": "npm install",
     "update-webdriver": "webdriver-manager update",

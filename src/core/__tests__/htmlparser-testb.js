@@ -1,3 +1,6 @@
+/* eslint no-irregular-whitespace: 0 */
+
+import { assert } from 'chai'
 import parseHtml from '../htmlparser'
 
 let hiddenContainer = () => document.getElementById('hidden-container')

@@ -9,14 +9,14 @@ Swarm.env.localhost = new Swarm.Host('test~0')
 const BASE_ID = BASE_CHAR.id
 
 const charAt_ = function(text) {
-  return _.partial((text, index) => text.getCharAt(index), text)
+  return _.partial((t, index) => t.getCharAt(index), text)
 }
 const getCharRelativeTo_ = function(text) {
-  return _.partial((text, charOrId, relative, allowWrap) => text.getCharRelativeTo(charOrId, relative, allowWrap), text)
+  return _.partial((t, charOrId, relative, allowWrap) => t.getCharRelativeTo(charOrId, relative, allowWrap), text)
 }
 
 const compareCharPos_ = function(text) {
-  return _.partial((text, char1, char2) => text.compareCharPos(char1, char2), text)
+  return _.partial((t, char1, char2) => t.compareCharPos(char1, char2), text)
 }
 
 describe('RichText TextData', () => {
@@ -69,11 +69,11 @@ describe('RichText TextData', () => {
   it('deletes characters and adds their ids to previous characters', () => {
     let charIds = ['00001+test', '00002+test', '00003+test']
     let textData = new TextData()
-    for (var i = 1; i <= charIds.length; i++) {
+    for (let i = 1; i <= charIds.length; i++) {
       textData.insertChar(i, i.toString(), charIds[i - 1], null)
     }
 
-    assert.strictEqual(textData.text(),'123')
+    assert.strictEqual(textData.text(), '123')
     assert.strictEqual(textData.len(), 4)  // includes initial id
     assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', null, null))
 
@@ -236,7 +236,7 @@ describe('RichText', () => {
 
     // handle a non-causal insert
     let ins = {}
-    ins['IDNOTEXIST'] = 'Z'
+    ins.IDNOTEXIST = 'Z'
     assert.deepEqual(text.deltaFromInsert(ins), [])
   })
 
@@ -284,7 +284,7 @@ describe('RichText', () => {
 
     // handle a non-causal delete
     let rm = {}
-    rm['IDNOTEXIST'] = true
+    rm.IDNOTEXIST = true
     assert.deepEqual(text.deltaFromRemove(rm), [])
   })
 
@@ -298,7 +298,7 @@ describe('RichText', () => {
     ins[charOfB.id] = { value: 'B' }
     text.insert(ins)
 
-    assert.strictEqual(text.text(), "abBcdef")
+    assert.strictEqual(text.text(), 'abBcdef')
   })
 
   it('inserts a character with attributes', () => {
@@ -311,7 +311,7 @@ describe('RichText', () => {
     ins[charOfB.id] = { value: 'B', attributes: { bold: true } }
     text.insert(ins)
 
-    assert.strictEqual(text.text(), "abBcdef")
+    assert.strictEqual(text.text(), 'abBcdef')
     assert.isNull(text.getCharAt(2).attributes)
     assert.deepEqual(text.getCharAt(3).attributes, { bold: true })
     assert.isNull(text.getCharAt(4).attributes)
@@ -348,7 +348,7 @@ describe('RichText', () => {
     ins[charOfB.id] = { value: 'ZZZ' }
     text.insert(ins)
 
-    assert.strictEqual(text.text(), "abZZZcdef")
+    assert.strictEqual(text.text(), 'abZZZcdef')
   })
 
   it('inserts multiple characters with attributes', () => {
@@ -361,7 +361,7 @@ describe('RichText', () => {
     ins[charOfB.id] = { value: 'ZZZ', attributes: { bold: true } }
     text.insert(ins)
 
-    assert.strictEqual(text.text(), "abZZZcdef")
+    assert.strictEqual(text.text(), 'abZZZcdef')
     assert.isNull(text.getCharAt(2).attributes)
     assert.deepEqual(text.getCharAt(3).attributes, { bold: true })
     assert.deepEqual(text.getCharAt(4).attributes, { bold: true })
@@ -449,7 +449,7 @@ describe('RichText', () => {
     ins[charOfB.id] = { value: 'B' }
     text.insert(ins)
 
-    assert.strictEqual(text.text(), "aBcdef")
+    assert.strictEqual(text.text(), 'aBcdef')
   })
 
   it('can get char information at a position', () => {
@@ -645,7 +645,7 @@ describe('RichText', () => {
     attrs[charOfB.id] = { bold: true }
     text.setAttributes(attrs)
 
-    var char2Attrs = charAt(2).attributes
+    let char2Attrs = charAt(2).attributes
     assert.deepEqual(char2Attrs, { bold: true })
     assert.throw(() => { char2Attrs.italic = true }, `Can't add property italic, object is not extensible`)
     assert.deepEqual(charAt(2).attributes, { bold: true })
