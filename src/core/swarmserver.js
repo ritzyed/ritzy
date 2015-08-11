@@ -1,5 +1,6 @@
 import SwarmBase from 'swarm/lib/NodeServer'
 import swarmFactory from './swarmfactory'
+import Spec from 'swarm/lib/Spec'
 import redis from 'redis'
 import RedisStorage from '../vendor/swarm/RedisStorage'
 
@@ -20,10 +21,7 @@ storage.open()
 Swarm.host = new Swarm.Host('swarm~nodejs', 0, storage)
 Swarm.env.localhost = Swarm.host
 
-// TODO lookup all editor ids
-let cursorSet = new Swarm.CursorSet('/CursorSet#10')
-
-function cursorSetClean() {
+function cleanCursorSet(cursorSet) {
   let online = {}
   for (let src in Swarm.host.sources) {
     if(!Swarm.host.sources.hasOwnProperty(src)) continue
@@ -49,7 +47,7 @@ function cursorSetClean() {
     let id = spec.id()
     cursorSetMoribund[id] = s.ms
   }
-  //console.log('cursorSetMoribund: ', cursorSetMoribund)
+  //console.log('cursorSet:', cursorSet._id, 'cursors:', cursorSetMoribund)
   // cursors live for 10 minutes after last use and then disappear (recreated by client if user resumes editing)
   let ancient = Date.now() - 60 * 60 * 1000
   for (let id in cursorSetMoribund) {
@@ -62,6 +60,12 @@ function cursorSetClean() {
   }
 }
 
-setInterval(cursorSetClean, 5000)
+function cleanCursorSets() {
+  Object.keys(Swarm.host.objects).map(s => new Spec(s)).filter(s => s.type() === 'CursorSet').forEach(s => {
+    cleanCursorSet(Swarm.host.get(s))
+  })
+}
+
+setInterval(cleanCursorSets, 5000)
 
 export default Swarm
