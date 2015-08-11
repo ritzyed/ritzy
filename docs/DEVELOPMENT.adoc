@@ -81,11 +81,7 @@ To test for blacklisted modules (listed in package.json):
 
 To test for latest versions of build packages (listed in package.json):
 
- gradle npm_run_check-updates
-
-and to apply updates to package.json automatically:
-
- gradle npm_run_check-updates-apply
+ gradle npm_outdated
 
 [[build]]
 === Build
