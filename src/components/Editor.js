@@ -6,8 +6,8 @@ import _ from 'lodash'
 import EditorActions from '../flux/EditorActions'
 import EditorStore from '../flux/EditorStore'
 import DebugEditor from './DebugEditor'
-import { BASE_CHAR, EOF } from 'RichText'
-import { elementPosition, scrollByToVisible } from 'dom'
+import { BASE_CHAR, EOF } from '../core/RichText'
+import { elementPosition, scrollByToVisible } from '../core/dom'
 import SwarmClientMixin from './SwarmClientMixin'
 import TextReplicaMixin from './TextReplicaMixin'
 import SharedCursorMixin from './SharedCursorMixin'
@@ -17,7 +17,7 @@ import { charEq, lineContainingChar } from '../core/EditorCommon'
 import { sourceOf } from '../core/replica'
 import TextFontMetrics from '../core/TextFontMetrics'
 
-require('internal.less')
+require('../styles/internal.less')
 
 const T = React.PropTypes
 const nbsp = String.fromCharCode(160)

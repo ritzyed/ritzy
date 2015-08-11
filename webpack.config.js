@@ -38,7 +38,6 @@ module.exports = function(options) {
     ],
 
     resolve: {
-      root: [path.resolve('./src/core'), path.resolve('./src/styles')],
       extensions: ['', '.webpack.js', '.web.js', '.js', '.jsx']
     },
 

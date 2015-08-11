@@ -1,7 +1,7 @@
 import React from 'react/addons'
 
 import EditorActions from '../flux/EditorActions'
-import { BASE_CHAR } from 'RichText'
+import { BASE_CHAR } from '../core/RichText'
 import { lineContainingChar } from '../core/EditorCommon'
 import { logInGroup } from '../core/utils'
 

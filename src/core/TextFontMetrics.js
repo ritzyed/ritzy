@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import {ATTR, hasAttributeFor} from 'attributes'
+import {ATTR, hasAttributeFor} from './attributes'
 
 const SUPER_SUB_FONT_RATIO = 0.65  // matches MS word according to http://en.wikipedia.org/wiki/Subscript_and_superscript
 
