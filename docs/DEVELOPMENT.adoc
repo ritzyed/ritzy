@@ -14,34 +14,25 @@ by Tim Pope] and http://chris.beams.io/posts/git-commit/[expanded on by others].
 
 === Gradle
 
-Gradle pulls in the appropriate npm dependencies, and can be used to execute npm
-in a platform-independent way. Gradle can bootstrap using the `gradlew` script.
-The gradle https://github.com/srs/gradle-node-plugin[node-plugin] is used to
-run programs such as `npm`.
+Gradle can be used to bootstrap a node and npm environment from scratch. Gradle
+itself can bootstrap using the `gradlew` script. If the required versions of
+node and npm are already installed at a system level, this step can be skipped.
 
-Alternatively, skip Gradle all together and install NodeJS / io.js, npm, in the
-normal way.
+Bootstrap gradle:
+
+ ./gradlew wrapper
+
+Bootstrap node and npm:
+
+ ./gradlew npmSetup
 
 === NPM
 
 NPM is used to manage Javascript dependencies. The gradle build will install the
-correct version of `npm`, and related dependencies. To install npm, run:
+correct version of `npm`, and related dependencies.
 
- gradle npmInstall
-
-Thereafter, npm commands can be run using an `_` notation e.g.:
-
- gradle npm_install
- gradle npm_update
- gradle npm_list
- gradle npm_cache_clean
- gradle npm_prune
-
-Once npm is installed, it can also be executed directly instead of via gradle,
-which has the advantage of colored output, as well as avoiding zombie processes
-due to gradle not passing process signals through. However, note that when run
-directly npm will by default use whichever version of node is in the PATH, which
-will likely be the default system install rather than the project version.
+NPM will use whichever version of node is in the PATH, which will likely be the
+default system install rather than the project version, if different.
 
 To solve this, execute all binaries via the `./nodew` script at the root of the
 project.
@@ -77,50 +68,43 @@ npm() {
 
 To test for blacklisted modules (listed in package.json):
 
- gradle npm_run_check-blacklisted
+ npm run-script check-blacklisted
 
 To test for latest versions of build packages (listed in package.json):
 
- gradle npm_outdated
+ npm outdated
+
+Other available scripts include `lint`, `lintdev`, and `test`. Scripts are
+listed in `package.json`.
 
 [[build]]
 === Build
 
-http://gulpjs.com/[Gulp] is the build system used for the frontend. It can also
-be accessed via the gradle build.
+http://gulpjs.com/[Gulp] is the build system used for the frontend.
 
 To create a minified and compiled version of all assets (including CSS
 preprocessors such as less and sass, and compilation of typescript files), run:
 
- gradle gulp_build --release
+ gulp build --release
 
 Or to produce non-minified CSS and JS files in the build:
 
- gradle gulp_build
+ gulp build
 
 To deploy documentation to GitHub pages (use `--production` or `--staging` as
 necessary, see the build file):
 
- gradle gulp_deploy   # or, `gulp deploy --production`
-
-Specific gulp tasks can be executed e.g.:
-
- gradle gulp_lint
+ gulp deploy   # or, `gulp deploy --production`
 
 To watch source files for changes and automatically update the compiled build
 (to see changes immediately in Play, for example), leave the gulp serve task
 running:
 
- gradle gulp_serve
+ gulp serve
 
-Gulp can also be executed directly instead of via gradle, which has the
-advantage of colored output, as well as :
+Specify the task before other arguments: e.g.
 
- node_modules/.bin/gulp ...      # Or ./gulp
-
-When running gulp directly, specify the task before other arguments: e.g.
-
-  ./gulp build --verbose
+ gulp build --verbose
 
 [[redis]]
 === Redis
@@ -152,7 +136,7 @@ assertions using http://chaijs.com/[Chai]. Tests are named
 
 To execute:
 
- gradle npm_test      # or ./npm test
+ npm test
 
 NOTE: The default Facebook library for testing React applications is Jest, but
 Jest is slow and classes under test had strange issues like array pushes
@@ -174,18 +158,20 @@ http://karma-runner.github.io/[Karma] runner.
 
 To execute:
 
- gradle npm_run-script_testb      # or ./npm run-script testb
+ npm run-script testb
+
+(testb stands for "test in browser")
 
 ==== Browser Sync
 
-Running the application from gradle/node via `gulp sync` will run a
+Running the application via `gulp sync` will run a
 http://www.browsersync.io/[BrowserSync] session. This provides live reload
 functionality in the browser when changes are made to server-side code. It will
 also synchronize multiple browsers (clicks, scrolling, and so forth), which is
 useful for multi-browser verification.
 
-NOTE: Current BrowserSync does not support websocket connections. Therefore
-connect directly to the underlying port to test and use Ritzy.
+WARNING: Current BrowserSync does not support websocket connections. Therefore
+`gulp sync` is not yet useful.
 
 [[intellij-idea]]
 === Intellij IDEA
