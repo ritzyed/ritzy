@@ -7,11 +7,18 @@ import express from 'express'
 import http from 'http'
 import url from 'url'
 import WebSocket from 'ws'
-
 //import compression from 'compression'
 
-//import React from 'react'
-import Swarm from './core/swarmserver'
+import SwarmServer from './core/swarmserver'
+
+let redisConfig = {
+  port: 6379,
+  host: '127.0.0.1',
+  options: {}
+}
+
+let swarmServer = new SwarmServer(redisConfig)
+let Swarm = swarmServer.Swarm
 
 let server = express()
 let port = process.env.PORT || 5000
