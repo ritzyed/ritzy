@@ -389,10 +389,11 @@ class EditorStore {
 
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
-      this._flow({ start: wordChars[0], end: wordChars[wordChars.length - 1], action: ACTION_DELETE})
+      this._flow({ start: start, end: end, action: ACTION_DELETE})
 
-      let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
-      this._setPosition(position, endOfLine)
+      let lineContainingStart = lineContainingChar(this.state.lines, start)
+      let endOfLine = lineContainingStart ? lineContainingStart.endOfLine : true
+      this._setPosition(start, endOfLine)
     }
   }
 
@@ -419,10 +420,11 @@ class EditorStore {
 
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
-      this._flow({ start: wordChars[0], end: wordChars[wordChars.length - 1], action: ACTION_DELETE})
+      this._flow({ start: start, end: end, action: ACTION_DELETE})
 
-      let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
-      this._setPosition(position, endOfLine)
+      let lineContainingStart = lineContainingChar(this.state.lines, start)
+      let endOfLine = lineContainingStart ? lineContainingStart.endOfLine : true
+      this._setPosition(start, endOfLine)
     }
   }
 
