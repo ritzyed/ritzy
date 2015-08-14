@@ -5,7 +5,7 @@ import Ritzy from './ritzy'
 // the most often used config values are shown below
 
 const config = {
-  id: 10,
+  id: '10',
   fontSize: 18,
   width: 600,
   marginH: 30,

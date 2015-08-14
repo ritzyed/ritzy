@@ -1,7 +1,7 @@
 export default {
   createTextReplica() {
     let Text = this.swarmClient.Swarm.Text
-    this.replica = new Text('/Text#' + this.props.id)
+    this.replica = new Text(this.props.id)
   },
 
   registerCb(initCb, updateCb) {

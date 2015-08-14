@@ -24,7 +24,7 @@ const nbsp = String.fromCharCode(160)
 
 export default React.createClass({
   propTypes: {
-    id: T.number.isRequired,
+    id: T.string.isRequired,
     fonts: T.shape({
       regular: T.object,
       bold: T.object,

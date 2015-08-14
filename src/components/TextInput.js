@@ -36,7 +36,7 @@ const ALL_CHARS = [
 
 export default React.createClass({
   propTypes: {
-    id: T.number.isRequired,
+    id: T.string.isRequired,
     position: T.number.isRequired,
     focused: T.bool.isRequired
   },
