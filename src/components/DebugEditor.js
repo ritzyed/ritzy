@@ -1,6 +1,7 @@
 import React from 'react/addons'
 
 import EditorActions from '../flux/EditorActions'
+import EditorStore from '../flux/EditorStore'
 import { BASE_CHAR } from '../core/RichText'
 import { lineContainingChar } from '../core/EditorCommon'
 import { logInGroup } from '../core/utils'
@@ -85,12 +86,13 @@ export default React.createClass({
 
   _dumpSelection() {
     if(this.edState.selectionActive) {
-      let selectionChars = this.replica.getTextRange(this.edState.selectionLeftChar, this.edState.selectionRightChar)
-      console.debug('Current selection contents: [' + selectionChars.map(c => c.char).join('') + ']')
+      console.debug('Current selection contents (rich chunks): [' + JSON.stringify(EditorStore.getSelectionRich()) + ']')
+      console.debug('Current selection contents (plain): [' + EditorStore.getSelectionText() + ']')
+      console.debug('Current selection contents (html): [' + EditorStore.getSelectionHtml() + ']')
       console.debug('Left=', this.edState.selectionLeftChar)
       console.debug('Right=', this.edState.selectionRightChar)
       console.debug('Anchor=', this.edState.selectionAnchorChar)
-      console.debug('Chars=', selectionChars)
+      console.debug('Chars=', EditorStore.getSelection())
     } else {
       console.debug('No active selection')
     }

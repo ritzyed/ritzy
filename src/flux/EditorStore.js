@@ -27,6 +27,13 @@ const ACTION_ATTRIBUTES = 'attributes'
  */
 class EditorStore {
   constructor() {
+    this.exportPublicMethods({
+      getSelection: () => this.getSelection(),
+      getSelectionRich: () => this.getSelectionRich(),
+      getSelectionHtml: () => this.getSelectionHtml(),
+      getSelectionText: () => this.getSelectionText()
+    })
+
     this.bindActions(EditorActions)
 
     this.config = null
@@ -323,12 +330,28 @@ class EditorStore {
   }
 
   copySelection(copyHandler) {
-    let selectionChunks = this._getSelection()
+    let selectionChunks = this._getSelectionRich()
     if(selectionChunks && selectionChunks.length > 0) {
       let copiedText = writeText(selectionChunks)
       let copiedHtml = writeHtml(selectionChunks)
       copyHandler(copiedText, copiedHtml, selectionChunks)
     }
+  }
+
+  getSelection() {
+    return this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
+  }
+
+  getSelectionRich() {
+    return this._getSelectionRich()
+  }
+
+  getSelectionHtml() {
+    return writeHtml(this._getSelectionRich())
+  }
+
+  getSelectionText() {
+    return writeText(this._getSelectionRich())
   }
 
   insertChars({value, attributes, atPosition, reflow}) {
@@ -919,7 +942,7 @@ class EditorStore {
       || (this._lastLine().isEof() && charEq(this.state.position, this._lastLine().start))
   }
 
-  _getSelection() {
+  _getSelectionRich() {
     let selectionChunks = []
 
     if(!this.state.selectionActive) {
