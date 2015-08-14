@@ -478,7 +478,7 @@ export default React.createClass({
       'ritzy-internal-text-cursor-blink': !this.state.cursorMotion && !remote
     })
 
-    let italicAtPosition = cursorPosition.position.attributes && cursorPosition.position.attributes[ATTR.ITALIC]
+    let italicAtPosition = cursorPosition.position.attributes && cursorPosition.position.attributes[ATTR.ITALIC] && !remote
     let italicActive = this.state.activeAttributes && this.state.activeAttributes[ATTR.ITALIC] && !remote
     let italicInactive = this.state.activeAttributes && !this.state.activeAttributes[ATTR.ITALIC] && !remote
 
