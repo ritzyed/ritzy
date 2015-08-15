@@ -3,6 +3,8 @@
 :sectanchors:
 
 image:https://badges.gitter.im/Join%20Chat.svg[link="https://gitter.im/ritzyed/ritzy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"]
+image:https://img.shields.io/badge/license-Apache-blue.svg[link="http://opensource.org/licenses/Apache-2.0"]
+image:https://img.shields.io/npm/v/ritzy.svg[link="https://www.npmjs.com/package/ritzy"]
 
 [[about]]
 == About
