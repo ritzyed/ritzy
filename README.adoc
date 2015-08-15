@@ -15,7 +15,7 @@ image:https://travis-ci.org/ritzyed/ritzy.svg[link="https://travis-ci.org/ritzye
 Finally, a good, open source, cross-browser [1], rich text, real-time
 collaborative editor for the web! Here is a demo:
 
-<<TODO>>
+http://demo-ritzy.rhcloud.com/  (https://github.com/ritzyed/ritzy-demo[source])
 
 [1] IE10+ and evergreen browsers supported
 
