@@ -1,0 +1,293 @@
+= Ritzy Editor Development Guide
+Raman Gupta <rocketraman@gmail.com>
+v1.0, 2015-08-10
+:toc:
+
+[[source]]
+== Policies
+
+=== Commit Message Style
+
+All git commits should conform to idiomatic git commit message style
+http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html[described
+by Tim Pope] and http://chris.beams.io/posts/git-commit/[expanded on by others].
+
+[[devtools]]
+== Development Tools
+
+=== Gradle
+
+Gradle pulls in the appropriate npm dependencies, and can be used to execute npm
+in a platform-independent way. Gradle can bootstrap using the `gradlew` script.
+The gradle https://github.com/srs/gradle-node-plugin[node-plugin] is used to
+run programs such as `npm`.
+
+Alternatively, skip Gradle all together and install NodeJS / io.js, npm, in the
+normal way.
+
+=== NPM
+
+NPM is used to manage Javascript dependencies. The gradle build will install the
+correct version of `npm`, and related dependencies. To install npm, run:
+
+ gradle npmInstall
+
+Thereafter, npm commands can be run using an `_` notation e.g.:
+
+ gradle npm_install
+ gradle npm_update
+ gradle npm_list
+ gradle npm_cache_clean
+ gradle npm_prune
+
+Once npm is installed, it can also be executed directly instead of via gradle,
+which has the advantage of colored output, as well as avoiding zombie processes
+due to gradle not passing process signals through. However, note that when run
+directly npm will by default use whichever version of node is in the PATH, which
+will likely be the default system install rather than the project version.
+
+To solve this, execute all binaries via the `./nodew` script at the root of the
+project.
+
+ ./nodew npm ...
+ ./nodew node ...
+ ./nodew gulp ...
+ ./nodew karma ...
+
+WARNING: Under Windows Cygwin, the platform and architecture detection in
+`nodew` is unlikely to work correctly. Set NODE_HOME to override it, and check
+the settings are correct with `./nodew npm version`.
+
+Shell function definitions for node, npm, gulp, etc. similar to the following
+may be useful:
+
+[source,bash]
+----
+npm() {
+  if [[ -f "./nodew" ]]; then
+    ./nodew npm $*
+  elif [[ -f "./npm" ]]; then
+    ./npm $*
+  elif [[ -f "./node_modules/.bin/npm" ]]; then
+    ./node_modules/.bin/npm $*
+  elif [[ -f /usr/bin/npm ]]; then
+    /usr/bin/npm $*
+  else
+    echo >&2 "npm not found."
+  fi
+}
+----
+
+To test for blacklisted modules (listed in package.json):
+
+ gradle npm_run_check-blacklisted
+
+To test for latest versions of build packages (listed in package.json):
+
+ gradle npm_run_check-updates
+
+and to apply updates to package.json automatically:
+
+ gradle npm_run_check-updates-apply
+
+[[build]]
+=== Build
+
+http://gulpjs.com/[Gulp] is the build system used for the frontend. It can also
+be accessed via the gradle build.
+
+To create a minified and compiled version of all assets (including CSS
+preprocessors such as less and sass, and compilation of typescript files), run:
+
+ gradle gulp_build --release
+
+Or to produce non-minified CSS and JS files in the build:
+
+ gradle gulp_build
+
+To deploy documentation to GitHub pages (use `--production` or `--staging` as
+necessary, see the build file):
+
+ gradle gulp_deploy   # or, `gulp deploy --production`
+
+Specific gulp tasks can be executed e.g.:
+
+ gradle gulp_lint
+
+To watch source files for changes and automatically update the compiled build
+(to see changes immediately in Play, for example), leave the gulp serve task
+running:
+
+ gradle gulp_serve
+
+Gulp can also be executed directly instead of via gradle, which has the
+advantage of colored output, as well as :
+
+ node_modules/.bin/gulp ...      # Or ./gulp
+
+When running gulp directly, specify the task before other arguments: e.g.
+
+  ./gulp build --verbose
+
+[[testing]]
+=== Testing
+
+==== Javascript Off-Browser
+
+Javascript unit tests are written using http://mochajs.org/[Mocha] and
+assertions using http://chaijs.com/[Chai]. Tests are named
+`<something>-test.js`.
+
+To execute:
+
+ gradle npm_test      # or ./npm test
+
+NOTE: The default Facebook library for testing React applications is Jest, but
+Jest is slow and classes under test had strange issues like array pushes
+failing. Mocha seems to be more consistent. IntelliJ IDEA can also run and debug
+Mocha tests.
+
+NOTE: `jsdom` is limited to version 3.x. 4.x and above only works with `io.js`
+and not with NodeJS.
+
+More information:
+
+* http://www.hammerlab.org/2015/02/14/testing-react-web-apps-with-mocha/
+
+==== Javascript In-Browser
+
+In cases where a browser API is required for the test, the unit tests are named
+`<something>-testb.js`. Tests are executed via the
+http://karma-runner.github.io/[Karma] runner.
+
+To execute:
+
+ gradle npm_run-script_testb      # or ./npm run-script testb
+
+==== Browser Sync
+
+Running the application from gradle/node via `gulp sync` will run a
+http://www.browsersync.io/[BrowserSync] session. This provides live reload
+functionality in the browser when changes are made to server-side code. It will
+also synchronize multiple browsers (clicks, scrolling, and so forth), which is
+useful for multi-browser verification.
+
+[[intellij-idea]]
+=== Intellij IDEA
+
+IntelliJ can debug Javascript with the appropriate plugins installed in IDEA.
+Note that if you use Chrome for normal browsing, you should use a different
+Chrome profile for IDEA -- set this in Settings, Web Browsers, Chrome, Edit
+
+==== Debugging ====
+
+Debug client-side Javascript in IDEA using the run configuration `Debug Frontend
+(npm start)`. Debug server-side Javascript (NodeJS) by using the run
+configuration `NodeJS Remote Debug`, and start the server with a `--debug` flag
+e.g. `./gulp serve --debug`.
+
+WARNING: There appears to be a bug in IntelliJ that causes it to not use the
+source map between the Javascript file in the `src` directory vs the one
+actually being executed (after processing by webpack) in the `build/gulp`
+directory (possibly https://youtrack.jetbrains.com/issue/WEB-14000[this one]).
+To work around this, set the breakpoints in the `build/gulp/.../whatever.js`
+file instead of the original file. Once they are set, the breakpoints will still
+trigger in the original src file.
+
+[[codestyle]]
+== Coding Style
+
+=== Eslint ===
+
+http://eslint.org/[ESLint] is used for checking JavaScript styles and for common
+errors. The project's rules are defined in ``.eslintrc`.
+
+=== Editor Config ===
+
+http://editorconfig.org/[EditorConfig] is used to maintain consistent coding
+styles between various editors and IDEs. The project's rules are defined in
+`.editorconfig`.
+
+=== JavaScript Modules
+
+Use ES6 module export and import syntax. Webpack with an ES6 transpiler is fully
+capable of handling this.
+
+=== JavaScript Style Guide
+
+Use the https://docs.npmjs.com/misc/coding-style[npm coding style]. Note, as per
+npm, we don't use semi-colon termination. We do use semi-colon prefixes when
+http://inimino.org/~inimino/blog/javascript_semicolons[required]. Exceptions:
+
+* Line lengths <~ 120 (not a strict limit, but a useful guideline)
+
+* "," at the end of comma-separated values as is normal (the benefit of putting
+  them at the beginning is clear, but it just plain makes code look weird)
+
+=== React/JSX Style Guide
+
+React components should be declared in `.js` files and use JSX syntax. Use the
+following conventions:
+
+. Layout the React component methods in rough
+  https://facebook.github.io/react/docs/component-specs.html#lifecycle-methods[lifecycle
+  order] (`displayName` is not necessary when using JSX):
++
+[source,javascript]
+----
+React.createClass({
+  propTypes: {},
+  mixins : [],
+
+  getDefaultProps() {},
+  getInitialState() {},
+
+  componentWillMount() {},
+  componentDidMount() {},
+  componentWillReceiveProps(nextProps) {},
+  shouldComponentUpdate(nextProps, nextState) {},
+  componentWillUpdate(nextProps, nextState) {},
+  componentDidUpdate(prevProps, prevState) {},
+  componentWillUnmount() {},
+
+  // other public methods
+
+  _parseData() {},
+  _onSelect() {},
+
+  render() {}
+});
+----
+NOTE: The above uses ES6
+http://people.mozilla.org/~jorendorff/es6-draft.html#sec-object-initializer[object
+initializer method definitions] as a function declaration
+https://github.com/lukehoban/es6features#enhanced-object-literals[shorthand].
++
+Custom functions should be prefixed with `_` and placed above the render method.
+
+. Variables containing conditional HTML should be suffixed with `Html` e.g.:
++
+[source,javascript]
+----
+var dinosaurHtml = '';
+if (this.state.showDinosaurs) {
+  dinosaurHtml = (
+    <section>
+      <DinosaurTable />
+      <DinosaurPager />
+    </section>
+  );
+}
+
+return (
+  <div>
+    ...
+    {dinosaurHtml}
+    ...
+  </div>
+);
+----
+
+. JSX spanning multiple lines should be wrapped in parentheses as above.
+
+. List iterations can be done inline using an ES6 `map` function.
