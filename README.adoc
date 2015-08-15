@@ -225,12 +225,12 @@ offline editing is intended to be a valid use case for Ritzy.
 The editor uses JavaScript ES6. Ensure your consuming client and server-side
 code transpiles to ES5 via babel or similar transpiler, and contains the
 appropriate ES6 polyfills. See the
-https://github.com/ritzyed/ritzy-demo/blob/master[Ritzy demo] for an example.
+https://github.com/ritzyed/ritzy-demo[Ritzy demo] for an example.
 
 [[integration_cs]]
 === Client-Side
 
-See `client.js` or the https://github.com/ritzyed/ritzy-demo/blob/master[Ritzy
+See `client.js` or the https://github.com/ritzyed/ritzy-demo[Ritzy
 demo] for an example of creating and using the editor.
 
 It should be possible to create multiple editors on one page, though this is not
@@ -245,7 +245,7 @@ will be responsible for receiving all updates to text replicas. The application
 can then use that text replica for any purpose.
 
 See https://github.com/ritzyed/ritzy/blob/master/src/server.js[server.js] or the
-https://github.com/ritzyed/ritzy-demo/blob/master[Ritzy demo] for an example of
+https://github.com/ritzyed/ritzy-demo[Ritzy demo] for an example of
 this.
 
 Currently, Swarm.js peers only run within JavaScript environments, but the
@@ -258,7 +258,7 @@ See also <<commercial_features>>.
 == Developers
 
 See
-https://github.com/ritzyed/ritzy/blob/master/docs/CONTRIBUTIONS.adoc[CONTRIBUTIONS]
+https://github.com/ritzyed/ritzy/blob/master/docs/CONTRIBUTING.adoc[CONTRIBUTIONS]
 and
 https://github.com/ritzyed/ritzy/blob/master/docs/DEVELOPMENT.adoc[DEVELOPMENT].
 

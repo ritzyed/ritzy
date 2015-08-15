@@ -8,9 +8,10 @@ The source is on GitHub: https://github.com/ritzyed/ritzy.
 [[submit]]
 == Submitting Changes
 
-* Review https://github.com/ritzyed/ritzy[DEVELOPMENT.adoc] for notes about
-how to build and run the editor locally, and related notes such as code and
-commit message style.
+* Review https://github.com/ritzyed/ritzy/blob/master/docs/DEVELOPMENT.adoc[DEVELOPMENT.adoc]
+for notes about how to build and run the editor locally, and related notes
+such as code and commit message style.
+
 * Push your changes to a topic branch in your fork of the repository.
 * Submit a pull request to the repository in the ritzyed organization.
 * Optionally, add yourself to the AUTHORS file as part of the pull request.
