@@ -281,19 +281,7 @@ gulp.task('deploy', function() {
     .pipe($.if('**/robots.txt', !argv.production ?
       $.replace('Disallow:', 'Disallow: /') : $.util.noop()))
     .pipe($.ghPages({
-      remoteUrl: 'https://github.com/{name}/{name}.github.io.git',
+      remoteUrl: 'https://github.com/ritzyed/ritzy.github.io.git',
       branch: 'master'
     }))
-})
-
-// Run Google's PageSpeed Insights (https://developers.google.com/speed/pagespeed/insights/)
-gulp.task('pagespeed', function(cb) {
-  var pagespeed = require('psi')
-  // TODO Update the below URL to the public URL of our site
-  pagespeed.output('example.com', {
-    strategy: 'mobile'
-    // By default we use the PageSpeed Insights free (no API key) tier.
-    // Use a Google Developer API key if you have one: http://goo.gl/RkN0vE
-    // key: 'YOUR_API_KEY'
-  }, cb)
 })

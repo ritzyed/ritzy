@@ -1,8 +1,20 @@
 {
-  "name": "ritzy-editor",
-  "private": true,
-  "version": "0.0.0",
-  "description": "Ritzy Collaborative Real-time Browser-Based Editor",
+  "name": "ritzy",
+  "version": "0.1.0",
+  "description": "Ritzy Collaborative Web-based Rich Text Editor",
+  "keywords": [
+    "editor",
+    "text editor",
+    "rich text",
+    "richtext",
+    "react",
+    "wysiwyg",
+    "wysiwym"
+  ],
+  "homepage": "http://ritzyed.github.io/ritzy",
+  "bugs": "https://github.com/ritzyed/ritzy/issues",
+  "license": "Apache-2.0",
+  "author": "Raman Gupta <rocketraman@gmail.com> (https://github.com/rocketraman/)",
   "files": [
     "dist/",
     "lib/"
