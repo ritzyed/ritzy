@@ -129,6 +129,25 @@ When running gulp directly, specify the task before other arguments: e.g.
 
   ./gulp build --verbose
 
+[[redis]]
+=== Redis
+
+The default server-side database is Redis. See
+https://github.com/ritzyed/ritzy/blob/master/src/core/swarmserver.js[swarmserver.js]
+for the Redis connection details.
+
+==== Useful Redis CLI Commands
+
+* Delete several keys matching a wildcard:
+
+ EVAL "return redis.call('del', unpack(redis.call('keys', ARGV[1])))" 0 "/Cursor#*"
+
+* Copy the state of editor 10 to 11 for debugging:
+
+ SCRIPT LOAD "return redis.call('restore', ARGV[2], 0, redis.call('dump', ARGV[1]))"
+ EVALSHA "bfb3fde399b1b363c6d5617b8d955bb4f7aea907" 0 "/Text#10" "/Text#11"
+ EVALSHA "bfb3fde399b1b363c6d5617b8d955bb4f7aea907" 0 "/Text#10:log" "/Text#11:log"
+
 [[testing]]
 === Testing
 
@@ -171,6 +190,9 @@ http://www.browsersync.io/[BrowserSync] session. This provides live reload
 functionality in the browser when changes are made to server-side code. It will
 also synchronize multiple browsers (clicks, scrolling, and so forth), which is
 useful for multi-browser verification.
+
+NOTE: Current BrowserSync does not support websocket connections. Therefore
+connect directly to the underlying port to test and use Ritzy.
 
 [[intellij-idea]]
 === Intellij IDEA
