@@ -36,6 +36,7 @@ let renderEditor = function(config, renderTarget) {
     return localUser
   })
   configDefault('userName', config.userId)
+  configDefault('wsPort', null)
 
   const editorFactory = React.createFactory(Editor)
 

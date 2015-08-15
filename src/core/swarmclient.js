@@ -2,14 +2,22 @@ import SwarmBase from 'swarm'
 import swarmFactory from './swarmfactory'
 
 export default class SwarmClient {
-  constructor(localUser) {
+  constructor(localUser, config) {
     let Swarm = swarmFactory(SwarmBase)
     this.Swarm = Swarm
 
     this.id = localUser
 
     // server host uri (/websocket is appended because https://github.com/websockets/ws/issues/131)
-    this.wsServerUri = 'ws://' + window.location.host + '/websocket'
+    let windowLocation = window.location.hostname
+    let port
+    if(config && config.wsPort) {
+      port = config.wsPort
+    } else {
+      port = window.location.port
+    }
+    windowLocation = windowLocation + ':' + port
+    this.wsServerUri = 'ws://' + windowLocation + '/websocket'
 
     let hash = window.location.hash || '#0'
 

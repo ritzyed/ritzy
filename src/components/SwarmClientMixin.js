@@ -2,6 +2,9 @@ import SwarmClient from '../core/swarmclient'
 
 export default {
   componentWillMount() {
-    this.swarmClient = new SwarmClient(this.props.userId)
+    let swarmClientConfig = {
+      wsPort: this.props.wsPort
+    }
+    this.swarmClient = new SwarmClient(this.props.userId, swarmClientConfig)
   }
 }

@@ -40,7 +40,8 @@ export default React.createClass({
     userId: T.string.isRequired,
     userName: T.string,
     cursorColorSpace: T.arrayOf(T.string), // TODO allow it to be a function as well
-    initialFocus: T.bool
+    initialFocus: T.bool,
+    wsPort: T.number
   },
 
   mixins: [SwarmClientMixin, TextReplicaMixin, SharedCursorMixin],
