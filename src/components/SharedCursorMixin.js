@@ -1,5 +1,3 @@
-import 'babel/polyfill'
-
 import EditorActions from '../flux/EditorActions'
 
 export default {

@@ -1,4 +1,4 @@
-import SwarmClient from 'swarmclient'
+import SwarmClient from '../core/swarmclient'
 
 export default {
   componentWillMount() {

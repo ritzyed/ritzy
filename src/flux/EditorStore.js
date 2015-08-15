@@ -1,4 +1,3 @@
-import 'babel/polyfill'
 import _ from 'lodash'
 import invariant from 'react/lib/invariant'
 
@@ -6,9 +5,9 @@ import alt from '../core/alt'
 import {ATTR, attributesEqual} from '../core/attributes'
 
 import EditorActions from './EditorActions'
-import { BASE_CHAR, EOF } from 'RichText'
-import { pushArray/*, logInGroup*/ } from 'utils'
-import { default as tokenizer, isWhitespace } from 'tokenizer'
+import { BASE_CHAR, EOF } from '../core/RichText'
+import { pushArray/*, logInGroup*/ } from '../core/utils'
+import { default as tokenizer, isWhitespace } from '../core/tokenizer'
 import writeHtml from '../core/htmlwriter'
 import writeText from '../core/textwriter'
 import TextFontMetrics from '../core/TextFontMetrics'
@@ -28,6 +27,13 @@ const ACTION_ATTRIBUTES = 'attributes'
  */
 class EditorStore {
   constructor() {
+    this.exportPublicMethods({
+      getSelection: () => this.getSelection(),
+      getSelectionRich: () => this.getSelectionRich(),
+      getSelectionHtml: () => this.getSelectionHtml(),
+      getSelectionText: () => this.getSelectionText()
+    })
+
     this.bindActions(EditorActions)
 
     this.config = null
@@ -324,12 +330,28 @@ class EditorStore {
   }
 
   copySelection(copyHandler) {
-    let selectionChunks = this._getSelection()
+    let selectionChunks = this._getSelectionRich()
     if(selectionChunks && selectionChunks.length > 0) {
       let copiedText = writeText(selectionChunks)
       let copiedHtml = writeHtml(selectionChunks)
       copyHandler(copiedText, copiedHtml, selectionChunks)
     }
+  }
+
+  getSelection() {
+    return this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
+  }
+
+  getSelectionRich() {
+    return this._getSelectionRich()
+  }
+
+  getSelectionHtml() {
+    return writeHtml(this._getSelectionRich())
+  }
+
+  getSelectionText() {
+    return writeText(this._getSelectionRich())
   }
 
   insertChars({value, attributes, atPosition, reflow}) {
@@ -390,10 +412,11 @@ class EditorStore {
 
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
-      this._flow({ start: wordChars[0], end: wordChars[wordChars.length - 1], action: ACTION_DELETE})
+      this._flow({ start: start, end: end, action: ACTION_DELETE})
 
-      let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
-      this._setPosition(position, endOfLine)
+      let lineContainingStart = lineContainingChar(this.state.lines, start)
+      let endOfLine = lineContainingStart ? lineContainingStart.endOfLine : true
+      this._setPosition(start, endOfLine)
     }
   }
 
@@ -420,10 +443,11 @@ class EditorStore {
 
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
-      this._flow({ start: wordChars[0], end: wordChars[wordChars.length - 1], action: ACTION_DELETE})
+      this._flow({ start: start, end: end, action: ACTION_DELETE})
 
-      let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
-      this._setPosition(position, endOfLine)
+      let lineContainingStart = lineContainingChar(this.state.lines, start)
+      let endOfLine = lineContainingStart ? lineContainingStart.endOfLine : true
+      this._setPosition(start, endOfLine)
     }
   }
 
@@ -918,7 +942,7 @@ class EditorStore {
       || (this._lastLine().isEof() && charEq(this.state.position, this._lastLine().start))
   }
 
-  _getSelection() {
+  _getSelectionRich() {
     let selectionChunks = []
 
     if(!this.state.selectionActive) {

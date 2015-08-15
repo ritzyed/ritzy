@@ -1,5 +1,3 @@
-import 'babel/polyfill'
-
 import _ from 'lodash'
 import React from 'react/addons'
 import getEventKey from 'react/lib/getEventKey'
@@ -38,7 +36,7 @@ const ALL_CHARS = [
 
 export default React.createClass({
   propTypes: {
-    id: T.number.isRequired,
+    id: T.string.isRequired,
     position: T.number.isRequired,
     focused: T.bool.isRequired
   },
@@ -104,11 +102,15 @@ export default React.createClass({
     this._checkEmptyValue()
 
     this.ieClipboardDivFocus = false
-
-    // IE requires a non-empty selection in order to fire the copy event, annoying
-    this.input.value = ' '
-    this.input.focus()
-    this.input.select()
+    this.focusHappening = true
+    try {
+      // IE requires a non-empty selection in order to fire the copy event, annoying
+      this.input.value = ' '
+      this.input.focus()
+      this.input.select()
+    } finally {
+      this.focusHappening = false
+    }
   },
 
   _checkEmptyValue() {
@@ -301,6 +303,13 @@ export default React.createClass({
     }
   },
 
+  _onInputFocusGained() {
+    if(!this.focusHappening && !this.ieClipboardDivFocus && this.input === document.activeElement) {
+      // regaining focus, perhaps the user switched windows and the browser is now focused again
+      EditorActions.focusInput()
+    }
+  },
+
   _onCopy(e) {
     let copyHandler = window.clipboardData ?
       _.partial(this._handleIeCopy) :
@@ -419,7 +428,7 @@ export default React.createClass({
     return (
       <div style={divStyle}>
         <textarea key="input" ref="input" onInput={this._onInput}
-          onCopy={this._onCopy} onCut={this._onCut} onPaste={this._onPaste} onBlur={this._onInputFocusLost}/>
+          onCopy={this._onCopy} onCut={this._onCut} onPaste={this._onPaste} onBlur={this._onInputFocusLost} onFocus={this._onInputFocusGained}/>
         <div style={{display: 'none'}} ref="hiddenContainer"></div>
         <div contentEditable="true" ref="ieClipboardDiv" onPaste={this._onPaste}></div>
       </div>

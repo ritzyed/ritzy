@@ -1,5 +1,3 @@
-import 'babel/polyfill'
-
 import React from 'react/addons'
 import classNames from 'classnames'
 import Spinner from 'react-spinkit'
@@ -8,8 +6,8 @@ import _ from 'lodash'
 import EditorActions from '../flux/EditorActions'
 import EditorStore from '../flux/EditorStore'
 import DebugEditor from './DebugEditor'
-import { BASE_CHAR, EOF } from 'RichText'
-import { elementPosition, scrollByToVisible } from 'dom'
+import { BASE_CHAR, EOF } from '../core/RichText'
+import { elementPosition, scrollByToVisible } from '../core/dom'
 import SwarmClientMixin from './SwarmClientMixin'
 import TextReplicaMixin from './TextReplicaMixin'
 import SharedCursorMixin from './SharedCursorMixin'
@@ -19,14 +17,14 @@ import { charEq, lineContainingChar } from '../core/EditorCommon'
 import { sourceOf } from '../core/replica'
 import TextFontMetrics from '../core/TextFontMetrics'
 
-require('internal.less')
+require('../styles/internal.less')
 
 const T = React.PropTypes
 const nbsp = String.fromCharCode(160)
 
 export default React.createClass({
   propTypes: {
-    id: T.number.isRequired,
+    id: T.string.isRequired,
     fonts: T.shape({
       regular: T.object,
       bold: T.object,
@@ -480,7 +478,7 @@ export default React.createClass({
       'ritzy-internal-text-cursor-blink': !this.state.cursorMotion && !remote
     })
 
-    let italicAtPosition = cursorPosition.position.attributes && cursorPosition.position.attributes[ATTR.ITALIC]
+    let italicAtPosition = cursorPosition.position.attributes && cursorPosition.position.attributes[ATTR.ITALIC] && !remote
     let italicActive = this.state.activeAttributes && this.state.activeAttributes[ATTR.ITALIC] && !remote
     let italicInactive = this.state.activeAttributes && !this.state.activeAttributes[ATTR.ITALIC] && !remote
 
@@ -550,8 +548,13 @@ export default React.createClass({
         console.warn('Error obtaining remote position, ignoring.', e)
         return null
       }
-      let cursorPosition = this._cursorPosition(lineHeight, remotePosition, remoteCursor.model.positionEolStart)
-      return this._renderCursor(cursorPosition, lineHeight, remoteCursor)
+      // do not display remote cursor in same position as local one
+      if(!this.state.focus || !(remoteCursor.model.positionEolStart === this.state.positionEolStart
+        && charEq(remotePosition, this.state.position))) {
+        let cursorPosition = this._cursorPosition(lineHeight, remotePosition, remoteCursor.model.positionEolStart)
+        return this._renderCursor(cursorPosition, lineHeight, remoteCursor)
+      }
+      return null
     })
   },
 
