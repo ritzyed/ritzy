@@ -28,4 +28,4 @@ make a repeatable test case / instructions when posting a new issue.
 [[communication]]
 == Communication
 
-* Gitter.im (TODO)
+* Gitter.im image:https://badges.gitter.im/Join%20Chat.svg[link="https://gitter.im/ritzyed/ritzy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"]
