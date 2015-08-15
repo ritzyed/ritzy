@@ -10,7 +10,9 @@
 .idea/qaplug_profiles.xml
 .gradle
 build/
+gradle/
 dist/
+lib/
 # Mac meta-data files
  __MACOSX/
 .DS_Store/

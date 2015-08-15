@@ -225,8 +225,11 @@ https://github.com/ritzyed/ritzy-demo/blob/master[Ritzy demo] for an example.
 [[integration_cs]]
 === Client-Side
 
-TODO
+See `client.js` or the https://github.com/ritzyed/ritzy-demo/blob/master[Ritzy
+demo] for an example of creating and using the editor.
 
+It should be possible to create multiple editors on one page, though this is not
+yet a tested configuration.
 
 [[integration_ss]]
 === Server-Side ===
@@ -282,8 +285,6 @@ immutable data structures.
 very slow as the replica continues to grow.
 
 * Undo/redo
-
-* Module loader support i.e. inclusion via Browserify, Webpack, etc. (medium).
 
 * Styles for content e.g. headings, lists, etc. (medium).
 

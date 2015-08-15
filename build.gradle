@@ -18,11 +18,11 @@ node {
   download = "${node.download}"
 
   // Set the work directory for unpacking node
-  workDir = file("${project.buildDir}/gradle/nodejs")
+  workDir = file("${project.projectDir}/gradle/nodejs")
 }
 
 task gulp_build_release(type: GulpTask) {
-  args = ["build", "--release"]
+  args = ["serve", "--release"]
 }
 
 defaultTasks 'gulp_default'

@@ -203,9 +203,9 @@ e.g. `./gulp serve --debug`.
 
 WARNING: There appears to be a bug in IntelliJ that causes it to not use the
 source map between the Javascript file in the `src` directory vs the one
-actually being executed (after processing by webpack) in the `build/gulp`
+actually being executed (after processing by webpack) in the build
 directory (possibly https://youtrack.jetbrains.com/issue/WEB-14000[this one]).
-To work around this, set the breakpoints in the `build/gulp/.../whatever.js`
+To work around this, set the breakpoints in the `<build>/.../whatever.js`
 file instead of the original file. Once they are set, the breakpoints will still
 trigger in the original src file.
 

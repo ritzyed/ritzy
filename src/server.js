@@ -14,8 +14,8 @@ import WebSocket from 'ws'
 import Swarm from './core/swarmserver'
 
 let server = express()
-
-server.set('port', (process.env.PORT || 5000))
+let port = process.env.PORT || 5000
+server.set('port', port)
 //server.use(compression())
 server.use(express.static(path.join(__dirname)))
 
@@ -56,13 +56,12 @@ httpServer.listen(server.get('port'), function(err) {
     return
   }
 
-  // integration with gulp and browsersync -- if we have a browsersync process (yuck that we need to do this)
+  // integration with parent process e.g. gulp
   // process.send is available if we are a child process (https://nodejs.org/api/child_process.html)
   if (process.send) {
     process.send('online')
-  } else {
-    console.log('The HTTP server is listening on port ' + server.get('port'))
   }
+  console.log('The HTTP server is listening on port ' + server.get('port'))
 })
 
 // start WebSocket server

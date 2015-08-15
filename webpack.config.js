@@ -2,35 +2,33 @@ var _ = require('lodash')
 var webpack = require('webpack')
 var path = require('path')
 
-module.exports = function(options) {
-
+module.exports = function(output, configs, debug, verbose, autoprefixer) {
   // define these as globals in all packed files
   var GLOBALS = {
-    'process.env.NODE_ENV': options.release ? '"production"' : '"development"',
-    '__DEV__': !options.release
+    'process.env.NODE_ENV': debug ? '"development"' : '"production"',
+    '__DEV__': debug
   }
 
-  var AUTOPREFIXER_LOADER = 'autoprefixer-loader?{browsers:' + JSON.stringify(options.autoprefixer) + '}'
+  var AUTOPREFIXER_LOADER = 'autoprefixer-loader?{browsers:' + JSON.stringify(autoprefixer) + '}'
 
   //
-  // Common configuration chunk to be used for both
-  // client-side (client.js) and server-side (server.js) bundles
+  // Common configuration chunk to be used for all other bundles
   // -----------------------------------------------------------------------------
 
   var config = {
     output: {
-      path: options.builddir,
+      path: output,
       publicPath: '',
       sourcePrefix: '  '
     },
 
-    cache: !options.release,
-    debug: !options.release,
-    devtool: options.release ? false : '#inline-source-map',
+    cache: debug,
+    debug: debug,
+    devtool: debug ? '#inline-source-map' : false,
 
     stats: {
       colors: true,
-      reasons: options.verbose
+      reasons: verbose
     },
 
     plugins: [
@@ -98,22 +96,49 @@ module.exports = function(options) {
   }
 
   //
-  // Configuration for the client-side bundle (client.js)
+  // Configuration for the client-side library bundle (ritzy.js) for release
   // -----------------------------------------------------------------------------
 
-  var appConfig = _.merge({}, config, {
-    entry: './src/client.js',
+  var libraryConfig = _.merge({}, config, {
+    entry: './src/ritzy.js',
     output: {
-      filename: 'client.js',
+      filename: configs.libName,
+      library: 'ritzy',
+      libraryTarget: 'commonjs2'
     },
     plugins: config.plugins.concat([
-        new webpack.DefinePlugin(_.merge(GLOBALS, {'__SERVER__': false}))
-      ].concat(options.release ? [
-        new webpack.optimize.DedupePlugin(),
-        new webpack.optimize.UglifyJsPlugin(),
-        new webpack.optimize.AggressiveMergingPlugin()
-      ] : [])
-    )
+      new webpack.DefinePlugin(_.merge(GLOBALS, {'__SERVER__': false})),
+      new webpack.optimize.DedupePlugin()
+    ].concat(!debug ? [
+        new webpack.optimize.UglifyJsPlugin({
+          compress: {
+            screw_ie8: true,
+            warnings: false
+          }
+        })
+    ] : []))
+  })
+
+  //
+  // Configuration for the client-side bundle (client.js) for testing
+  // -----------------------------------------------------------------------------
+
+  var clientConfig = _.merge({}, config, {
+    entry: './src/client.js',
+    output: {
+      filename: 'client.js'
+    },
+    plugins: config.plugins.concat([
+      new webpack.DefinePlugin(_.merge(GLOBALS, {'__SERVER__': false})),
+      new webpack.optimize.DedupePlugin()
+    ].concat(!debug ? [
+      new webpack.optimize.UglifyJsPlugin({
+        compress: {
+          screw_ie8: true,
+          warnings: false
+        }
+      })
+    ] : []))
   })
 
   //
@@ -149,6 +174,11 @@ module.exports = function(options) {
     }
   })
 
-  return [appConfig, serverConfig]
+  var activeConfigs = []
+  if(configs.client) activeConfigs.push(clientConfig)
+  if(configs.server) activeConfigs.push(serverConfig)
+  if(configs.lib) activeConfigs.push(libraryConfig)
+
+  return activeConfigs
 
 }
