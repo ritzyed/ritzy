@@ -1,7 +1,4 @@
 = Ritzy Editor Contributor Guide
-Raman Gupta <rocketraman@gmail.com>
-v1.0, 2015-06-15
-:toc:
 
 TODO: example: https://github.com/puppetlabs/puppet/blob/master/CONTRIBUTING.md
 

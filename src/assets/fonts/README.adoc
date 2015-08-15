@@ -1,7 +1,4 @@
 = Font Assets README
-Raman Gupta <raman@vivosys.com>
-v1.0, 2015-05-02
-:toc:
 
 == Purpose ==
 

@@ -1,7 +1,4 @@
 = Ritzy Editor Development Guide
-Raman Gupta <rocketraman@gmail.com>
-v1.0, 2015-08-10
-:toc:
 
 [[source]]
 == Policies
