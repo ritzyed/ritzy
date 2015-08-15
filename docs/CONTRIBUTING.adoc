@@ -11,7 +11,6 @@ The source is on GitHub: https://github.com/ritzyed/ritzy.
 * Review https://github.com/ritzyed/ritzy[DEVELOPMENT.adoc] for notes about
 how to build and run the editor locally, and related notes such as code and
 commit message style.
-* Sign the http://TODO[Contributor License Agreement].
 * Push your changes to a topic branch in your fork of the repository.
 * Submit a pull request to the repository in the ritzyed organization.
 * Optionally, add yourself to the AUTHORS file as part of the pull request.
