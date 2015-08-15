@@ -190,12 +190,20 @@ can then use that text replica for any purpose.
 
 See also <<commercial_features>>.
 
+[[developers]]
+== Developers
+
+See
+https://github.com/ritzyed/ritzy/blob/master/docs/CONTRIBUTIONS.adoc[CONTRIBUTIONS]
+and
+https://github.com/ritzyed/ritzy/blob/master/docs/DEVELOPMENT.adoc[DEVELOPMENT].
+
 [[roadmap]]
 == Roadmap
 
 The following is a tentative list of features and capabilities that will be
 added over time.
-https://github.com/rocketraman/ritzy-editor/blob/master/docs/CONTRIBUTIONS.adoc[Contributions]
+https://github.com/ritzyed/ritzy/blob/master/docs/CONTRIBUTIONS.adoc[Contributions]
 are welcome.
 
 * Multiple colored/labeled cursors (medium).
@@ -291,7 +299,7 @@ know] if your company or startup may be interested in such a service.
 == Support
 
 Support is provided on an as-available basis via
-https://github.com/rocketraman/ritzy-editor/issues[GitHub issues].
+https://github.com/ritzyed/ritzy/issues[GitHub issues].
 
 Contact mailto:raman@vivosys.com[raman@vivosys.com] @
 http://vivosys.com[VIVO Systems] for paid support or enhancements.

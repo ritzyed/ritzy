@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "description": "Ritzy Collaborative Real-time Browser-Based Editor",
-  "repository": "https://github.com/rocketraman/ritzy-editor",
+  "repository": "ritzyed/ritzy",
   "engines": {
     "node": ">= 0.12",
     "npm": ">= 2.11"
