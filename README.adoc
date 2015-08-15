@@ -195,7 +195,7 @@ See also <<commercial_features>>.
 
 The following is a tentative list of features and capabilities that will be
 added over time.
-https://github.com/rocketraman/ritzy-editor/blob/master/CONTRIBUTIONS.adoc[Contributions]
+https://github.com/rocketraman/ritzy-editor/blob/master/docs/CONTRIBUTIONS.adoc[Contributions]
 are welcome.
 
 * Multiple colored/labeled cursors (medium).
