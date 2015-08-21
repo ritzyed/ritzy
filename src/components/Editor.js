@@ -6,9 +6,10 @@ import _ from 'lodash'
 import EditorActions from '../flux/EditorActions'
 import EditorStore from '../flux/EditorStore'
 import EditorLine from './EditorLine'
+import Cursor from './Cursor'
 import DebugEditor from './DebugEditor'
 import { BASE_CHAR, EOF } from '../core/RichText'
-import { elementPosition, scrollByToVisible } from '../core/dom'
+import { elementPosition } from '../core/dom'
 import SwarmClientMixin from './SwarmClientMixin'
 import TextReplicaMixin from './TextReplicaMixin'
 import SharedCursorMixin from './SharedCursorMixin'
@@ -89,18 +90,6 @@ export default React.createClass({
   componentDidMount() {
     this.clickCount = 0
     EditorStore.listen(this.onStateChange)
-  },
-
-  componentDidUpdate() {
-    if(!this.caret) {
-      this.caret = React.findDOMNode(this.refs.caret)
-    }
-    if(this.caret) {
-      let scrollByToCursor = scrollByToVisible(this.caret, 5)
-      if(scrollByToCursor.xDelta !== 0 || scrollByToCursor.yDelta !== 0) {
-        window.scrollBy(scrollByToCursor.xDelta, scrollByToCursor.yDelta)
-      }
-    }
   },
 
   componentWillUnmount() {
@@ -192,13 +181,6 @@ export default React.createClass({
     if(!coordinates) return
 
     EditorActions.selectToCoordinates(coordinates)
-
-    e.preventDefault()
-    e.stopPropagation()
-  },
-
-  _remoteCursorHover(id, e) {
-    EditorActions.revealRemoteCursorName(this.state.remoteCursors[id])
 
     e.preventDefault()
     e.stopPropagation()
@@ -366,71 +348,18 @@ export default React.createClass({
   },
 
   _renderCursor(cursorPosition, lineHeight, remote) {
-    // the initial render before the component is mounted has no position
-    if (!cursorPosition) {
-      return null
-    }
-
-    let cursorClasses = classNames('ritzy-internal-text-cursor text-cursor', 'ritzy-internal-ui-unprintable', {
-      'ritzy-internal-text-cursor-blink': !this.state.cursorMotion && !remote
-    })
-
-    let italicAtPosition = cursorPosition.position.attributes && cursorPosition.position.attributes[ATTR.ITALIC] && !remote
-    let italicActive = this.state.activeAttributes && this.state.activeAttributes[ATTR.ITALIC] && !remote
-    let italicInactive = this.state.activeAttributes && !this.state.activeAttributes[ATTR.ITALIC] && !remote
-
-    let caretClasses = classNames('ritzy-internal-text-cursor-caret text-cursor-caret', {
-      'ritzy-internal-text-cursor-italic': italicActive || (italicAtPosition && !italicInactive)
-    })
-
-    let cursorStyle = {
-      left: cursorPosition.left,
-      top: cursorPosition.top
-    }
-
-    if (!remote && (this.state.selectionActive || !this.state.focus)) {
-      cursorStyle.opacity = 0
-      cursorStyle.visibility = 'hidden'
-    } else {
-      cursorStyle.opacity = 1
-    }
-
-    let cursorHeight = Math.round(lineHeight * 10) / 10
-
     if(remote) {
       let id = remote.model._id
-      let key = `cursor-${id}`
-      let remoteCursorHover = _.partial(this._remoteCursorHover, id)
       let revealName = this.state.remoteNameReveal.indexOf(id) > -1
-      let cursorTopStyle = {
-        backgroundColor: remote.color,
-        opacity: 1
-      }
-      let cursorNameStyle = {
-        backgroundColor: remote.color
-      }
-      if(revealName) {
-        cursorTopStyle.display = 'none'
-        cursorNameStyle.opacity = 1
-      } else {
-        cursorNameStyle.opacity = 0
-        cursorNameStyle.display = 'none'
-      }
-
       return (
-        <div className={cursorClasses} style={cursorStyle} key={key}>
-          <div className={caretClasses} style={{borderColor: remote.color, height: cursorHeight}} onMouseOver={remoteCursorHover}></div>
-          <div className="ritzy-internal-text-cursor-top text-cursor-top" style={cursorTopStyle} onMouseOver={remoteCursorHover}></div>
-          <div className="ritzy-internal-text-cursor-name text-cursor-name" style={cursorNameStyle}>{remote.model.name}</div>
-        </div>
+        <Cursor key={id} cursorPosition={cursorPosition} lineHeight={lineHeight}
+          remoteNameReveal={revealName} remote={remote}/>
       )
     } else {
       return (
-        <div className={cursorClasses} style={cursorStyle} key="cursor" ref="cursor">
-          <div className={caretClasses} style={{borderColor: 'black', height: cursorHeight}} key="caret" ref="caret"></div>
-          <div className="ritzy-internal-text-cursor-top text-cursor-top" style={{opacity: 1}}></div>
-          <div className="ritzy-internal-text-cursor-name text-cursor-name" style={{opacity: 1}}></div>
-        </div>
+        <Cursor key="local" ref="cursor" cursorPosition={cursorPosition} lineHeight={lineHeight}
+          cursorMotion={this.state.cursorMotion} activeAttributes={this.state.activeAttributes}
+          selectionActive={this.state.selectionActive} focus={this.state.focus}/>
       )
     }
   },
