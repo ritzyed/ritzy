@@ -340,10 +340,9 @@ export default React.createClass({
   },
 
   _renderInput(cursorPosition) {
-    let position = cursorPosition ? cursorPosition.top : 0
-
+    let top = cursorPosition ? cursorPosition.top : 0
     return (
-      <TextInput id={this.props.id} ref="input" position={position} focused={this.state.focus}/>
+      <TextInput id={this.props.id} ref="input" yPosition={top} focused={this.state.focus}/>
     )
   },
 
