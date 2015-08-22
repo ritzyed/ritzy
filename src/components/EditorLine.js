@@ -1,7 +1,10 @@
+import _ from 'lodash'
 import React from 'react/addons'
 
 import EditorLineContent from './EditorLineContent'
 import SelectionOverlay from './SelectionOverlay'
+import { linesEq } from '../core/EditorCommon'
+import ReactUtils from '../core/ReactUtils'
 
 const T = React.PropTypes
 
@@ -14,16 +17,30 @@ export default React.createClass({
     remoteSelections: T.arrayOf(T.object)
   },
 
-  //mixins: [React.addons.PureRenderMixin],
+  shouldComponentUpdate(nextProps) {
+    // for better performance make sure objects are immutable so that we can do reference equality checks
+    let propsEqual = this.props.lineHeight === nextProps.lineHeight
+      && this.props.fontSize === nextProps.fontSize
+      && ReactUtils.deepEquals(this.props.selection, nextProps.selection)
+      && ReactUtils.deepEquals(this.props.remoteSelections, nextProps.remoteSelections)
+      && ReactUtils.deepEquals(this.props.line, nextProps.line, linesEq)
 
+    return !propsEqual
+  },
 
   _renderSelectionOverlay(selection) {
+    if(!selection) {
+      return null
+    }
     return (
       <SelectionOverlay key={selection && selection.color ? selection.color : 'local'} selection={selection}/>
     )
   },
 
   _renderRemoteSelectionOverlays(remoteSelections) {
+    if(!remoteSelections) {
+      return null
+    }
     return remoteSelections.map(s => this._renderSelectionOverlay(s))
   },
 

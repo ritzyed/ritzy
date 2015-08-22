@@ -1,6 +1,8 @@
 import _ from 'lodash'
 import React from 'react/addons'
 
+import ReactUtils from '../core/ReactUtils'
+
 const T = React.PropTypes
 
 export default React.createClass({
@@ -9,7 +11,8 @@ export default React.createClass({
   },
 
   shouldComponentUpdate(nextProps) {
-    let propsEqual = Object.is(this.props.selection, nextProps.selection) || _.isEqual(this.props.selection, nextProps.selection)
+    // for better performance make sure objects are immutable so that we can do reference equality checks
+    let propsEqual = ReactUtils.deepEquals(this.props.selection, nextProps.selection)
     return !propsEqual
   },
 

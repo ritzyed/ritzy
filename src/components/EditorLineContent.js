@@ -2,7 +2,9 @@ import _ from 'lodash'
 import React from 'react/addons'
 import classNames from 'classnames'
 
-import {ATTR, hasAttributeFor} from '../core/attributes'
+import { ATTR, hasAttributeFor } from '../core/attributes'
+import { linesEq } from '../core/EditorCommon'
+import ReactUtils from '../core/ReactUtils'
 import TextFontMetrics from '../core/TextFontMetrics'
 
 const T = React.PropTypes
@@ -15,9 +17,9 @@ export default React.createClass({
   },
 
   shouldComponentUpdate(nextProps) {
-    // for better performance make sure objects are immutable so that reference equality is true
+    // for better performance make sure objects are immutable so that we can do reference equality checks
     let propsEqual = this.props.fontSize === nextProps.fontSize
-      && (Object.is(this.props.line, nextProps.line) || (this.props.line && this.props.line.isEqual(nextProps.line)))
+      && ReactUtils.deepEquals(this.props.line, nextProps.line, linesEq)
 
     return !propsEqual
   },

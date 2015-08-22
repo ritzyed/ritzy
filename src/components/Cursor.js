@@ -1,9 +1,11 @@
+import _ from 'lodash'
 import React from 'react/addons'
 import classNames from 'classnames'
 
 import EditorActions from '../flux/EditorActions'
 import { ATTR } from '../core/attributes'
 import { scrollByToVisible } from '../core/dom'
+import ReactUtils from '../core/ReactUtils'
 
 const T = React.PropTypes
 
@@ -19,7 +21,19 @@ export default React.createClass({
     remote: T.object
   },
 
-  //mixins: [React.addons.PureRenderMixin],
+  shouldComponentUpdate(nextProps) {
+    // for better performance make sure objects are immutable so that we can do reference equality checks
+    let propsEqual = this.props.lineHeight === nextProps.lineHeight
+      && this.props.cursorMotion === nextProps.cursorMotion
+      && this.props.selectionActive === nextProps.selectionActive
+      && this.props.focus === nextProps.focus
+      && ReactUtils.deepEquals(this.props.remoteNameReveal, nextProps.remoteNameReveal)
+      && ReactUtils.deepEquals(this.props.cursorPosition, nextProps.cursorPosition)
+      && ReactUtils.deepEquals(this.props.activeAttributes, nextProps.activeAttributes)
+      && ReactUtils.deepEquals(this.props.remote, nextProps.remote, _.isEqual, [r => r.color, r => r.model.name])
+
+    return !propsEqual
+  },
 
   getDefaultProps() {
     return {
