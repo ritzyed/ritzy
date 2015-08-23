@@ -15,7 +15,8 @@ import TextReplicaMixin from './TextReplicaMixin'
 import SharedCursorMixin from './SharedCursorMixin'
 import TextInput from './TextInput'
 import {ATTR, hasAttributeFor} from '../core/attributes'
-import { charEq, lineContainingChar } from '../core/EditorCommon'
+import { charEq, linesEq, lineContainingChar } from '../core/EditorCommon'
+import ReactUtils from '../core/ReactUtils'
 import { sourceOf } from '../core/replica'
 import TextFontMetrics from '../core/TextFontMetrics'
 
@@ -90,6 +91,51 @@ export default React.createClass({
   componentDidMount() {
     this.clickCount = 0
     EditorStore.listen(this.onStateChange)
+  },
+
+  shouldComponentUpdate(nextProps, nextState) {
+    // for better performance make sure objects are immutable so that we can do reference equality checks
+    let stateEqual = this.state.loaded === nextState.loaded
+      && this.state.focus === nextState.focus
+      && this.state.positionEolStart == nextState.positionEolStart
+      && this.state.selectionActive == nextState.selectionActive
+      && this.state.cursorMotion == nextState.cursorMotion
+      && ReactUtils.deepEquals(this.state.position, nextState.position, charEq)
+      && ReactUtils.deepEquals(this.state.selectionLeftChar, nextState.selectionLeftChar, charEq)
+      && ReactUtils.deepEquals(this.state.selectionRightChar, nextState.selectionRightChar, charEq)
+      && ReactUtils.deepEquals(this.state.activeAttributes, nextState.activeAttributes)
+      && ReactUtils.deepEquals(this.state.remoteNameReveal, nextState.remoteNameReveal)
+
+    if(!stateEqual) return true
+
+    let remoteCursorsIds = this.state.remoteCursors ? Object.keys(this.state.remoteCursors) : []
+    let nextRemoteCursorsIds = nextState.remoteCursors ? Object.keys(nextState.remoteCursors) : []
+    if(remoteCursorsIds.length !== nextRemoteCursorsIds.length) return true
+    for(let i = 0; i < remoteCursorsIds.length; i++) {
+      let id = remoteCursorsIds[i]
+      if(!ReactUtils.deepEquals(this.state.remoteCursors[id], nextState.remoteCursors[id], _.isEqual, [r => r.color, r => r.model.name])) return true
+    }
+
+    if(this.state.lines.length !== nextState.lines.length) return true
+    for(let i = 0; i < this.state.lines.length; i++) {
+      if(!ReactUtils.deepEquals(this.state.lines[i], nextState.lines[i], linesEq)) return true
+    }
+
+    // check props too, even though this check is fast and normally we would do faster checks first,
+    // put after state checks b/c Editor props rarely change
+    let propsEqual = this.props.fontSize === nextProps.fontSize
+      && this.props.minFontSize === nextProps.minFontSize
+      && this.props.unitsPerEm === nextProps.unitsPerEm
+      && this.props.width === nextProps.width
+      && this.props.marginH === nextProps.marginH
+      && this.props.marginV === nextProps.marginV
+      && this.props.userId === nextProps.userId
+      && this.props.userName === nextProps.userName
+      && this.props.initialFocus === nextProps.initialFocus
+      && this.props.wsPort === nextProps.wsPort
+      && ReactUtils.deepEquals(this.props.cursorColorSpace, nextProps.cursorColorSpace)
+
+    return !propsEqual
   },
 
   componentWillUnmount() {
