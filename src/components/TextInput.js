@@ -5,7 +5,7 @@ import Mousetrap from 'mousetrap'
 
 import EditorActions from '../flux/EditorActions'
 import parseHtml from '../core/htmlparser'
-import {emptyNode} from '../core/dom'
+import { emptyNode } from '../core/dom'
 
 const T = React.PropTypes
 const MIME_TYPE_TEXT_PLAIN = 'text/plain'
@@ -37,7 +37,7 @@ const ALL_CHARS = [
 export default React.createClass({
   propTypes: {
     id: T.string.isRequired,
-    position: T.number.isRequired,
+    yPosition: T.number.isRequired,
     focused: T.bool.isRequired
   },
 
@@ -89,7 +89,7 @@ export default React.createClass({
   },
 
   shouldComponentUpdate(nextProps) {
-    return this.props.focused !== nextProps.focused || this.props.position !== nextProps.position
+    return this.props.focused !== nextProps.focused || this.props.yPosition !== nextProps.yPosition
   },
 
   componentDidUpdate() {
@@ -421,7 +421,7 @@ export default React.createClass({
       height: 0,
       outline: 'none',
       left: 0,
-      top: this.props.position
+      top: this.props.yPosition
     }
 
     // we can't focus an element with display: none so wrap them in another invisible div

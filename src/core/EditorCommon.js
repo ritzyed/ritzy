@@ -124,8 +124,27 @@ export class Line {
 const EMPTY_LINE = new Line([], [], BASE_CHAR, EOF, 0)
 
 /**
+ * Determines whether two lines are the same or not i.e. that the lines refer to the same
+ * chars with the same attributes. Will also return true if both lines are undefined or
+ * both are null.
+ * @param line1
+ * @param line2
+ */
+export function linesEq(line1, line2) {
+  if(line1 === line2) return true
+  if(!line1) return Object.is(line1, line2)
+  if(_.isArray(line1.chars) && _.isArray(line2.chars) && line1.chars.length !== line2.chars.length) return false
+  if(!_.isEqual(line1.start, line2.start)) return false
+  if(!_.isEqual(line1.end, line2.end)) return false
+  if(!_.isEqual(line1.chars, line2.chars)) return false
+  return true
+}
+
+/**
  * Determines whether two char arrays are the same or not i.e. that the arrays refer to the
- * same chars. Will also return true if both arrays are undefined or both are null.
+ * same chars (but note that this only checks char identity, and ignores char properties like
+ * attributes and deleted chars). Will also return true if both arrays are undefined or both
+ * are null.
  * @param {Char[]} cArr1
  * @param {Char[]} cArr2
  */

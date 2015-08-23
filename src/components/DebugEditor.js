@@ -20,6 +20,11 @@ export default React.createClass({
     this.replica = nextProps.replica
   },
 
+  shouldComponentUpdate() {
+    // consists only of buttons, we never need a re-render
+    return false
+  },
+
   _dumpState() {
     console.debug('Current state contents (Use React Devtools 0.14+ for real-time state view/edit):')
     console.dir(this.edState)
