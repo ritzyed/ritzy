@@ -734,7 +734,7 @@ class EditorStore {
           }
         }
         if(!_.isUndefined(modLineOffset)) {
-          let startIndex = lines.length - modLineOffset
+          let startIndex = modLineOffset > lines.length ? 0 : lines.length - modLineOffset
           let matchChars = _.clone(currentWord.chars)
           matchChars.push(c)
 
