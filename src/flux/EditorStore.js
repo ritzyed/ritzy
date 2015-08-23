@@ -522,7 +522,7 @@ class EditorStore {
     if(reflow) this._flow({start: position, end: newPosition, action: ACTION_INSERT})
 
     this._setPosition(newPosition, newPositionEolStart)
-    this.activeAttributes = attributes
+    this.setState({activeAttributes: attributes})
 
     // return the new position so that multiple insertChars calls can be made in sequence
     return newPosition
@@ -1332,24 +1332,32 @@ class EditorStore {
     } else {
       // TODO set the state of the toolbar so the toolbar button can be rendered accordingly
       // no selection so we are either toggling the explicitly set state, or setting the state explicitly
-      let activeAttributes = this.state.activeAttributes
-      if(activeAttributes) {
-        activeAttributes[attribute] = !activeAttributes[attribute]
-        if(activeAttributes[attribute] && exclusiveWith && activeAttributes[exclusiveWith]) {
-          activeAttributes[exclusiveWith] = false
+      let activeAttributes
+      if(this.state.activeAttributes) {
+        activeAttributes = _.clone(this.state.activeAttributes)
+        if(activeAttributes[attribute]) {
+          delete activeAttributes[attribute]
+        } else {
+          activeAttributes[attribute] = true
         }
       } else if(this.state.position) {
-        let currentAttrs = this._relativeChar(this.state.position, 0, 'limit').copyOfAttributes()
-        if(currentAttrs) {
-          currentAttrs[attribute] = !currentAttrs[attribute]
-          activeAttributes = currentAttrs
-          if(activeAttributes[attribute] && exclusiveWith && activeAttributes[exclusiveWith]) {
-            activeAttributes[exclusiveWith] = false
+        activeAttributes = this._relativeChar(this.state.position, 0, 'limit').copyOfAttributes()
+        if(activeAttributes) {
+          if(activeAttributes[attribute]) {
+            delete activeAttributes[attribute]
+          } else {
+            activeAttributes[attribute] = true
           }
         } else {
           activeAttributes = {}
           activeAttributes[attribute] = true
         }
+      }
+      if(activeAttributes && activeAttributes[attribute] && exclusiveWith && activeAttributes[exclusiveWith]) {
+        delete activeAttributes[exclusiveWith]
+      }
+      if(_.isEmpty(activeAttributes)) {
+        activeAttributes = null
       }
       this.setState({activeAttributes: activeAttributes})
     }
