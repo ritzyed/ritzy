@@ -47,7 +47,8 @@ class EditorStore {
       remoteCursors: {},
       remoteNameReveal: [],
       focus: false,
-      loaded: false
+      loaded: false,
+      lines: []
     }
   }
 
