@@ -513,6 +513,10 @@ class EditorStore {
       }
     }
 
+    // normalize line endings (CRLF -> LF, CR -> LF)
+    value = value.replace(/\r\n/g, '\n')
+    value = value.replace(/\r/g, '\n')
+
     this.replica.insertCharsAt(position, value, attributes)
 
     let relativeMove = value.length
