@@ -43,7 +43,8 @@ export default React.createClass({
     userName: T.string,
     cursorColorSpace: T.arrayOf(T.string), // TODO allow it to be a function as well
     initialFocus: T.bool,
-    wsPort: T.number
+    wsPort: T.number,
+    renderOptimizations: T.bool
   },
 
   mixins: [SwarmClientMixin, TextReplicaMixin, SharedCursorMixin],
@@ -68,7 +69,8 @@ export default React.createClass({
         'rgb(255, 205, 243)', // pink
         'rgb(255, 238, 51)',  // yellow
         'rgb(129, 74, 25)'    // brown
-      ]
+      ],
+      renderOptimizations: true
     }
   },
 
@@ -94,6 +96,10 @@ export default React.createClass({
   },
 
   shouldComponentUpdate(nextProps, nextState) {
+    if(!nextProps.renderOptimizations) {
+      return true
+    }
+
     // for better performance make sure objects are immutable so that we can do reference equality checks
     let stateEqual = this.state.loaded === nextState.loaded
       && this.state.focus === nextState.focus
@@ -145,6 +151,10 @@ export default React.createClass({
 
   onStateChange(state) {
     this.setState(state)
+  },
+
+  _setRenderOptimizations(renderOptimizations) {
+    this.setProps({renderOptimizations: renderOptimizations})
   },
 
   _createReplica() {
@@ -344,7 +354,8 @@ export default React.createClass({
 
     return (
       <EditorLine key={index} line={line} lineHeight={lineHeight}
-        fontSize={this.props.fontSize} selection={computedSelection} remoteSelections={computedRemoteSelections}/>
+        fontSize={this.props.fontSize} selection={computedSelection} remoteSelections={computedRemoteSelections}
+        renderOptimizations={this.props.renderOptimizations}/>
     )
   },
 
@@ -390,7 +401,8 @@ export default React.createClass({
   _renderInput(cursorPosition) {
     let top = cursorPosition ? cursorPosition.top : 0
     return (
-      <TextInput id={this.props.id} ref="input" yPosition={top} focused={this.state.focus}/>
+      <TextInput id={this.props.id} ref="input" yPosition={top} focused={this.state.focus}
+        renderOptimizations={this.props.renderOptimizations}/>
     )
   },
 
@@ -400,13 +412,14 @@ export default React.createClass({
       let revealName = this.state.remoteNameReveal.indexOf(id) > -1
       return (
         <Cursor key={id} cursorPosition={cursorPosition} lineHeight={lineHeight}
-          remoteNameReveal={revealName} remote={remote}/>
+          remoteNameReveal={revealName} remote={remote} renderOptimizations={this.props.renderOptimizations}/>
       )
     } else {
       return (
         <Cursor key="local" ref="cursor" cursorPosition={cursorPosition} lineHeight={lineHeight}
           cursorMotion={this.state.cursorMotion} activeAttributes={this.state.activeAttributes}
-          selectionActive={this.state.selectionActive} focus={this.state.focus}/>
+          selectionActive={this.state.selectionActive} focus={this.state.focus}
+          renderOptimizations={this.props.renderOptimizations}/>
       )
     }
   },
@@ -463,7 +476,7 @@ export default React.createClass({
           <div className="ritzy-internal-text-contents text-contents" style={{position: 'relative'}}>
             { this.state.lines.length > 0 ?
               this.state.lines.map((line, index) => this._renderLine(line, index, lineHeight, localSelection, remoteSelections) ) :
-              <EditorLine lineHeight={lineHeight} fontSize={this.props.fontSize}/> }
+              <EditorLine lineHeight={lineHeight} fontSize={this.props.fontSize} renderOptimizations={this.props.renderOptimizations}/> }
           </div>
           {this._renderCursor(cursorPosition, lineHeight)}
           {this._renderRemoteCursors(lineHeight)}
@@ -489,7 +502,7 @@ export default React.createClass({
           style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
           {this._renderEditorContents()}
         </div>
-        {/*<DebugEditor editorState={this.state} replica={this.replica} searchLinesWithSelection={this._searchLinesWithSelection}/>*/}
+        {/*<DebugEditor editorState={this.state} replica={this.replica} searchLinesWithSelection={this._searchLinesWithSelection} setRenderOptimizations={this._setRenderOptimizations}/>*/}
       </div>
     )
   }

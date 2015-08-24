@@ -18,10 +18,23 @@ export default React.createClass({
     selectionActive: T.bool,
     focus: T.bool,
     remoteNameReveal: T.bool,
-    remote: T.object
+    remote: T.object,
+    renderOptimizations: T.bool
+  },
+
+  getDefaultProps() {
+    return {
+      remoteNameReveal: false,
+      remote: null,
+      renderOptimizations: true
+    }
   },
 
   shouldComponentUpdate(nextProps) {
+    if(!nextProps.renderOptimizations) {
+      return true
+    }
+
     // for better performance make sure objects are immutable so that we can do reference equality checks
     let propsEqual = this.props.lineHeight === nextProps.lineHeight
       && this.props.cursorMotion === nextProps.cursorMotion
@@ -33,13 +46,6 @@ export default React.createClass({
       && ReactUtils.deepEquals(this.props.remote, nextProps.remote, _.isEqual, [r => r.color, r => r.name, r => r.state])
 
     return !propsEqual
-  },
-
-  getDefaultProps() {
-    return {
-      remoteNameReveal: false,
-      remote: null
-    }
   },
 
   componentDidUpdate() {

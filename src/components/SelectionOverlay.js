@@ -7,10 +7,21 @@ const T = React.PropTypes
 
 export default React.createClass({
   propTypes: {
-    selection: T.object
+    selection: T.object,
+    renderOptimizations: T.bool
+  },
+
+  getDefaultProps() {
+    return {
+      renderOptimizations: true
+    }
   },
 
   shouldComponentUpdate(nextProps) {
+    if(!nextProps.renderOptimizations) {
+      return true
+    }
+
     // for better performance make sure objects are immutable so that we can do reference equality checks
     let propsEqual = ReactUtils.deepEquals(this.props.selection, nextProps.selection)
     return !propsEqual

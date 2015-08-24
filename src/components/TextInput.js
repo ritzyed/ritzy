@@ -38,7 +38,14 @@ export default React.createClass({
   propTypes: {
     id: T.string.isRequired,
     yPosition: T.number.isRequired,
-    focused: T.bool.isRequired
+    focused: T.bool.isRequired,
+    renderOptimizations: T.bool
+  },
+
+  getDefaultProps() {
+    return {
+      renderOptimizations: true
+    }
   },
 
   componentDidMount() {
@@ -89,6 +96,10 @@ export default React.createClass({
   },
 
   shouldComponentUpdate(nextProps) {
+    if(!nextProps.renderOptimizations) {
+      return true
+    }
+
     return this.props.focused !== nextProps.focused || this.props.yPosition !== nextProps.yPosition
   },
 

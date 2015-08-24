@@ -13,10 +13,21 @@ const nbsp = String.fromCharCode(160)
 export default React.createClass({
   propTypes: {
     line: T.object,
-    fontSize: T.number.isRequired
+    fontSize: T.number.isRequired,
+    renderOptimizations: T.bool
+  },
+
+  getDefaultProps() {
+    return {
+      renderOptimizations: true
+    }
   },
 
   shouldComponentUpdate(nextProps) {
+    if(!nextProps.renderOptimizations) {
+      return true
+    }
+
     // for better performance make sure objects are immutable so that we can do reference equality checks
     let propsEqual = this.props.fontSize === nextProps.fontSize
       && ReactUtils.deepEquals(this.props.line, nextProps.line, linesEq)

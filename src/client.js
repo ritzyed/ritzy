@@ -10,8 +10,9 @@ const config = {
   width: 600,
   marginH: 30,
   marginV: 35,
-  // userId
-  // userName
+  // userId: ...,
+  // userName: ...,
+  //renderOptimizations: false,
   onLoadError: (err) => {
     document.getElementById('content').innerHTML = 'Oops, I couldn\'t load the editor:\n\n' + err
   }

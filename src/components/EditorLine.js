@@ -14,10 +14,21 @@ export default React.createClass({
     lineHeight: T.number.isRequired,
     fontSize: T.number.isRequired,
     selection: T.object,
-    remoteSelections: T.arrayOf(T.object)
+    remoteSelections: T.arrayOf(T.object),
+    renderOptimizations: T.bool
+  },
+
+  getDefaultProps() {
+    return {
+      renderOptimizations: true
+    }
   },
 
   shouldComponentUpdate(nextProps) {
+    if(!nextProps.renderOptimizations) {
+      return true
+    }
+
     // for better performance make sure objects are immutable so that we can do reference equality checks
     let propsEqual = this.props.lineHeight === nextProps.lineHeight
       && this.props.fontSize === nextProps.fontSize
@@ -33,7 +44,8 @@ export default React.createClass({
       return null
     }
     return (
-      <SelectionOverlay key={selection && selection.color ? selection.color : 'local'} selection={selection}/>
+      <SelectionOverlay key={selection && selection.color ? selection.color : 'local'} selection={selection}
+        renderOptimizations={this.props.renderOptimizations}/>
     )
   },
 
@@ -50,7 +62,7 @@ export default React.createClass({
       <div className="ritzy-internal-text-lineview text-lineview" style={{height: this.props.lineHeight, direction: 'ltr', textAlign: 'left'}}>
         {this._renderSelectionOverlay(this.props.selection)}
         {this._renderRemoteSelectionOverlays(this.props.remoteSelections)}
-        <EditorLineContent fontSize={this.props.fontSize} line={this.props.line}/>
+        <EditorLineContent fontSize={this.props.fontSize} line={this.props.line} renderOptimizations={this.props.renderOptimizations}/>
       </div>
     )
   }

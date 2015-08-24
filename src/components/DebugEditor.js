@@ -12,7 +12,8 @@ export default React.createClass({
   propTypes: {
     editorState: T.object,
     replica: T.object,
-    searchLinesWithSelection: T.func
+    searchLinesWithSelection: T.func,
+    setRenderOptimizations: T.func
   },
 
   componentWillReceiveProps(nextProps) {
@@ -146,6 +147,14 @@ export default React.createClass({
     EditorActions.focusInput()
   },
 
+  _renderOptimizationsEnable() {
+    this.props.setRenderOptimizations(true)
+  },
+
+  _renderOptimizationsDisable() {
+    this.props.setRenderOptimizations(false)
+  },
+
   render() {
     return (
       <div style={{position: 'relative', zIndex: 100, paddingTop: 30}}>
@@ -162,6 +171,9 @@ export default React.createClass({
         <button onClick={this._forceFlow}>Flow</button><br/>
         <span>Action:&nbsp;</span>
         <button onClick={this._togglePositionEolStart}>Toggle Position EOL Start</button><br/>
+        <span>Render Optimizations:&nbsp;</span>
+        <button onClick={this._renderOptimizationsEnable}>Enable</button>&nbsp;
+        <button onClick={this._renderOptimizationsDisable}>Disable</button><br/>
       </div>
     )
   }

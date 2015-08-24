@@ -53,6 +53,7 @@ let renderEditor = function(config, renderTarget) {
   })
   configDefault('userName', config.userId)
   configDefault('wsPort', null)
+  configDefault('renderOptimizations', true)
 
   const editorFactory = React.createFactory(Editor)
 
