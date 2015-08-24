@@ -12,28 +12,13 @@ const MIME_TYPE_TEXT_PLAIN = 'text/plain'
 const MIME_TYPE_TEXT_HTML = 'text/html'
 const MIME_TYPE_RITZY_RICH_TEXT = 'application/x-ritzy-rt'
 
-// alphabet lower case +
-// alphabet upper case case +
-// numerals +
-// space +
-// special chars (_KEYCODE_MAP in mousetrap) +
-// keys requiring shift (_SHIFT_MAP in mousetrap) +
-// { and } which were missing from mousetrap _SHIFT_MAP
-// common special chars (TODO)
-// TODO non-english language/char entry
-/* eslint-disable comma-spacing */
-const ALL_CHARS = [
-  'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-  'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-  '0','1','2','3','4','5','6','7','8','9',
-  'space',
-  '*','+','-','.','/',';','=',',','-','.','/','`','[','\\',']','\'',
-  '~','!','@','#','$','%','^','&','*','(',')','_','+',':','\"','<','>','?','|',
-  '{','}',
-  'é','è'
-]
-/* eslint-enable comma-spacing */
-
+/**
+ * A React component to obtain TextInput from the user and insert it into the editor. We capture shortcuts
+ * via Mousetrap.js bindings. All other characters bypass Mousetrap and are inserted by the browser into the
+ * focused hidden text input area (so the browser's internal machinery deals with the key capture and translation
+ * to characters, so it should work for complex IME input as well), and from there the browser triggers the
+ * onInput event on the input area, at which point we grab the character and place it into the editor.
+ */
 export default React.createClass({
   propTypes: {
     id: T.string.isRequired,
@@ -61,34 +46,30 @@ export default React.createClass({
     }, true)
 
     let keyBindings = new Mousetrap(this.input)
-
-    // TODO probably ALL_CHARS should be handled via onInput instead to avoid keycode translation
-    keyBindings.bind(ALL_CHARS, this._handleKeyChar)
     keyBindings.bind(['up', 'down', 'left', 'right'], this._handleKeyArrow)
     keyBindings.bind(['shift+up', 'shift+down', 'shift+left', 'shift+right'], this._handleKeySelectionArrow)
     keyBindings.bind(['pageup', 'pagedown'], this._handleKeyNavigationPage)
     keyBindings.bind(['shift+pageup', 'shift+pagedown'], this._handleKeySelectionPage)
-    keyBindings.bind(['ctrl+home', 'home', 'ctrl+end', 'end'], this._handleKeyNavigationHomeEnd)
-    keyBindings.bind(['ctrl+shift+home', 'shift+home', 'ctrl+shift+end', 'shift+end'], this._handleKeySelectionHomeEnd)
-    keyBindings.bind(['ctrl+left', 'ctrl+right'], this._handleKeyNavigationWord)
-    keyBindings.bind(['shift+ctrl+left', 'shift+ctrl+right'], this._handleKeySelectionWord)
-    keyBindings.bind('ctrl+a', this._handleKeySelectionAll)
+    keyBindings.bind(['mod+home', 'home', 'mod+end', 'end'], this._handleKeyNavigationHomeEnd)
+    keyBindings.bind(['mod+shift+home', 'shift+home', 'mod+shift+end', 'shift+end'], this._handleKeySelectionHomeEnd)
+    keyBindings.bind(['mod+left', 'mod+right'], this._handleKeyNavigationWord)
+    keyBindings.bind(['shift+mod+left', 'shift+mod+right'], this._handleKeySelectionWord)
+    keyBindings.bind('mod+a', this._handleKeySelectionAll)
     keyBindings.bind('backspace', this._handleKeyBackspace)
     keyBindings.bind('del', this._handleKeyDelete)
-    keyBindings.bind('ctrl+backspace', this._handleKeyWordBackspace)
-    keyBindings.bind('ctrl+del', this._handleKeyWordDelete)
-    //keyBindings.bind('ctrl+s', this._handleKeySave)
+    keyBindings.bind('mod+backspace', this._handleKeyWordBackspace)
+    keyBindings.bind('mod+del', this._handleKeyWordDelete)
+    //keyBindings.bind('mod+s', this._handleKeySave)
     //keyBindings.bind('tab', this._handleKeyTab)
-    keyBindings.bind('enter', this._handleKeyEnter)
-    //keyBindings.bind('ctrl+z', this._handleUndo)
-    //keyBindings.bind('ctrl+y', this._handleRedo)
+    //keyBindings.bind('mod+z', this._handleUndo)
+    //keyBindings.bind('mod+y', this._handleRedo)
 
-    keyBindings.bind('ctrl+b', this._handleKeyBold)
-    keyBindings.bind('ctrl+i', this._handleKeyItalics)
-    keyBindings.bind('ctrl+u', this._handleKeyUnderline)
+    keyBindings.bind('mod+b', this._handleKeyBold)
+    keyBindings.bind('mod+i', this._handleKeyItalics)
+    keyBindings.bind('mod+u', this._handleKeyUnderline)
     keyBindings.bind('alt+shift+5', this._handleKeyStrikethrough)
-    keyBindings.bind('ctrl+.', this._handleKeySuperscript)
-    keyBindings.bind('ctrl+,', this._handleKeySubscript)
+    keyBindings.bind('mod+.', this._handleKeySuperscript)
+    keyBindings.bind('mod+,', this._handleKeySubscript)
 
     if(this.props.focused) {
       this._focus()
@@ -127,20 +108,10 @@ export default React.createClass({
   _checkEmptyValue() {
     let value = this.input.value
     if(value.length > 0 && value !== ' ') {
-      console.error('The hidden input area is not empty, missed an event? Value=', value)
+      console.warn('The hidden input area is not empty, missed an event? Inserting now. Please report this to https://github.com/ritzyed/ritzy/issues/12. Value=', value)
+      EditorActions.insertChars(value)
+      this.input.value = ' '
     }
-  },
-
-  _handleKeyChar(e) {
-    this._checkEmptyValue()
-
-    // use React's DOM-L3 events polyfill to convert the native event into a key
-    let key = getEventKey(e)
-    if(key === 'Enter') {
-      key = '\n'
-    }
-    EditorActions.insertChars(key)
-    return false
   },
 
   _handleKeyArrow(e, key) {
@@ -201,13 +172,6 @@ export default React.createClass({
     return false
   },
 
-  _handleKeyEnter() {
-    this._checkEmptyValue()
-
-    EditorActions.insertChars('\n')
-    return false
-  },
-
   _handleKeyNavigationPage(e, key) {
     if(key === 'pageup') {
       EditorActions.navigatePageUp()
@@ -227,11 +191,11 @@ export default React.createClass({
   },
 
   _handleKeyNavigationHomeEnd(e, key) {
-    if(key === 'ctrl+home') {
+    if(key === 'mod+home') {
       EditorActions.navigateStart()
     } else if(key === 'home') {
       EditorActions.navigateStartLine()
-    } else if(key === 'ctrl+end') {
+    } else if(key === 'mod+end') {
       EditorActions.navigateEnd()
     } else if(key === 'end') {
       EditorActions.navigateEndLine()
@@ -242,20 +206,20 @@ export default React.createClass({
   _handleKeyNavigationWord(e, key) {
     this._checkEmptyValue()
 
-    if(key === 'ctrl+left') {
+    if(key === 'mod+left') {
       EditorActions.navigateWordLeft()
-    } else if(key === 'ctrl+right') {
+    } else if(key === 'mod+right') {
       EditorActions.navigateWordRight()
     }
     return false
   },
 
   _handleKeySelectionHomeEnd(e, key) {
-    if(key === 'ctrl+shift+home') {
+    if(key === 'mod+shift+home') {
       EditorActions.selectionStart()
     } else if(key === 'shift+home') {
       EditorActions.selectionStartLine()
-    } else if(key === 'ctrl+shift+end') {
+    } else if(key === 'mod+shift+end') {
       EditorActions.selectionEnd()
     } else if(key === 'shift+end') {
       EditorActions.selectionEndLine()
@@ -265,9 +229,9 @@ export default React.createClass({
   },
 
   _handleKeySelectionWord(e, key) {
-    if(key === 'shift+ctrl+left') {
+    if(key === 'shift+mod+left') {
       EditorActions.selectionWordLeft()
-    } else if(key === 'shift+ctrl+right') {
+    } else if(key === 'shift+mod+right') {
       EditorActions.selectionWordRight()
     }
     return false
@@ -419,9 +383,10 @@ export default React.createClass({
   },
 
   _onInput(e) {
-    // catch inputs that our keyboard handler doesn't catch e.g. compose key, IME inputs, etc.
+    // all character input, including IME events should trigger this event
     let value = e.target.value
     EditorActions.insertChars(value)
+    e.target.value = ' '
     this._focus()
   },
 
