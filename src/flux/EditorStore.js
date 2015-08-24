@@ -86,32 +86,30 @@ class EditorStore {
   }
 
   setRemoteCursorPosition(remoteCursor) {
-    let id = remoteCursor.model._id
+    let id = remoteCursor._id
     // some bug in Swarm.js: sometimes the id is blank if a lot of cursor events have happened quickly in succession
     if(!id) return
-    let remoteCursors = this.state.remoteCursors
+    // TODO use immutable data structure instead, need clone here to avoid mutating the existing state
+    let remoteCursors = _.clone(this.state.remoteCursors)
     remoteCursors[id] = remoteCursor
     this.setState({remoteCursors: remoteCursors})
     this._delayedRemoteCursorNameReveal(id)
   }
 
   unsetRemoteCursorPosition(remoteCursor) {
-    let id = remoteCursor.model._id
+    let id = remoteCursor._id
     // some bug in Swarm.js: sometimes the id is blank if a lot of cursor events have happened quickly in succession
     if(!id) return
-    let remoteCursors = this.state.remoteCursors
+    // TODO use immutable data structure instead, need clone here to avoid mutating the existing state
+    let remoteCursors = _.clone(this.state.remoteCursors)
     if(id in remoteCursors) {
       delete remoteCursors[id]
       this.setState({remoteCursors: remoteCursors})
     }
   }
 
-  updateRemoteCursorModel() {
-    this._setRemoteCursorModel()
-  }
-
   revealRemoteCursorName(remoteCursor) {
-    this._delayedRemoteCursorNameReveal(remoteCursor.model._id)
+    this._delayedRemoteCursorNameReveal(remoteCursor._id)
   }
 
   navigateLeft() {
@@ -839,11 +837,13 @@ class EditorStore {
     if(!this.cursorModel) return
 
     let updatedModel = {
-      position: this.state.position.id,
-      positionEolStart: this.state.positionEolStart,
-      selectionActive: this.state.selectionActive,
-      selectionLeftChar: this.state.selectionActive ? charId(this.state.selectionLeftChar) : null,
-      selectionRightChar: this.state.selectionActive ? charId(this.state.selectionRightChar) : null,
+      data: {
+        position: this.state.position.id,
+        positionEolStart: this.state.positionEolStart,
+        selectionActive: this.state.selectionActive,
+        selectionLeftChar: this.state.selectionActive ? charId(this.state.selectionLeftChar) : null,
+        selectionRightChar: this.state.selectionActive ? charId(this.state.selectionRightChar) : null
+      },
       ms: Date.now()
     }
 

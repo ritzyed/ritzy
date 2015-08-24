@@ -30,7 +30,7 @@ export default React.createClass({
       && ReactUtils.deepEquals(this.props.remoteNameReveal, nextProps.remoteNameReveal)
       && ReactUtils.deepEquals(this.props.cursorPosition, nextProps.cursorPosition)
       && ReactUtils.deepEquals(this.props.activeAttributes, nextProps.activeAttributes)
-      && ReactUtils.deepEquals(this.props.remote, nextProps.remote, _.isEqual, [r => r.color, r => r.model.name])
+      && ReactUtils.deepEquals(this.props.remote, nextProps.remote, _.isEqual, [r => r.color, r => r.name, r => r.data])
 
     return !propsEqual
   },
@@ -117,7 +117,7 @@ export default React.createClass({
         <div className={cursorClasses} style={cursorStyle}>
           <div className={caretClasses} style={{borderColor: remote.color, height: cursorHeight}} onMouseOver={this._remoteCursorHover}></div>
           <div className="ritzy-internal-text-cursor-top text-cursor-top" style={cursorTopStyle} onMouseOver={this._remoteCursorHover}></div>
-          <div className="ritzy-internal-text-cursor-name text-cursor-name" style={cursorNameStyle}>{remote.model.name}</div>
+          <div className="ritzy-internal-text-cursor-name text-cursor-name" style={cursorNameStyle}>{remote.name}</div>
         </div>
       )
     } else {

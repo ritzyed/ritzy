@@ -5,17 +5,21 @@ import OpenType from 'opentype.js'
 import Editor from './components/Editor'
 import { detectMinFontSize } from './core/dom'
 
-// For performance analysis, bind React to the global scope (window) and then in console:
-// var Perf = window.React.addons.Perf
-// Perf.start()
-// ... do some stuff ...
-// Perf.stop()
-// var measurements = Perf.getLastMeasurements()
-// Perf.printInclusive(measurements)
-// Perf.printExclusive(measurements)
-// Perf.printWasted(measurements)
-// Perf.printDOM(measurements)
-//window.React = React
+/*
+For performance analysis, bind React to the global scope (window) and then in console:
+var Perf = window.React.addons.Perf
+Perf.start()
+... do some stuff ...
+Perf.stop()
+function printTiming(measurements) {
+  Perf.printInclusive(measurements)
+  Perf.printExclusive(measurements)
+  Perf.printWasted(measurements)
+}
+printTiming(Perf.getLastMeasurements())
+Perf.printDOM(Perf.getLastMeasurements())
+*/
+// window.React = React
 
 let renderEditor = function(config, renderTarget) {
   let configDefault = function(key, defaultValue) {

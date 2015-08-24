@@ -113,7 +113,8 @@ export default React.createClass({
     if(remoteCursorsIds.length !== nextRemoteCursorsIds.length) return true
     for(let i = 0; i < remoteCursorsIds.length; i++) {
       let id = remoteCursorsIds[i]
-      if(!ReactUtils.deepEquals(this.state.remoteCursors[id], nextState.remoteCursors[id], _.isEqual, [r => r.color, r => r.model.name])) return true
+      if(!ReactUtils.deepEquals(this.state.remoteCursors[id], nextState.remoteCursors[id], _.isEqual,
+        [r => r.color, r => r.name, r => r.data])) return true
     }
 
     if(this.state.lines.length !== nextState.lines.length) return true
@@ -339,6 +340,7 @@ export default React.createClass({
   _renderLine(line, index, lineHeight, localSelection, remoteSelections) {
     let computedSelection = this._computeSelection(index, lineHeight, localSelection.selection, localSelection.lines)
     let computedRemoteSelections = remoteSelections.map(s => this._computeSelection(index, lineHeight, s.selection, s.lines, s.color))
+      .filter(s => s)
 
     return (
       <EditorLine key={index} line={line} lineHeight={lineHeight}
@@ -394,7 +396,7 @@ export default React.createClass({
 
   _renderCursor(cursorPosition, lineHeight, remote) {
     if(remote) {
-      let id = remote.model._id
+      let id = remote._id
       let revealName = this.state.remoteNameReveal.indexOf(id) > -1
       return (
         <Cursor key={id} cursorPosition={cursorPosition} lineHeight={lineHeight}
@@ -410,20 +412,22 @@ export default React.createClass({
   },
 
   _renderRemoteCursors(lineHeight) {
-    return Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].model.position).map(id => {
+    return Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].data.position).map(id => {
       let remoteCursor = this.state.remoteCursors[id]
       let remotePosition
       try {
-        remotePosition = this.replica.getChar(remoteCursor.model.position)
+        remotePosition = this.replica.getChar(remoteCursor.data.position)
       } catch (e) {
         console.warn('Error obtaining remote position, ignoring.', e)
         return null
       }
       // do not display remote cursor in same position as local one
-      if(!this.state.focus || !(remoteCursor.model.positionEolStart === this.state.positionEolStart
+      if(!this.state.focus || !(remoteCursor.data.positionEolStart === this.state.positionEolStart
         && charEq(remotePosition, this.state.position))) {
-        let cursorPosition = this._cursorPosition(lineHeight, remotePosition, remoteCursor.model.positionEolStart)
-        return this._renderCursor(cursorPosition, lineHeight, remoteCursor)
+        let cursorPosition = this._cursorPosition(lineHeight, remotePosition, remoteCursor.data.positionEolStart)
+        if(cursorPosition) {
+          return this._renderCursor(cursorPosition, lineHeight, remoteCursor)
+        }
       }
       return null
     })
@@ -448,9 +452,9 @@ export default React.createClass({
       }
 
       let localSelection = createSelectionData(this.state)
-      let remoteSelections = Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].model.selectionActive).map(id => {
+      let remoteSelections = Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].data.selectionActive).map(id => {
         let remoteCursor = this.state.remoteCursors[id]
-        return createSelectionData(remoteCursor.model, remoteCursor.color)
+        return createSelectionData(remoteCursor.data, remoteCursor.color)
       })
 
       return (

@@ -63,42 +63,55 @@ export default {
   subscribeRemoteCursor(remoteCursorModel) {
     let id = remoteCursorModel._id
     let remoteCursor
-    // if already subscribed, unsubscribe first (but keep the local info) --> shouldn't happen but check for it anyway
+    // if already subscribed, unsubscribe first (but keep the local color info) --> shouldn't happen but check for it anyway
     if(this.trackedCursors[id]) {
       remoteCursor = this.trackedCursors[id]
-      remoteCursor.model.off('.set', this.onRemoteCursorUpdate)
-      remoteCursor.model = remoteCursorModel
+      remoteCursor.swarmModel.off('.set', this.onRemoteCursorUpdate)
+      remoteCursor.swarmModel = remoteCursorModel
+      remoteCursor.internalModel = this._internalModelFromSwarmModel(remoteCursorModel, remoteCursor.internalModel.color)
     } else {
       let usedColors = new Set(Object.keys(this.trackedCursors).map(cursorId => this.trackedCursors[cursorId].color))
       let possibleColors = this.props.cursorColorSpace.filter(c => !usedColors.has(c))
       // re-use colors if none are left
       let color = possibleColors.length > 0 ? possibleColors[0] : usedColors[0]
+      let internalModel = this._internalModelFromSwarmModel(remoteCursorModel, color)
       remoteCursor = {
-        model: remoteCursorModel,
-        color: color
+        swarmModel: remoteCursorModel,
+        internalModel: internalModel
       }
       this.trackedCursors[id] = remoteCursor
     }
-    EditorActions.setRemoteCursorPosition(remoteCursor)
+    EditorActions.setRemoteCursorPosition(remoteCursor.internalModel)
     remoteCursorModel.on('.set', this.onRemoteCursorUpdate)
   },
 
   unSubscribeRemoteCursor(remoteCursor) {
-    let id = remoteCursor.model._id
+    let id = remoteCursor.swarmModel._id
     // TODO this doesn't work because swarm.js is looking for the function in listener.sink but it is found in listener.sink.sink
     // see https://github.com/gritzko/swarm/blob/master/lib/Syncable.js#L673
-    remoteCursor.model.off('.set', this.onRemoteCursorUpdate)
+    remoteCursor.swarmModel.off('.set', this.onRemoteCursorUpdate)
+    let internalModel = this.trackedCursors[id].internalModel
     delete this.trackedCursors[id]
-    EditorActions.unsetRemoteCursorPosition(remoteCursor)
+    EditorActions.unsetRemoteCursorPosition(internalModel)
   },
 
   onRemoteCursorUpdate(spec, value, source) {   // eslint-disable-line no-unused-vars
     let id = source._id
     if(!id || !this.trackedCursors[id]) return
-    EditorActions.setRemoteCursorPosition(this.trackedCursors[id])
+
+    let internalModel = this._internalModelFromSwarmModel(this.trackedCursors[id].swarmModel,
+      this.trackedCursors[id].internalModel.color)
+
+    EditorActions.setRemoteCursorPosition(internalModel)
   },
 
   foreignCursorSet() {
     return this.cursorSet.list().filter(c => c._id && c._id !== this.cursorId)
+  },
+
+  _internalModelFromSwarmModel(swarmModel, color) {
+    let internalModel = _.pick(swarmModel, '_id', 'name', 'data', 'ms')
+    internalModel.color = color
+    return internalModel
   }
 }
