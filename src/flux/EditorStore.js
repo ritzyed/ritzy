@@ -45,7 +45,7 @@ class EditorStore {
       cursorMotion: false,
       selectionActive: false,
       remoteCursors: {},
-      remoteNameReveal: [],
+      remoteNameReveal: new Set(),
       focus: false,
       loaded: false,
       lines: []
@@ -922,13 +922,16 @@ class EditorStore {
   _delayedRemoteCursorNameReveal(id, timeout) {
     if(_.isUndefined(timeout)) timeout = 2000
 
-    this.state.remoteNameReveal.push(id)
-    this.setState({remoteNameReveal: this.state.remoteNameReveal})
+    // TODO use immutable data structure instead, need to create a new Set here to avoid mutating the existing state
+    let remoteNameReveal = new Set(this.state.remoteNameReveal)
+    remoteNameReveal.add(id)
+    this.setState({remoteNameReveal: remoteNameReveal})
 
     setTimeout(() => {
       // this should never be false
-      if(this.state.remoteNameReveal.length > 0) this.state.remoteNameReveal.shift()
-      this.setState({remoteNameReveal: this.state.remoteNameReveal})
+      let remoteNameReveal = new Set(this.state.remoteNameReveal)
+      remoteNameReveal.delete(id)
+      this.setState({remoteNameReveal: remoteNameReveal})
     }, timeout)
   }
 

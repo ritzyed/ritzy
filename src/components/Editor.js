@@ -412,7 +412,7 @@ export default React.createClass({
   _renderCursor(cursorPosition, lineHeight, remote) {
     if(remote) {
       let id = remote._id
-      let revealName = this.state.remoteNameReveal.indexOf(id) > -1
+      let revealName = this.state.remoteNameReveal.has(id)
       return (
         <Cursor key={id} cursorPosition={cursorPosition} lineHeight={lineHeight}
           remoteNameReveal={revealName} remote={remote} renderOptimizations={this.props.renderOptimizations}/>
