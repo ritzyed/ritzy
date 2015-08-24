@@ -437,9 +437,8 @@ export default React.createClass({
         console.warn('Error obtaining remote position, ignoring.', e)
         return null
       }
-      // do not display remote cursor in same position as local one
-      if(!this.state.focus || !(remoteCursor.state.positionEolStart === this.state.positionEolStart
-        && charEq(remotePosition, this.state.position))) {
+      // show remote cursors in same position as local one (subtly prompts user to move his local cursor somewhere else)
+      if(remotePosition) {
         let cursorPosition = this._cursorPosition(lineHeight, remotePosition, remoteCursor.state.positionEolStart)
         if(cursorPosition) {
           return this._renderCursor(cursorPosition, lineHeight, remoteCursor)
