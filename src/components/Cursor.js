@@ -30,7 +30,7 @@ export default React.createClass({
       && ReactUtils.deepEquals(this.props.remoteNameReveal, nextProps.remoteNameReveal)
       && ReactUtils.deepEquals(this.props.cursorPosition, nextProps.cursorPosition)
       && ReactUtils.deepEquals(this.props.activeAttributes, nextProps.activeAttributes)
-      && ReactUtils.deepEquals(this.props.remote, nextProps.remote, _.isEqual, [r => r.color, r => r.name, r => r.data])
+      && ReactUtils.deepEquals(this.props.remote, nextProps.remote, _.isEqual, [r => r.color, r => r.name, r => r.state])
 
     return !propsEqual
   },

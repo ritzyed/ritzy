@@ -1,4 +1,5 @@
 import EditorActions from '../flux/EditorActions'
+import { extractInternal } from '../core/CursorModel'
 
 export default {
   createSharedCursor() {
@@ -110,7 +111,7 @@ export default {
   },
 
   _internalModelFromSwarmModel(swarmModel, color) {
-    let internalModel = _.pick(swarmModel, '_id', 'name', 'data', 'ms')
+    let internalModel = extractInternal(swarmModel)
     internalModel.color = color
     return internalModel
   }

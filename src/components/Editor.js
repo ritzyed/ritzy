@@ -114,7 +114,7 @@ export default React.createClass({
     for(let i = 0; i < remoteCursorsIds.length; i++) {
       let id = remoteCursorsIds[i]
       if(!ReactUtils.deepEquals(this.state.remoteCursors[id], nextState.remoteCursors[id], _.isEqual,
-        [r => r.color, r => r.name, r => r.data])) return true
+        [r => r.color, r => r.name, r => r.state])) return true
     }
 
     if(this.state.lines.length !== nextState.lines.length) return true
@@ -412,19 +412,19 @@ export default React.createClass({
   },
 
   _renderRemoteCursors(lineHeight) {
-    return Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].data.position).map(id => {
+    return Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].state.position).map(id => {
       let remoteCursor = this.state.remoteCursors[id]
       let remotePosition
       try {
-        remotePosition = this.replica.getChar(remoteCursor.data.position)
+        remotePosition = this.replica.getChar(remoteCursor.state.position)
       } catch (e) {
         console.warn('Error obtaining remote position, ignoring.', e)
         return null
       }
       // do not display remote cursor in same position as local one
-      if(!this.state.focus || !(remoteCursor.data.positionEolStart === this.state.positionEolStart
+      if(!this.state.focus || !(remoteCursor.state.positionEolStart === this.state.positionEolStart
         && charEq(remotePosition, this.state.position))) {
-        let cursorPosition = this._cursorPosition(lineHeight, remotePosition, remoteCursor.data.positionEolStart)
+        let cursorPosition = this._cursorPosition(lineHeight, remotePosition, remoteCursor.state.positionEolStart)
         if(cursorPosition) {
           return this._renderCursor(cursorPosition, lineHeight, remoteCursor)
         }
@@ -452,9 +452,9 @@ export default React.createClass({
       }
 
       let localSelection = createSelectionData(this.state)
-      let remoteSelections = Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].data.selectionActive).map(id => {
+      let remoteSelections = Object.keys(this.state.remoteCursors).filter(id => this.state.remoteCursors[id].state.selectionActive).map(id => {
         let remoteCursor = this.state.remoteCursors[id]
-        return createSelectionData(remoteCursor.data, remoteCursor.color)
+        return createSelectionData(remoteCursor.state, remoteCursor.color)
       })
 
       return (

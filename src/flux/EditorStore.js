@@ -837,7 +837,7 @@ class EditorStore {
     if(!this.cursorModel) return
 
     let updatedModel = {
-      data: {
+      state: {
         position: this.state.position.id,
         positionEolStart: this.state.positionEolStart,
         selectionActive: this.state.selectionActive,
