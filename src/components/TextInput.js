@@ -68,27 +68,27 @@ export default React.createClass({
     keyBindings.bind(['shift+up', 'shift+down', 'shift+left', 'shift+right'], this._handleKeySelectionArrow)
     keyBindings.bind(['pageup', 'pagedown'], this._handleKeyNavigationPage)
     keyBindings.bind(['shift+pageup', 'shift+pagedown'], this._handleKeySelectionPage)
-    keyBindings.bind(['ctrl+home', 'home', 'ctrl+end', 'end'], this._handleKeyNavigationHomeEnd)
-    keyBindings.bind(['ctrl+shift+home', 'shift+home', 'ctrl+shift+end', 'shift+end'], this._handleKeySelectionHomeEnd)
-    keyBindings.bind(['ctrl+left', 'ctrl+right'], this._handleKeyNavigationWord)
-    keyBindings.bind(['shift+ctrl+left', 'shift+ctrl+right'], this._handleKeySelectionWord)
-    keyBindings.bind('ctrl+a', this._handleKeySelectionAll)
+    keyBindings.bind(['mod+home', 'home', 'mod+end', 'end'], this._handleKeyNavigationHomeEnd)
+    keyBindings.bind(['mod+shift+home', 'shift+home', 'mod+shift+end', 'shift+end'], this._handleKeySelectionHomeEnd)
+    keyBindings.bind(['mod+left', 'mod+right'], this._handleKeyNavigationWord)
+    keyBindings.bind(['shift+mod+left', 'shift+mod+right'], this._handleKeySelectionWord)
+    keyBindings.bind('mod+a', this._handleKeySelectionAll)
     keyBindings.bind('backspace', this._handleKeyBackspace)
     keyBindings.bind('del', this._handleKeyDelete)
-    keyBindings.bind('ctrl+backspace', this._handleKeyWordBackspace)
-    keyBindings.bind('ctrl+del', this._handleKeyWordDelete)
-    //keyBindings.bind('ctrl+s', this._handleKeySave)
+    keyBindings.bind('mod+backspace', this._handleKeyWordBackspace)
+    keyBindings.bind('mod+del', this._handleKeyWordDelete)
+    //keyBindings.bind('mod+s', this._handleKeySave)
     //keyBindings.bind('tab', this._handleKeyTab)
     keyBindings.bind('enter', this._handleKeyEnter)
-    //keyBindings.bind('ctrl+z', this._handleUndo)
-    //keyBindings.bind('ctrl+y', this._handleRedo)
+    //keyBindings.bind('mod+z', this._handleUndo)
+    //keyBindings.bind('mod+y', this._handleRedo)
 
-    keyBindings.bind('ctrl+b', this._handleKeyBold)
-    keyBindings.bind('ctrl+i', this._handleKeyItalics)
-    keyBindings.bind('ctrl+u', this._handleKeyUnderline)
+    keyBindings.bind('mod+b', this._handleKeyBold)
+    keyBindings.bind('mod+i', this._handleKeyItalics)
+    keyBindings.bind('mod+u', this._handleKeyUnderline)
     keyBindings.bind('alt+shift+5', this._handleKeyStrikethrough)
-    keyBindings.bind('ctrl+.', this._handleKeySuperscript)
-    keyBindings.bind('ctrl+,', this._handleKeySubscript)
+    keyBindings.bind('mod+.', this._handleKeySuperscript)
+    keyBindings.bind('mod+,', this._handleKeySubscript)
 
     if(this.props.focused) {
       this._focus()
@@ -227,11 +227,11 @@ export default React.createClass({
   },
 
   _handleKeyNavigationHomeEnd(e, key) {
-    if(key === 'ctrl+home') {
+    if(key === 'mod+home') {
       EditorActions.navigateStart()
     } else if(key === 'home') {
       EditorActions.navigateStartLine()
-    } else if(key === 'ctrl+end') {
+    } else if(key === 'mod+end') {
       EditorActions.navigateEnd()
     } else if(key === 'end') {
       EditorActions.navigateEndLine()
@@ -242,20 +242,20 @@ export default React.createClass({
   _handleKeyNavigationWord(e, key) {
     this._checkEmptyValue()
 
-    if(key === 'ctrl+left') {
+    if(key === 'mod+left') {
       EditorActions.navigateWordLeft()
-    } else if(key === 'ctrl+right') {
+    } else if(key === 'mod+right') {
       EditorActions.navigateWordRight()
     }
     return false
   },
 
   _handleKeySelectionHomeEnd(e, key) {
-    if(key === 'ctrl+shift+home') {
+    if(key === 'mod+shift+home') {
       EditorActions.selectionStart()
     } else if(key === 'shift+home') {
       EditorActions.selectionStartLine()
-    } else if(key === 'ctrl+shift+end') {
+    } else if(key === 'mod+shift+end') {
       EditorActions.selectionEnd()
     } else if(key === 'shift+end') {
       EditorActions.selectionEndLine()
@@ -265,9 +265,9 @@ export default React.createClass({
   },
 
   _handleKeySelectionWord(e, key) {
-    if(key === 'shift+ctrl+left') {
+    if(key === 'shift+mod+left') {
       EditorActions.selectionWordLeft()
-    } else if(key === 'shift+ctrl+right') {
+    } else if(key === 'shift+mod+right') {
       EditorActions.selectionWordRight()
     }
     return false
