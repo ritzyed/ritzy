@@ -44,7 +44,8 @@ export default React.createClass({
     cursorColorSpace: T.arrayOf(T.string), // TODO allow it to be a function as well
     initialFocus: T.bool,
     wsPort: T.number,
-    renderOptimizations: T.bool
+    renderOptimizations: T.bool,
+    debugButtons: T.bool
   },
 
   mixins: [SwarmClientMixin, TextReplicaMixin, SharedCursorMixin],
@@ -70,7 +71,8 @@ export default React.createClass({
         'rgb(255, 238, 51)',  // yellow
         'rgb(129, 74, 25)'    // brown
       ],
-      renderOptimizations: true
+      renderOptimizations: true,
+      debugButtons: false
     }
   },
 
@@ -140,6 +142,7 @@ export default React.createClass({
       && this.props.userName === nextProps.userName
       && this.props.initialFocus === nextProps.initialFocus
       && this.props.wsPort === nextProps.wsPort
+      && this.props.debugButtons === nextProps.debugButtons
       && ReactUtils.deepEquals(this.props.cursorColorSpace, nextProps.cursorColorSpace)
 
     return !propsEqual
@@ -489,6 +492,15 @@ export default React.createClass({
     }
   },
 
+  _renderDebugButtons() {
+    if(!this.props.debugButtons) {
+      return null
+    }
+    return (
+      <DebugEditor editorState={this.state} replica={this.replica} searchLinesWithSelection={this._searchLinesWithSelection} setRenderOptimizations={this._setRenderOptimizations}/>
+    )
+  },
+
   render() {
     //console.trace('render')
     let wrapperStyle = {
@@ -502,7 +514,7 @@ export default React.createClass({
           style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
           {this._renderEditorContents()}
         </div>
-        {/*<DebugEditor editorState={this.state} replica={this.replica} searchLinesWithSelection={this._searchLinesWithSelection} setRenderOptimizations={this._setRenderOptimizations}/>*/}
+        {this._renderDebugButtons()}
       </div>
     )
   }

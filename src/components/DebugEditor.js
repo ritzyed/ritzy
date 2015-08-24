@@ -158,6 +158,7 @@ export default React.createClass({
   render() {
     return (
       <div style={{position: 'relative', zIndex: 100, paddingTop: 30}}>
+        <p>Debugging tools:</p>
         <span>Dump:&nbsp;</span>
         <button onClick={this._dumpState}>State</button>&nbsp;
         <button onClick={this._dumpReplica}>Replica</button>&nbsp;
