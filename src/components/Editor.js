@@ -490,7 +490,6 @@ export default React.createClass({
           {this._renderEditorContents()}
         </div>
         {/*<DebugEditor editorState={this.state} replica={this.replica} searchLinesWithSelection={this._searchLinesWithSelection}/>*/}
-        <DebugEditor editorState={this.state} replica={this.replica} searchLinesWithSelection={this._searchLinesWithSelection}/>
       </div>
     )
   }
