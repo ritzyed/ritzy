@@ -23,7 +23,7 @@ Perf.printDOM(Perf.getLastMeasurements())
 
 let renderEditor = function(config, renderTarget) {
   let configDefault = function(key, defaultValue) {
-    if(!config[key]) {
+    if(!config.hasOwnProperty(key)) {
       if(typeof defaultValue === 'function') {
         config[key] = defaultValue()
       } else {
@@ -33,7 +33,7 @@ let renderEditor = function(config, renderTarget) {
   }
 
   let configRequire = function(key) {
-    if(!config[key]) {
+    if(!config.hasOwnProperty(key)) {
       throw new Error(`Configuration must contain a property '${key}'.`)
     }
   }
