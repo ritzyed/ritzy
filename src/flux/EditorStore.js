@@ -36,6 +36,20 @@ class EditorStore {
 
     this.bindActions(EditorActions)
 
+    this.on('error', (err) => {
+      console.group('Error Handler')
+      console.error('Error during dispatch, please report this to https://github.com/ritzyed/ritzy/issues, ideally with a reproduction recipe.')
+      console.log(err.error.message)
+      console.log(err.error.stack)
+      console.log('Payload:')
+      console.dir(err.payload)
+      console.log('State:')
+      console.dir(_.clone(err.state)) // not sure why we need the clone here, err.state.error is updated if not
+      console.groupEnd()
+      this.registerEditorError(err.error)
+      throw err.error
+    })
+
     this.config = null
     this.replica = null
 
@@ -48,7 +62,8 @@ class EditorStore {
       remoteNameReveal: new Set(),
       focus: false,
       loaded: false,
-      lines: []
+      lines: [],
+      error: null
     }
   }
 
@@ -478,6 +493,14 @@ class EditorStore {
 
   toggleSubscript() {
     this._toggleAttribute(ATTR.SUBSCRIPT, ATTR.SUPERSCRIPT)
+  }
+
+  registerEditorError(error) {
+    this.setState({error: error})
+  }
+
+  dismissEditorError() {
+    this.setState({error: null})
   }
 
   _insertChars(value, attributes, atPosition, reflow) {

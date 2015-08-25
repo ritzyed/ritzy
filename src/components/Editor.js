@@ -45,7 +45,9 @@ export default React.createClass({
     initialFocus: T.bool,
     wsPort: T.number,
     renderOptimizations: T.bool,
-    debugButtons: T.bool
+    debugButtons: T.bool,
+    showErrorNotification: T.bool,
+    errorNotification: T.string
   },
 
   mixins: [SwarmClientMixin, TextReplicaMixin, SharedCursorMixin],
@@ -72,7 +74,9 @@ export default React.createClass({
         'rgb(129, 74, 25)'    // brown
       ],
       renderOptimizations: true,
-      debugButtons: false
+      debugButtons: false,
+      showErrorNotification: true,
+      errorNotification: 'There was an unexpected error. You may need to refresh the page.'
     }
   },
 
@@ -108,6 +112,7 @@ export default React.createClass({
       && this.state.positionEolStart == nextState.positionEolStart
       && this.state.selectionActive == nextState.selectionActive
       && this.state.cursorMotion == nextState.cursorMotion
+      && this.state.error === nextState.error
       && ReactUtils.deepEquals(this.state.position, nextState.position, charEq)
       && ReactUtils.deepEquals(this.state.selectionLeftChar, nextState.selectionLeftChar, charEq)
       && ReactUtils.deepEquals(this.state.selectionRightChar, nextState.selectionRightChar, charEq)
@@ -241,6 +246,10 @@ export default React.createClass({
 
     e.preventDefault()
     e.stopPropagation()
+  },
+
+  _dismissError() {
+    EditorActions.dismissEditorError()
   },
 
   // RENDERING ---------------------------------------------------------------------------------------------------------
@@ -407,6 +416,16 @@ export default React.createClass({
     }
   },
 
+  _renderError(error) {
+    if(this.props.showErrorNotification && error) {
+      return (
+        <div className="ritzy-error-notification">{ this.props.errorNotification }
+          &nbsp; <button className="ritzy-error-notification-dismiss" onClick={this._dismissError}>x</button>
+        </div>
+      )
+    }
+  },
+
   _renderInput(cursorPosition) {
     let top = cursorPosition ? cursorPosition.top : 0
     return (
@@ -518,6 +537,7 @@ export default React.createClass({
 
     return (
       <div>
+        {this._renderError(this.state.error)}
         <div className="ritzy-internal-text-content-wrapper text-content-wrapper"
           style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
           {this._renderEditorContents()}

@@ -210,6 +210,14 @@ class EditorActions {
   toggleSubscript() {
     this.dispatch()
   }
+
+  registerEditorError(error) {
+    this.dispatch(error)
+  }
+
+  dismissEditorError() {
+    this.dispatch()
+  }
 }
 
 export default alt.createActions(EditorActions)

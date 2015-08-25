@@ -147,6 +147,11 @@ export default React.createClass({
     EditorActions.focusInput()
   },
 
+  _testError() {
+    let err = new Error('A test error from DebugEditor')
+    EditorActions.registerEditorError(err)
+  },
+
   _renderOptimizationsEnable() {
     this.props.setRenderOptimizations(true)
   },
@@ -171,7 +176,8 @@ export default React.createClass({
         <button onClick={this._forceRender}>Render</button>&nbsp;
         <button onClick={this._forceFlow}>Flow</button><br/>
         <span>Action:&nbsp;</span>
-        <button onClick={this._togglePositionEolStart}>Toggle Position EOL Start</button><br/>
+        <button onClick={this._togglePositionEolStart}>Toggle Position EOL Start</button>&nbsp;
+        <button onClick={this._testError}>Raise an Error</button><br/>
         <span>Render Optimizations:&nbsp;</span>
         <button onClick={this._renderOptimizationsEnable}>Enable</button>&nbsp;
         <button onClick={this._renderOptimizationsDisable}>Disable</button><br/>
