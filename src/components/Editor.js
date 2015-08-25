@@ -262,7 +262,14 @@ export default React.createClass({
     }
 
     let left = lineContainingChar(this.state.lines, this.replica.getCharRelativeTo(selection.selectionLeftChar, 1, 'eof'))
+    if(!left) {
+      return null
+    }
+
     let right = lineContainingChar(this.state.lines.slice(left.index), selection.selectionRightChar, null)
+    if(!right) {
+      return null
+    }
 
     return {
       left: left.index,
@@ -351,7 +358,9 @@ export default React.createClass({
   },
 
   _renderLine(line, index, lineHeight, localSelection, remoteSelections) {
-    let computedSelection = this._computeSelection(index, lineHeight, localSelection.selection, localSelection.lines)
+    let computedSelection = localSelection ?
+      this._computeSelection(index, lineHeight, localSelection.selection, localSelection.lines) :
+      null
     let computedRemoteSelections = remoteSelections.map(s => this._computeSelection(index, lineHeight, s.selection, s.lines, s.color))
       .filter(s => s)
 
@@ -459,6 +468,9 @@ export default React.createClass({
           selectionRightChar: source.selectionRightChar
         }
         let linesWithSelection = this._searchLinesWithSelection(selection)
+        if(!linesWithSelection) {
+          return null
+        }
         return {
           selection: selection,
           lines: linesWithSelection,
