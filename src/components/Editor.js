@@ -140,10 +140,7 @@ export default React.createClass({
       && this.props.marginV === nextProps.marginV
       && this.props.userId === nextProps.userId
       && this.props.userName === nextProps.userName
-      && this.props.initialFocus === nextProps.initialFocus
-      && this.props.wsPort === nextProps.wsPort
       && this.props.debugButtons === nextProps.debugButtons
-      && ReactUtils.deepEquals(this.props.cursorColorSpace, nextProps.cursorColorSpace)
 
     return !propsEqual
   },
