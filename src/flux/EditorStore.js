@@ -60,6 +60,7 @@ class EditorStore {
       selectionActive: false,
       remoteCursors: {},
       remoteNameReveal: new Set(),
+      activeAttributes: {},
       focus: false,
       loaded: false,
       lines: [],
@@ -248,16 +249,19 @@ class EditorStore {
 
   selectionStart() {
     this._modifySelection(BASE_CHAR, true)
+    this.setActiveAttributes()
   }
 
   selectionStartLine() {
     let {line} = lineContainingChar(this.state.lines, this.state.position, this.state.positionEolStart)
     this._modifySelection(line.start, true)
+    this.setActiveAttributes()
   }
 
   selectionEnd() {
     let toChar = this._lastLine() && this._lastLine().isEof() ? EOF : this._relativeChar(BASE_CHAR, -1)
     this._modifySelection(toChar, toChar === EOF)
+    this.setActiveAttributes()
   }
 
   /**
@@ -286,6 +290,7 @@ class EditorStore {
       toChar = line.end
     }
     this._modifySelection(toChar, positionEolStart)
+    this.setActiveAttributes()
   }
 
   selectionWordLeft() {
@@ -299,6 +304,7 @@ class EditorStore {
       positionEolStart = !lineContainingChar(this.state.lines, this.state.position).endOfLine
     }
     this._modifySelection(position, positionEolStart)
+    this.setActiveAttributes()
   }
 
   selectionWordRight() {
@@ -306,6 +312,7 @@ class EditorStore {
     let endOfLine = lineContainingChar(this.state.lines, this.state.position).endOfLine
 
     this._modifySelection(position, !endOfLine)
+    this.setActiveAttributes()
   }
 
   selectionAll() {
@@ -316,11 +323,13 @@ class EditorStore {
       let lastChar = this._lastLine() && this._lastLine().isEof() ? EOF : this._lastLine().end
       this._modifySelection(lastChar, false)
     }
+    this.setActiveAttributes()
   }
 
   selectToCoordinates(coordinates) {
     let {position, positionEolStart} = this._coordinatesToPosition(coordinates)
     this._modifySelection(position, positionEolStart)
+    // we do not setAttributes here, this is handled (for performance reasons) when the mouse up event occurs
   }
 
   /**
@@ -341,6 +350,7 @@ class EditorStore {
       this._setPosition(word.start)
       this._modifySelection(word.end, false)
     }
+    this.setActiveAttributes()
   }
 
   copySelection(copyHandler) {
@@ -376,7 +386,7 @@ class EditorStore {
     let firstInsertPosition = this.state.position
     let insertPosition = null
     chunks.forEach(c => {
-      insertPosition = this._insertChars(c.text, c.attrs || {}, insertPosition, false)
+      insertPosition = this._insertChars(c.text, c.attrs || null, insertPosition, false)
     })
     this._flow({start: firstInsertPosition, end: insertPosition, action: 'insert'})
   }
@@ -495,6 +505,32 @@ class EditorStore {
     this._toggleAttribute(ATTR.SUBSCRIPT, ATTR.SUPERSCRIPT)
   }
 
+  setActiveAttributes() {
+    let attributes
+    if(this.state.selectionActive) {
+      // activeAttributes are set by the common selection attributes
+      let selection = this.getSelection()
+      attributes = selection.length > 0 ? selection[0].copyOfAttributes() : null
+      if(attributes && selection.length > 1) {
+        for(let i = 1; i < selection.length && !_.isEmpty(attributes); i++) {
+          let char = selection[i]
+          let charAttrs = char.attributes
+          if(!charAttrs) {
+            attributes = null
+            break
+          } else {
+            Object.keys(attributes).forEach(attr => {
+              if(attributes[attr] && !charAttrs[attr]) delete attributes[attr]
+            })
+          }
+        }
+      }
+    } else {
+      attributes = this.state.position.attributes
+    }
+    this.setState({activeAttributes: attributes})
+  }
+
   registerEditorError(error) {
     this.setState({error: error})
   }
@@ -506,6 +542,11 @@ class EditorStore {
   _insertChars(value, attributes, atPosition, reflow) {
     if(_.isUndefined(reflow)) reflow = true
     let position
+
+    if(!attributes) {
+      // use the active attributes if attributes are not set explicitly
+      attributes = this.state.activeAttributes
+    }
 
     if(this.state.selectionActive) {
       position = this.state.selectionLeftChar
@@ -519,18 +560,6 @@ class EditorStore {
 
       if(position === EOF) {
         position = this._relativeChar(EOF, -1, 'limit')
-      }
-    }
-
-    if(!attributes) {
-      if(this.state.selectionActive) {
-        position = this.state.selectionLeftChar
-        // if selection, then activeAttributes (set by command or toolbar) are set by the first selected char
-        attributes = this._relativeChar(position, 1, 'limit').attributes
-      } else {
-        attributes = this.state.activeAttributes ?
-          this.state.activeAttributes :
-          this._relativeChar(position, 0).attributes // reload attributes from the replica in case they have changed
       }
     }
 
@@ -905,14 +934,17 @@ class EditorStore {
 
     //console.debug('position', position, 'positionEolStart', positionEolStart, 'resetUpDown', resetUpDown)
 
+    let currentPosition = this.state.position
+
     this.setState({
       position: position,
       positionEolStart: positionEolStart,
-      selectionActive: false,
-      activeAttributes: null
+      selectionActive: false
     })
 
-    // todo set the line information in the state, line index, advanceX
+    if(!charEq(position, currentPosition)) {
+      this.setState({ activeAttributes: position.attributes })
+    }
 
     if(resetUpDown) {
       this.upDownAdvanceX = null
@@ -1280,6 +1312,7 @@ class EditorStore {
       toChar = this._lastLine().end
     }
     this._modifySelection(toChar, (this.state.position === EOF && charCount === -1) || !endOfLine)
+    this.setActiveAttributes()
   }
 
   _selectionUpDown(lineCount) {
@@ -1332,6 +1365,7 @@ class EditorStore {
       }
       this._modifySelection(newPosition, positionEolStart, false)
     }
+    this.setActiveAttributes()
   }
 
   _toggleAttribute(attribute, exclusiveWith) {
@@ -1354,41 +1388,27 @@ class EditorStore {
         for(let i = 0; i < selectionChars.length; i++) {
           let currentAttrs = selectionChars[i].copyOfAttributes()
           delete currentAttrs[attribute]
+          if(_.isEmpty(currentAttrs)) {
+            currentAttrs = null
+          }
           setAttr[selectionChars[i].id] = currentAttrs
         }
       }
 
       this.replica.setAttributes(setAttr)
+      this.setActiveAttributes()
       this._flow({ start: this.state.selectionLeftChar, end: this.state.selectionRightChar, action: ACTION_ATTRIBUTES})
     } else {
-      // TODO set the state of the toolbar so the toolbar button can be rendered accordingly
       // no selection so we are either toggling the explicitly set state, or setting the state explicitly
-      let activeAttributes
-      if(this.state.activeAttributes) {
-        activeAttributes = _.clone(this.state.activeAttributes)
-        if(activeAttributes[attribute]) {
-          delete activeAttributes[attribute]
-        } else {
-          activeAttributes[attribute] = true
-        }
-      } else if(this.state.position) {
-        activeAttributes = this._relativeChar(this.state.position, 0, 'limit').copyOfAttributes()
-        if(activeAttributes) {
-          if(activeAttributes[attribute]) {
-            delete activeAttributes[attribute]
-          } else {
-            activeAttributes[attribute] = true
-          }
-        } else {
-          activeAttributes = {}
-          activeAttributes[attribute] = true
-        }
+      let activeAttributes = this.state.activeAttributes ? _.clone(this.state.activeAttributes) : {}
+      if(activeAttributes[attribute]) {
+        delete activeAttributes[attribute]
+      } else {
+        activeAttributes[attribute] = true
       }
+
       if(activeAttributes && activeAttributes[attribute] && exclusiveWith && activeAttributes[exclusiveWith]) {
         delete activeAttributes[exclusiveWith]
-      }
-      if(_.isEmpty(activeAttributes)) {
-        activeAttributes = null
       }
       this.setState({activeAttributes: activeAttributes})
     }
@@ -1450,6 +1470,21 @@ class EditorStore {
       position: position,
       positionEolStart: positionEolStart
     }
+  }
+
+  _attributesForSelection() {
+    // activeAttributes are set by the common selection attributes
+    let selection = this.getSelection()
+    let attributes = selection.length > 0 ? selection[0].copyOfAttributes() : {}
+    if(attributes && selection.length > 1) {
+      selection.slice(1).forEach(char => {
+        let charAttrs = char.attributes
+        Object.keys(attributes).forEach(attr => {
+          if(attributes[attr] && !charAttrs[attr]) delete attributes[attr]
+        })
+      })
+    }
+    return attributes
   }
 }
 

@@ -211,6 +211,10 @@ class EditorActions {
     this.dispatch()
   }
 
+  setActiveAttributes() {
+    this.dispatch()
+  }
+
   registerEditorError(error) {
     this.dispatch(error)
   }

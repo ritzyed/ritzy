@@ -694,4 +694,26 @@ describe('RichText', () => {
     assert.deepEqual(attrsOfB, { bold: true, italic: true })
     assert.deepEqual(charAt(2).attributes, { bold: true })
   })
+
+  it('noramlizes attributes', () => {
+    let text = new Text('/Text#1')
+    text.reset()
+    text.set('abcdef')
+    let charAt = charAt_(text)
+
+    let charOfB = charAt(2)
+    let attrs = {}
+    let attrsOfB = { bold: true, italic: true }
+    attrs[charOfB.id] = attrsOfB
+    text.setAttributes(attrs)
+    assert.deepEqual(charAt(2).attributes, { bold: true, italic: true })
+
+    attrsOfB.italic = false
+    text.setAttributes(attrs)
+    assert.deepEqual(charAt(2).attributes, { bold: true })
+
+    attrsOfB.bold = false
+    text.setAttributes(attrs)
+    assert.deepEqual(charAt(2).attributes, null)
+  })
 })

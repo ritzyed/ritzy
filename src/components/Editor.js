@@ -248,6 +248,12 @@ export default React.createClass({
     e.stopPropagation()
   },
 
+  _onMouseUp(e) {
+    if(this.state.selectionActive) {
+      EditorActions.setActiveAttributes()
+    }
+  },
+
   _dismissError() {
     EditorActions.dismissEditorError()
   },
@@ -539,7 +545,7 @@ export default React.createClass({
       <div>
         {this._renderError(this.state.error)}
         <div className="ritzy-internal-text-content-wrapper text-content-wrapper"
-          style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseMove={this._onMouseMove}>
+          style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseUp={this._onMouseUp} onMouseMove={this._onMouseMove}>
           {this._renderEditorContents()}
         </div>
         {this._renderDebugButtons()}

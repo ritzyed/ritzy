@@ -61,7 +61,7 @@ class TextData {
   insertChar(pos, char, id, attributes) {
     invariant(pos !== 0, 'Cannot insert at position 0.')
     invariant(pos <= this.len(), 'Index ' + pos + ' out of bounds.')
-    this.chars.splice(pos, 0, new Char(id, char, null, attributes ? attributes : null))
+    this.chars.splice(pos, 0, new Char(id, char, null, this._normalizeAttrs(attributes)))
   }
 
   deleteChar(pos) {
@@ -82,7 +82,7 @@ class TextData {
     invariant(pos !== 0, 'Cannot set attributes of position 0.')
     invariant(pos < this.len(), 'Index ' + pos + ' out of bounds.')
 
-    this.chars[pos].attributes = _.clone(attributes)
+    this.chars[pos].attributes = this._normalizeAttrs(_.clone(attributes))
   }
 
   matches(pos, ids, includeDeleted) {
@@ -136,6 +136,12 @@ class TextData {
 
   text() {
     return this.chars.map(c => c.char).join('')
+  }
+
+  _normalizeAttrs(attrs) {
+    if(!attrs) return null
+    Object.keys(attrs).filter(a => !attrs[a]).forEach(a => delete attrs[a])
+    return _.isEmpty(attrs) ? null : attrs
   }
 }
 
