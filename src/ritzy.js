@@ -176,6 +176,24 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
     setFontSize(fontSize) {
       this.updateConfig('fontSize', fontSize)
     }
+
+    setWidth(width) {
+      this.updateConfig('width', width)
+    }
+
+    setMargin(horizontal, vertical) {
+      this.updateConfig('margin', { horizontal: horizontal, vertical: vertical })
+    }
+
+    setMarginHorizontal(horizontal) {
+      let margin = { horizontal: horizontal, vertical: this.config.margin.vertical }
+      this.updateConfig('margin', margin)
+    }
+
+    setMarginVertical(vertical) {
+      let margin = { horizontal: this.config.margin.horizontal, vertical: vertical }
+      this.updateConfig('margin', margin)
+    }
   }
 
   return new Ritzy(config, renderTarget)
