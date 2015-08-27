@@ -94,6 +94,10 @@ export default React.createClass({
   componentWillReceiveProps(nextProps) {
     TextFontMetrics.setConfig(this.props)
     EditorActions.initialize(nextProps, this.replica)
+
+    if(this.props.fontSize !== nextProps.fontSize) {
+      EditorActions.reflow()
+    }
   },
 
   componentDidMount() {

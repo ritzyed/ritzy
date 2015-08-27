@@ -107,6 +107,10 @@ class EditorStore {
     this.setState({focus: false})
   }
 
+  reflow() {
+    this._flow()
+  }
+
   setRemoteCursorPosition(remoteCursor) {
     let id = remoteCursor._id
     // some bug in Swarm.js: sometimes the id is blank if a lot of cursor events have happened quickly in succession

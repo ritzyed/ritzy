@@ -171,6 +171,10 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
     setUserName(userName) {
       this.updateConfig('userName', userName)
     }
+
+    setFontSize(fontSize) {
+      this.updateConfig('fontSize', fontSize)
+    }
   }
 
   return new Ritzy(config, renderTarget)
