@@ -74,6 +74,12 @@ class EditorStore {
     this.replica = replica
 
     this.setState({focus: config.initialFocus})
+
+    if(this.cursorModel && this.cursorModel.name !== config.userName) {
+      setTimeout(() => {
+        this.cursorModel.set({name: config.userName})
+      }, 0)
+    }
   }
 
   initializeCursorModel({cursorSet, cursorModel}) {

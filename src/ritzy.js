@@ -167,6 +167,10 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
       this.config[property] = value
       this.update()
     }
+
+    setUserName(userName) {
+      this.updateConfig('userName', userName)
+    }
   }
 
   return new Ritzy(config, renderTarget)
