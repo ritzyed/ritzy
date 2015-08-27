@@ -22,7 +22,7 @@ const MIME_TYPE_RITZY_RICH_TEXT = 'application/x-ritzy-rt'
 export default React.createClass({
   propTypes: {
     id: T.string.isRequired,
-    yPosition: T.number.isRequired,
+    coordinates: T.object.isRequired,
     focused: T.bool.isRequired,
     renderOptimizations: T.bool
   },
@@ -81,7 +81,9 @@ export default React.createClass({
       return true
     }
 
-    return this.props.focused !== nextProps.focused || this.props.yPosition !== nextProps.yPosition
+    return this.props.focused !== nextProps.focused
+      || this.props.coordinates.x !== nextProps.coordinates.x
+      || this.props.coordinates.y !== nextProps.coordinates.y
   },
 
   componentDidUpdate() {
@@ -396,8 +398,8 @@ export default React.createClass({
       overflow: 'hidden',
       height: 0,
       outline: 'none',
-      left: 0,
-      top: this.props.yPosition
+      left: this.props.coordinates.x,
+      top: this.props.coordinates.y
     }
 
     // we can't focus an element with display: none so wrap them in another invisible div
