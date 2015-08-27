@@ -382,7 +382,7 @@ export default React.createClass({
     selection.addRange(range)
   },
 
-  _onInput(e) {
+  _onChange(e) {
     // all character input, including IME events should trigger this event
     let value = e.target.value
     EditorActions.insertChars(value)
@@ -403,7 +403,7 @@ export default React.createClass({
     // we can't focus an element with display: none so wrap them in another invisible div
     return (
       <div style={divStyle}>
-        <textarea key="input" ref="input" onInput={this._onInput}
+        <textarea key="input" ref="input" onChange={this._onChange}
           onCopy={this._onCopy} onCut={this._onCut} onPaste={this._onPaste} onBlur={this._onInputFocusLost} onFocus={this._onInputFocusGained}/>
         <div style={{display: 'none'}} ref="hiddenContainer"></div>
         <div contentEditable="true" ref="ieClipboardDiv" onPaste={this._onPaste}></div>
