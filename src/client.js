@@ -13,13 +13,12 @@ const config = {
   // userId: ...,
   // userName: ...,
   //renderOptimizations: false,
-  debugButtons: true,
-  onLoadError: (err) => {
-    document.getElementById('content').innerHTML = 'Oops, I couldn\'t load the editor:\n\n' + err
-  }
+  debugButtons: true
 }
 
-let ritzy = new Ritzy(config)
-
 const renderTarget = document.getElementById('content')
-ritzy.render(renderTarget)
+
+let ritzy = new Ritzy(config, renderTarget)
+ritzy.load((err) => {
+  document.getElementById('content').innerHTML = 'Oops, I couldn\'t load the editor:\n\n' + err
+})
