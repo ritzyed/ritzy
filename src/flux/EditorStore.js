@@ -101,10 +101,12 @@ class EditorStore {
   focusInput() {
     this._delayedCursorBlink(0)
     this.setState({focus: true})
+    this.config.eventEmitter.emit('focus-gained')
   }
 
   inputFocusLost() {
     this.setState({focus: false})
+    this.config.eventEmitter.emit('focus-lost')
   }
 
   reflow() {

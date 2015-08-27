@@ -19,6 +19,16 @@ const config = {
 const renderTarget = document.getElementById('content')
 
 let ritzy = new Ritzy(config, renderTarget)
+
+ritzy.on('focus-gained', function() {
+  console.log('event: focus-gained')
+})
+
+ritzy.on('focus-lost', function() {
+  console.log('event: focus-lost')
+})
+
 ritzy.load((err) => {
   document.getElementById('content').innerHTML = 'Oops, I couldn\'t load the editor:\n\n' + err
 })
+
