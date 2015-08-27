@@ -147,6 +147,7 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
       }
       this.load = (onLoadError) => {
         initConfig(config).then((c) => {
+          c.eventEmitter = this
           this.config = c
           this.update()
         }).catch(function(err) {

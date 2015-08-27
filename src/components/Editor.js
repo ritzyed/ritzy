@@ -27,6 +27,7 @@ const T = React.PropTypes
 export default React.createClass({
   propTypes: {
     id: T.string.isRequired,
+    eventEmitter: T.object.isRequired,
     fonts: T.shape({
       regular: T.object,
       bold: T.object,
