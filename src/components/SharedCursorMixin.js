@@ -71,7 +71,7 @@ export default {
       remoteCursor.swarmModel = remoteCursorModel
       remoteCursor.internalModel = this._internalModelFromSwarmModel(remoteCursorModel, remoteCursor.internalModel.color)
     } else {
-      let usedColors = new Set(Object.keys(this.trackedCursors).map(cursorId => this.trackedCursors[cursorId].color))
+      let usedColors = new Set(Object.values(this.trackedCursors).map(c => c.internalModel.color))
       let possibleColors = this.props.cursorColorSpace.filter(c => !usedColors.has(c))
       // re-use colors if none are left
       let color = possibleColors.length > 0 ? possibleColors[0] : usedColors[0]
