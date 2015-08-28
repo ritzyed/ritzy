@@ -110,12 +110,12 @@ module.exports = function(output, configs, debug, verbose, autoprefixer) {
       new webpack.DefinePlugin(_.merge(GLOBALS, {'__SERVER__': false})),
       new webpack.optimize.DedupePlugin()
     ].concat(!debug ? [
-        new webpack.optimize.UglifyJsPlugin({
-          compress: {
-            screw_ie8: true,
-            warnings: false
-          }
-        })
+      new webpack.optimize.UglifyJsPlugin({
+        compress: {
+          screw_ie8: true,
+          warnings: false
+        }
+      })
     ] : []))
   })
 

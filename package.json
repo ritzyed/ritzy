@@ -56,6 +56,7 @@
     "eslint": "^1.1.0",
     "eslint-loader": "^1.0.0",
     "eslint-plugin-react": "^3.2.2",
+    "espree": "^2.2.4",
     "file-loader": "^0.8.4",
     "gulp": "^3.9.0",
     "gulp-autoprefixer": "^2.3.1",
@@ -95,9 +96,11 @@
     "start": "gulp",
     "test": "mocha --compilers js:compiler.js src/**/*-test.js",
     "lint": "eslint src/",
-    "lintdev": "eslint -c .eslintdevrc gulpfile.js webpack.config.js",
+    "lintdev": "eslint -c .eslintdevrc gulpfile.js webpack.config.js extractapi.js",
     "testb": "karma start",
     "check-blacklisted": "blacklisted-gulp",
+    "preversion": "node extractapi.js > docs/API.adoc && asciidoctor -b docbook -o - README.adoc | pandoc -o README.md -f docbook -t markdown_github -",
+    "postversion": "git push && git push --tags",
     "prepublish": "gulp docs && gulp dist"
   }
 }

@@ -233,8 +233,9 @@ https://github.com/ritzyed/ritzy-demo[Ritzy demo] for an example.
 See `client.js` or the https://github.com/ritzyed/ritzy-demo[Ritzy demo] for an
 example of creating and using the editor. Note that `client.js` uses the `ritzy`
 module, which wraps the underlying React `Editor` component. It provides a
-useful API to calling code, including methods to control the editor at runtime
-and event registration.
+useful https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc[API] to
+calling code, including methods to control the editor at runtime and event
+registration.
 
 NOTE: If you are building a React app, you are free to embed the `Editor`
 component directly rather than using the `ritzy` module.

@@ -1,0 +1,227 @@
+= Ritzy Editor Client API
+
+[[contents]]
+== Contents
+
+The content of the editor can be retrieved by one of the following methods:
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L261[Ritzy.getContents]::
+Returns the contents of the editor as an array of Char objects. The Char object is from the
+underlying CRDT data store.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L271[Ritzy.getContentsRich]::
+Returns the contents of the editor in a rich text JSON format representing the rich text chunks and the
+associated attributes.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L280[Ritzy.getContentsHtml]::
+Returns the contents of the editor as HTML.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L289[Ritzy.getContentsText]::
+Returns the contents of the editor as plain text.
+====
+
+[[selection]]
+== Selection
+
+The current selection can be retrieved by one of the following methods:
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L301[Ritzy.getSelection]::
+Returns the contents of the current selection as an array of Char objects. The Char object is from the
+underlying CRDT data store.
+Returns the contents of the current selection in the underlying CRDT data storage format. The left char
+of the selection is exclusive and the right char is inclusive.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L311[Ritzy.getSelectionRich]::
+Returns the contents of the current selection in a rich text JSON format representing the rich text chunks
+and the associated attributes.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L320[Ritzy.getSelectionHtml]::
+Returns the contents of the current selection as HTML.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L329[Ritzy.getSelectionText]::
+Returns the contents of the current selection as plain text.
+====
+
+[[cursor]]
+== Cursors
+
+Information about local and remote cursors is available:
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L343[Ritzy.getPosition]::
+Returns the current position of the local cursor. The position is a character at which the cursor is placed
+(the point just after the character), and an eolStart attribute. The eolStart attribute is when the position is
+at the character at the end of a line (will generally be space if it is a soft break, and a newline if it is a
+hard break), if eolStart is false the cursor is at the end of the line with that character, and if eolStart is
+true, the cursor is at the start of the next line. This is necessary because both cursor positions represent
+the *same* character position.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L353[Ritzy.getRemoteCursors]::
+Gets all remote cursors currently active in the document. Each remote cursor has attributes such as name
+('name'), the last update time ('ms'), and the remote position of the cursor.
+====
+
+[[events]]
+== Events
+
+The following methods can be used to register listeners for events:
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L363[Ritzy.onPositionChange]::
+Register a callback that executes when the cursor position changes.
+
+Parameters:::
+* cb Callback with the following parameters:
+  ** position - The new position.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L373[Ritzy.onSelectionChange]::
+Register a callback that executes when the selection changes.
+
+Parameters:::
+* cb Callback with the following parameters:
+  ** selection - The new selection in native CRDT format. The left char of the selection is exclusive and the right char is inclusive.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L382[Ritzy.onFocusGained]::
+Register a callback that executes when the editor gains focus.
+
+Parameters:::
+* cb Callback with no parameters.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L391[Ritzy.onFocusLost]::
+Register a callback that executes when the editor loses focus (blur).
+
+Parameters:::
+* cb Callback with no parameters.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L401[Ritzy.onRemoteCursorAdd]::
+Register a callback that executes when a remote cursor is added.
+
+Parameters:::
+* cb Callback with the following parameters:
+  ** remoteCursor - The remote cursor that was added.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L411[Ritzy.onRemoteCursorRemove]::
+Register a callback that executes when a remote cursor is removed.
+
+Parameters:::
+* cb Callback with the following parameters:
+  ** remoteCursor - The remote cursor that was removed.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L423[Ritzy.onRemoteCursorChangeName]::
+Register a callback that executes when the name associated with a remote cursor has changed.
+
+Parameters:::
+* cb Callback with the following parameters:
+  ** remoteCursor - The remote cursor with the changed name.
+  ** oldName - The old name.
+  ** newName - The new name.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L436[Ritzy.onTextInsert]::
+Register a callback that executes when text is inserted into the editor.
+
+Parameters:::
+* cb Callback with the following parameters:
+  ** atPosition - The char position at which the insert occurred.
+  ** value - The text string that was inserted.
+  ** attributes - The rich attributes associated with the inserted text.
+  ** newPosition - The new position of the cursor after the insert is done. An `onPositionChange` event will also be raised separately.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L448[Ritzy.onTextDelete]::
+Register a callback that executes when text is deleted from the editor.
+
+Parameters:::
+* cb Callback with the following parameters:
+  ** from - The char position from which text was deleted (exclusive).
+  ** to - The char position to which text was deleted (inclusive).
+  ** newPosition - The new position of the cursor after the insert is done. An `onPositionChange` event will also be raised separately.
+====
+
+[[configuration]]
+== Configuration
+
+The following methods can be used to configure the editor after load time:
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L196[Ritzy.setUserName]::
+Sets the user name of the editor's user, which will be associated with all remote cursors that
+represent the cursor in this editor. Updates remote cursors immediately.
+
+Parameters:::
+* userName The user name to set.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L206[Ritzy.setFontSize]::
+Sets the editor font size, and update the editor contents immediately to reflect this.
+
+Parameters:::
+* fontSize The font size, in pixels, to set.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L216[Ritzy.setWidth]::
+Sets the editor width in pixels, and update the editor immediately to reflect this.
+
+Parameters:::
+* width The width of the editor in pixels. This includes the internal margins.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L229[Ritzy.setMargin]::
+Sets the editor internal margins, and update the editor contents immediately to reflect this.
+Margins provide a useful "click area" where the user can click to go to the beginning
+or end of a line (or first or last line) without being super-precise about the click.
+
+Parameters:::
+* horizontal The horizontal (left-right) margins.
+* vertical The vertical (top-bottom) margins.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L239[Ritzy.setMarginHorizontal]::
+Sets the editor internal horizontal margin.
+
+Parameters:::
+* horizontal The horizontal (left-right) margins.
+====
+
+====
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L250[Ritzy.setMarginVertical]::
+Sets the editor internal vertical margin.
+
+Parameters:::
+* vertical The vertical (top-bottom) margins.
+====
+
