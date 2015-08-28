@@ -421,6 +421,7 @@ class EditorStore {
   }
 
   getSelection() {
+    if(!this.state.selectionActive) return null
     return this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
   }
 
