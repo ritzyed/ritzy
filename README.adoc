@@ -12,8 +12,8 @@ image:https://travis-ci.org/ritzyed/ritzy.svg[link="https://travis-ci.org/ritzye
 
 === Demo / Short Introduction (TL;DR)
 
-Finally, a good, open source, cross-browser [1], rich text, real-time
-collaborative editor for the web! Here is a demo:
+Finally, a good, open source, cross-browser [1], rich text, real-time,
+embeddable, collaborative editor for the web! Here is a demo:
 
 http://demo-ritzy.rhcloud.com/  (https://github.com/ritzyed/ritzy-demo[source])
 
@@ -25,7 +25,7 @@ Note that the code is alpha quality.
 === Longer Introduction
 
 The Ritzy editor is a rich text, real-time character-by-character collaborative
-browser-based editor. It shuns use of the
+embeddable browser-based editor. It shuns use of the
 https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Content_Editable[contentEditable]
 attribute in favor of a custom editor surface and layout engine, exactly like
 the approach
@@ -34,14 +34,47 @@ by] Google Docs.
 
 In addition, and also like Google Docs, Ritzy is built with real-time
 collaborative editing support from the ground up, unlike most browser-based
-editors that require third-party plugins or that do not support it at all.
+editors that require third-party plugins or that do not support it at all. The
+underlying mechanism for this is a
+https://github.com/ritzyed/ritzy/blob/master/docs/DESIGN.adoc[causal tree CRDT].
 
 Ritzy implements all the basic expected text editing functionality, such as
 bold, underline, strikethrough, superscript, subscript, selection via keyboard
 and mouse, cut, copy, and paste. More capabilities will be added as needed or as
 third-party contributions are received.
 
-==== Limitations and Target Audience
+[[about_other]]
+=== Features
+
+* Real-time collaborative text editing just like Google Docs, with all the basic
+standard editing features and shortcuts.
+
+* Multiple author colored/labeled cursor and selection tracking in real-time.
+
+* Paragraph flow control, including wrapping support for long words/URLs.
+
+* Selection and keyboard navigation behavior mimicking common platforms like
+Microsoft Word and Google Docs.
+
+* Cursor decorations such as blinking with focus and idle, slant when traversing
+italic text, and invisible when there is no focus.
+
+* Selection decorations such as gray-out when editor does not have focus.
+
+* Automatically scrolling the document window horizontally and vertically to
+keep the cursor visible.
+
+* Cut/copy/paste of clipboard data, including conversion between rich text and
+HTML, including support for copy/paste to/from Microsoft Word.
+
+* API to control the editor and to obtain selections as rich text, HTML, or
+plain text.
+
+* Input handling and support for non-english languages.
+
+* Offline simultaneous editing.
+
+=== Limitations and Target Audience
 
 Unlike Google Docs, Ritzy does not (currently) support complex page-based layout
 needed to build a word processor. It will be most useful for those developers
@@ -49,7 +82,7 @@ who wish to add collaborative rich-text data entry fields to their browser
 applications. However, some layout capabilities are planned to be added over
 time, such as bulleted and numbered lists, styles, and other such features.
 
-===== Mobile Support
+==== Mobile Support
 
 Mobile is partially supported. On a Nexus 5 and Nexus 7 with a recent Chrome,
 the following seem to work:
@@ -73,214 +106,25 @@ work on this.
 
 As an aside, similar integration could be done for native desktop editors.
 
-===== Production Readiness
+==== Production Readiness
 
-The code is alpha quality. Lots of real-world testing is needed. While the
+*The code is alpha quality*. Lots of real-world testing is needed. While the
 client side is pretty performant once the editor is loaded, lots of optimization
 work remains to be done, especially on the underlying CRDT data structures.
 
-[[about_surface]]
-=== JavaScript Surface and Layout Engine
-
-The
-https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Content_Editable[contentEditable]
-attribute used by most editors allows the editor to delegate the capture of user
-input and the display of the editor contents and selections to the browser. This
-is "easy" and performs very well, but is https://vimeo.com/76219173[limited] and
-https://medium.com/medium-eng/why-contenteditable-is-terrible-122d8a40e480[broken]
-by browser capabilities and incompatibilities in `contentEditable`
-implementations, and by the underlying HTML data model which is not suited for
-collaborative editing. Instead, Ritzy implements a custom surface and layout
-engine like Google Docs:
-
-[quote, Jeff Harris (Google Docs Product Manager),http://googledrive.blogspot.ca/2010/05/whats-different-about-new-google-docs.html]
-Let’s start by talking about the editing surface, which processes all user input
-and makes the application feel like a regular editor. To you, the new editor
-looks like a fairly normal text box. But from the browser’s perspective, it’s a
-webpage with JavaScript that responds to any user action by dynamically changing
-what to display on each line. For example, the cursor you see is actually a
-thin, 2 pixel-wide div element that we manually place on the screen. When you
-click somewhere, we find the x and y coordinates of your click and draw the
-cursor at that position. This lets us do basic things like slanting the cursor
-for italicized text, and it also allows more powerful capabilities like showing
-multiple collaborators’ cursors simultaneously, in the same document.
-
-==== Pros and Cons ====
-
-This approach is more flexible than `contentEditable`. The logic is consistent
-across browsers, and there are no browser-specific workarounds for the document
-model. The document model is only ever modified through explicit application
-action (rather than by the browser as happens with contentEditable), ensuring
-that the content of the internal document model is repeatable and consistent.
-
-The document model is not HTML -- it is completely independent of the editor
-surface. Therefore it should be easier to support applications that need to
-customize the editor surface with new controls and/or behavior. Examples of this
-would be inline spelling error notations or comments.
-
-The downside is that having a custom editor surface unmanaged by the browser
-requires significant complexity to do things the browser would normally provide
-for free, such as: cursor motion and positioning (even blinking the cursor!),
-dealing with accessibility concerns, non-left-to-right text orientations, user
-inputs that are not raised as application events by the browser, dealing
-correctly with touch-driven interfaces, and other such capabilities. Some of
-these may be impossible or at the very least, extremely hard, to solve with this
-approach.
-
-[[about_collaboration]]
-=== Real-time Character-by-character Collaborative Editing ===
-
-Ritzy's real-time collaborative editing uses a different approach than Google
-Docs, which based on public information is based on
-http://en.wikipedia.org/wiki/Operational_transformation[operational transform]
-(OT). Operational transforms require implementing a transform for every
-operation, and dealing specially with lots of corner cases, especially as the
-complexity of the model increases.
-
-Instead, Ritzy uses operation-based
-http://en.wikipedia.org/wiki/Conflict-free_replicated_data_type[conflict free
-replicated data types] (CRDTs) to implement the concurrency control required for
-real-time character-by-character collaborative editing. Just like OT, CRDTs
-allow changes to happen in different orders on each instance, but the final
-editor state to converge.
-
-See <<design_collaboration>> below for more technical details.
-
-[[about_other]]
-=== Other Features
-
-Beyond basic text editing, some other features implemented by Ritzy:
-
-* Paragraph flow control, including wrapping support for long words/URLs.
-
-* Selection and keyboard navigation behavior mimicking common platforms like
-Microsoft Word and Google Docs.
-
-* Multiple author colored/labeled cursor and selection tracking in real-time.
-
-* Cursor blink control simulating browser function (blink while waiting, no
-  blink during operations).
-
-* Cursor slant when traversing italic text.
-
-* Automatically scrolling the document window horizontally and vertically to
-keep the cursor visible.
-
-* Cut/copy/paste of clipboard data, including conversion between rich text and
-HTML.
-
-* Focus/blur support with appropriate styling for cursors (invisible) and
-selections (gray).
-
-* API to control the editor and to obtain selections as HTML, text, or rich
-text (though more work is needed here).
-
-[[design]]
-== Design and Implementation
-
-[[design_surface]]
-=== Editor Surface
-
-The editor uses Facebook's http://facebook.github.io/react/[React] to manage
-rendering for the editor surface. React is perfect for this purpose as most user
-input and selection operations alter the surface only slightly -- to insert or
-remove characters, to highlight selections, and to position the cursor. For each
-of these, React can instruct the browser to make the minimum number of required
-changes to the DOM that represents the editor surface. Since modifying the DOM
-is an expensive operation performance-wise, React is key to Ritzy's smooth
-performance. React's virtual DOM / state abstraction also makes code maintenance
-simpler.
-
-[[design_layout]]
-=== Layout
-
-Managing the layout in JavaScript requires knowledge of the x-y positions of
-individual characters, for example to position the cursor when the user clicks
-on text, or to wrap text within the editor's bounding box.
-
-Ritzy prefers using http://nodebox.github.io/opentype.js/[Opentype.js] to obtain
-the required text metrics from the underlying font, such as
-http://www.freetype.org/freetype2/docs/glyphs/glyphs-3.html[advance widths] for
-the glyphs that represent each character.
-
-When the browser/OS platform supports linear subpixel positioning and faithfully
-follows the font's instructions for it's text rendering, the font metrics are
-sufficient to calculate x-y positions. However, on some browsers on some
-platforms at some font sizes, for various complicated reasons the font metrics
-are ignored in favor of http://goo.gl/yf3M7[hinting or other mechanisms]. In
-these situations, the layout engine falls back to a slower but reliable
-mechanism using the canvas `measureText` function. In addition, the canvas
-`measureText` function is used to calculate the width of characters for which
-the glyph is not available from the loaded font file.
-
-To use the Opentype.js mechanism, all fonts displayed by Ritzy must be available
-as TrueType or OpenType font files. Note that Opentype.js does not
-https://github.com/nodebox/opentype.js/issues/43[currently support] WOFF font
-files, but usually TrueType or OpenType equivalents are available. In addition,
-the font is loaded into memory twice: by the browser and by Ritzy.
-
-[[design_collaboration]]
-=== Collaborative Editing ===
-
-Collaborative editing requires each editor client to "report" changes i.e.
-operations such as inserting or deleting characters, or changing character
-attributes, to peers. Peers in turn, accept these changes and display them on
-their own editor surfaces, while themselves dealing with user input and
-reporting their own changes.
-
-To handle this concurrency, Ritzy uses a
-http://en.wikipedia.org/wiki/Conflict-free_replicated_data_type[CRDT]-based
-http://www.pds.ewi.tudelft.nl/~victor/polo.pdf[causal trees] approach created by
-https://github.com/gritzko[Victor Grishchenko], running on the
-http://swarmjs.github.io/[Swarm.js] library created by the same author. Each
-client possesses a causal trees "replica" of the current state of the rich text
-within the Ritzy editor.
-
-Essentially, with causal trees, every character has a unique id, and all
-operations and positioning is relative to these ids. This greatly simplifies
-simultaneous operations that are complex with index-based approaches, at the
-cost of significantly greater disk and memory requirements. This is generally
-not an issue for text content on modern machines.
-
-Ritzy requires a NodeJS or io.js server running and bidirectionally connected to
-each editor client via WebSockets or a long-polling mechanism. The server is
-responsible for receiving changes from all editors and transmitting them back to
-other editors. A default server implementation is provided as part of the Ritzy
-project. Currently, Ritzy does not operate stand-alone, though it should not be
-too difficult to add this capability (see <<roadmap>>).
-
-Unlike other collaborative editing techniques such as OT and diff-match-patch,
-the causal trees approach is highly amenable to offline editing, therefore
-offline editing is intended to be a valid use case for Ritzy.
-
-[[data_model]]
-=== Data Model
-
-==== Native CRDT Characters
-
-The internal primary data model for the editor is the causal tree CRDT described
-above. See the
-https://github.com/ritzyed/ritzy/blob/master/docs/DESIGN.adoc[DESIGN] for more
-details.
-
-This data is accessible via the
-https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc[API].
-
-WARNING: This format is not final, and is subject to change in future versions.
-
-==== Import/Export
+== Supported Data Formats
 
 Ritzy can import and export data in JSON, HTML, and text. See
 https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc#contents[API Content]
-and https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc#selections[API
+and https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc#selection[API
 Selection].
 
-===== Rich Text JSON
+=== Rich Text JSON
 
-Ritzy can also import and export a rich text JSON model. The JSON structure
-contains an array of text chunks with associated attributes. These attributes
-are currently boolean values for bold, italics, and so forth, but could in the
-future include other values such as style names.
+Ritzy can import and export a JSON structure containing an array of text chunks
+with associated attributes. These attributes are currently boolean values for
+bold, italics, and so forth, but could in the future include other values such
+as style names.
 
 TIP: This format is "full fidelity" i.e. exported rich text data is guaranteed to be
 imported exactly. Here is an example:
@@ -294,75 +138,45 @@ let content = [
 ]
 ----
 
-===== HTML
+=== HTML
 
 Ritzy can import and export HTML. This is used internally by the editor when
 copying/pasting rich text to external applications such as Word or Google Docs.
 
-===== Text
+=== Plain Text
 
 Ritzy can import and export plain text. This is used internally by the editor
 when copying/pasting plain text to external applications such as text editors.
 
-[[integration]]
-== Ritzy Integration
+=== Native Causal Tree CRDT
 
-[[integration_es6]]
-=== ES6
+The internal data model for the editor is a causal tree CRDT described in the
+https://github.com/ritzyed/ritzy/blob/master/docs/DESIGN.adoc[DESIGN].
 
-The editor uses JavaScript ES6. Ensure your consuming client and server-side
-code transpiles to ES5 via babel or similar transpiler, and contains the
-appropriate ES6 polyfills. See the
-https://github.com/ritzyed/ritzy-demo[Ritzy demo] for an example.
+In addition to the formats described above which will be used most often, this
+data is also accessible via the
+https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc[API].
 
-[[integration_cs]]
-=== Client-Side
+WARNING: This format is not final, and is subject to change in future versions.
 
-See `client.js` or the https://github.com/ritzyed/ritzy-demo[Ritzy demo] for an
-example of creating and using the editor. Note that `client.js` uses the `ritzy`
-module, which wraps the underlying React `Editor` component. It provides a
-useful https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc[API] to
-calling code, including methods to control the editor at runtime and event
-registration.
+[[usage]]
+== Usage
 
-NOTE: If you are building a React app, you are free to embed the `Editor`
-component directly rather than using the `ritzy` module.
+Ritzy is an ES6 React component with an optional API wrapper. Currently, it does
+require a server-side implementation to support collaborative editing. In the
+future, this will be optional.
 
-It should be possible to create multiple editors on one page, though this is not
-yet a tested configuration.
-
-[[integration_ss]]
-=== Server-Side ===
-
-The server-side integration mechanism for most applications employing Ritzy will
-be to create a Ritzy Swarm.js peer within their server-side application, which
-will be responsible for receiving all updates to text replicas. The application
-can then use that text replica for any purpose.
-
-See https://github.com/ritzyed/ritzy/blob/master/src/server.js[server.js] or the
-https://github.com/ritzyed/ritzy-demo[Ritzy demo] for an example of
-this.
-
-Currently, Swarm.js peers only run within JavaScript environments, but the
-author http://swarmjs.github.io/articles/android-is-coming/[plans] to support
-other languages in the future.
-
-See also <<commercial_features>>.
-
-[[developers]]
-== Developers
-
-See
-https://github.com/ritzyed/ritzy/blob/master/docs/CONTRIBUTING.adoc[CONTRIBUTIONS]
-and
-https://github.com/ritzyed/ritzy/blob/master/docs/DEVELOPMENT.adoc[DEVELOPMENT].
+See the
+https://github.com/ritzyed/ritzy/blob/master/docs/INSTALLATION.adoc[INSTALLATION]
+document for information about how to integrate Ritzy into your client and
+server-side infrastructure.
 
 [[roadmap]]
 == Roadmap
 
 The following is a tentative list of features and capabilities that will be
 added over time.
-https://github.com/ritzyed/ritzy/blob/master/docs/CONTRIBUTIONS.adoc[Contributions]
+https://github.com/ritzyed/ritzy/blob/master/docs/CONTRIBUTING.adoc[Contributions]
 are welcome.
 
 * Tests (many, see GitHub issue xx) (hard!).
@@ -370,40 +184,32 @@ are welcome.
 * Once tests are in place, refactoring to make the editor code more modular /
 easier to understand (hard).
 
-* Performance improvements. Performance is not bad right now, but much can
+* Undo/redo (hard).
+
+* Make Ritzy work without a shared replica and server implementation -- create
+a local-only replica with the same API (medium).
+
+* Performance improvements. Performance is pretty good right now, but much can
 be done to improve it further. Some ideas:
-** Create finer-grained React components (see refactor above) to avoid
-re-rendering the entire editor on updates (this should be a big win).
 ** Use immutable collections as much as possible e.g.
 http://facebook.github.io/immutable-js/
-** Implement `shouldComponentUpdate` and/or `PureRenderMixin` to avoid
-unnecessary component renders, taking advantage of reference equality with
-immutable data structures.
-** Implement some type of indexing for characters.
+** Implement some type of compression and/or indexing for characters within the
+causal tree CRDT.
+** Clear stale data from the causal tree CRDT, such as deletions (but keep
+enough for revision history).
 ** Cache frequently used / slow operations where possible.
 ** Server-side performance improvements. Currently the initial load can become
 very slow as the replica continues to grow.
 
-* Undo/redo
-
 * Styles for content e.g. headings, lists, etc. (medium).
 
-* Expose an API for programmatic access to the editor and contents (medium):
-** Get/set contents using the native data model for proper concurrency control
-** Get contents as HTML
+* Add to the API (easy):
 ** Insert HTML at a particular position specified by the native data model
-** Event callbacks for inserts, deletions, changes, and selections
 ** Command and status support for text attributes e.g. to support a toolbar
 ** See http://w3c.github.io/editing/historic-editing-apis.html[Historic Editing
-APIs] for comparison/implementation with
-contentEditable-based APIs
-
-* Better input handling for non-English languages (medium to hard?).
+APIs] for comparison/implementation with contentEditable-based APIs.
 
 * A skinnable and/or replaceable toolbar that leverages the editor API (medium).
-
-* Make Ritzy work apart from a shared replica and server implementation. Create
-a local-only replica with the same API (medium).
 
 * Test and support editor fonts other than OpenSans (easy to medium?).
 
@@ -412,7 +218,7 @@ a local-only replica with the same API (medium).
 * Reduce the number of dependencies and lower download size as much as is
 possible without sacrificing clarity and maintainability.
 
-* Search/replace
+* Search/replace (TODO).
 
 * Figures and tables (TODO).
 
@@ -435,11 +241,12 @@ possible without sacrificing clarity and maintainability.
 
 In addition to the editor which will remain free and open source,
 http://vivosys.com[VIVO Systems], the organization behind Ritzy, is considering
-offering the Ritzy editor as a service. Because it is intended for real-time
-collaboration, a server-side component is required by Ritzy.
+offering the Ritzy editor as a service. A server-side component is required for
+real-time collaboration.
 
-NOTE: A simple but working server-side component is bundled with the free and
-open source Ritzy editor. See <<integration_ss>>.
+NOTE: A simple but working server-side component is bundled. See the
+https://github.com/ritzyed/ritzy/blob/master/docs/INSTALLATION.adoc[INSTALLATION]
+documentation.
 
 The commercial server-side solution will handle storage, communications,
 security, availability, and provide a simple but powerful server-side API for
@@ -471,6 +278,14 @@ so forth.
 Please
 mailto:sales@vivosys.com?subject=Interested%20in%20the%20Ritzy%20Service[let us
 know] if your company or startup may be interested in such a service.
+
+[[developers]]
+== Developers
+
+See
+https://github.com/ritzyed/ritzy/blob/master/docs/CONTRIBUTING.adoc[CONTRIBUTING]
+and
+https://github.com/ritzyed/ritzy/blob/master/docs/DEVELOPMENT.adoc[DEVELOPMENT].
 
 == Support
 

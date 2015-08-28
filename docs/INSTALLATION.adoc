@@ -1,0 +1,80 @@
+= Ritzy Installation
+:toc:
+:sectanchors:
+
+== General
+
+Ritzy is an ES6 React component with an optional API wrapper. Currently, it does
+require a server-side implementation to support collaborative editing. In the
+future, this will be optional.
+
+[[es6]]
+=== ES6
+
+The editor uses JavaScript ES6. Ensure your consuming client and server-side
+code transpiles to ES5 via babel or similar transpiler, and contains the
+appropriate ES6 polyfills. See the
+https://github.com/ritzyed/ritzy-demo[Ritzy demo] for an example.
+
+Alternatively, use the pre-transpiled and (optionally) minified library
+available in the package `dist` directory.
+
+[[cs]]
+=== Client-Side
+
+[[cs_react]]
+==== React Projects
+
+The React component is
+https://github.com/ritzyed/ritzy/blob/master/src/components/Editor.js[Editor].
+There are several props necessary to initialize the editor properly. See
+<<configuration>> below for information about the props that can be passed.
+
+TIP: The `ritzy` module provides a useful API for the editor. Consider using
+that instead.
+
+[[cs_other]]
+==== Other Projects
+
+See https://github.com/ritzyed/ritzy/blob/master/src/client.js[client.js] or the
+https://github.com/ritzyed/ritzy-demo[Ritzy demo] for an example of creating and
+using the editor using its `ritzy` module . Note that `client.js` uses the
+`ritzy` module, which wraps the underlying React `Editor` component. It provides
+a useful https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc[API] to
+calling code, including methods to control the editor at runtime and event
+registration.
+
+TIP: If you are building a React app, you are free to embed the `Editor`
+component directly rather than using the `ritzy` module. See above.
+
+It should be possible to create multiple editors on one page, though this is not
+yet a tested configuration.
+
+[[configuration]]
+==== Configuration
+
+TODO
+
+For now, see
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js[ritzy.js],
+https://github.com/ritzyed/ritzy/blob/master/src/client.js[client.js] and the
+https://github.com/ritzyed/ritzy-demo[Ritzy demo] for examples.
+
+[[ss]]
+=== Server-Side ===
+
+The server-side integration mechanism for most applications employing Ritzy will
+be to create a Ritzy Swarm.js peer within their server-side application, which
+will be responsible for receiving all updates to text replicas. The application
+can then use that text replica for any purpose.
+
+See https://github.com/ritzyed/ritzy/blob/master/src/server.js[server.js] or the
+https://github.com/ritzyed/ritzy-demo[Ritzy demo] for an example of
+this.
+
+Currently, Swarm.js peers only run within JavaScript environments, but the
+author http://swarmjs.github.io/articles/android-is-coming/[plans] to support
+other languages in the future.
+
+For commercial support with additional server-side features, see the
+https://github.com/ritzyed/ritzy/blob/master/README.adoc#commercial_features[README].

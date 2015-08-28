@@ -1,0 +1,221 @@
+= Ritzy Design
+:toc:
+:sectanchors:
+
+== General Information
+
+See the https://github.com/ritzyed/ritzy/blob/master/README.adoc[README] for
+general information about Ritzy.
+
+[[collaboration]]
+== Real-time Character-by-character Collaborative Editing
+
+=== Causal Tree CRDT
+
+Ritzy's real-time collaborative editing uses a different approach than Google
+Docs, which based on public information is based on
+http://en.wikipedia.org/wiki/Operational_transformation[operational transform]
+(OT). Operational transforms require implementing a transform for every
+operation, and dealing specially with lots of corner cases, especially as the
+complexity of the model increases.
+
+Instead, Ritzy uses operation-based
+http://en.wikipedia.org/wiki/Conflict-free_replicated_data_type[conflict free
+replicated data types] (CRDTs), specifically a
+http://www.pds.ewi.tudelft.nl/~victor/polo.pdf[causal tree], to implement the
+concurrency control required for real-time character-by-character collaborative
+editing. Just like OT, CRDTs allow changes to happen in different orders on each
+instance, but the final editor state to converge.
+
+==== Character IDs
+
+NOTE: This is a simplification. Read the
+http://www.pds.ewi.tudelft.nl/~victor/polo.pdf[causal trees paper] by Victor
+Grishchenko for details. Errors in the text below are our own.
+
+Essentially, with causal trees, every character has a unique id made up of a
+http://swarmjs.github.io/articles/lamport/[Lamport timestamp and some other
+information]. All operations and positioning is relative to these ids rather
+than character count offsets.
+
+==== Merging Operations
+
+Imagine our editor contents consist of the following text, cursor, and
+associated (simplified) id of each character:
+
+image:images/char_ids.svg[Editor IDs]
+
+In this example, rather than the local cursor being described as "at position
+with offset 2", the cursor is instead "at position '360Zq'".
+
+Say Joe and the local user type simultaneously. Rather than Joe's operation
+being `insert(1, 'x')`, Joe's causal tree operation is `insert('360Zp', 'x')`.
+The local user's operation is `insert('360Zq', 'y')` rather than `insert(2,
+'y')`. With index-based operations and OT, one of them will be received by the
+server before the other (say Joe's). The other (say the local user's) will need
+to be *transformed* from `insert(2, 'y')` to `insert(3, 'y')`. But with a causal
+tree CRDT, as long as causality is maintained i.e. this character exists before
+this new one, the operations will merge to the same end result on both Joe's
+editor and the local users'.
+
+Deletes are handled by storing the deleted IDs in the character position before
+the deletion. This allows inserts by other users at that deleted ID to maintain
+their causal relationships, and therefore be positioned correctly within the
+causal tree.
+
+This greatly simplifies simultaneous operations, at the cost of significantly
+greater disk and memory requirements. This is generally not an issue for text
+content on modern machines, and compression, tombstone clearing, and indexing
+mechanisms can be applied to reduce the performance overhead (Ritzy does not yet
+do this).
+
+In addition, with a causal tree, simultaneous offline editing -- extremely
+difficult with OT and diff-match-patch algorithms -- is not only realistic, but
+comes built-in.
+
+==== Supported Operations ====
+
+Currently, the supported operations are `insert`, `remove`, and `setAttributes`.
+See
+https://github.com/ritzyed/ritzy/blob/master/src/core/RichText.js[RichText.js].
+
+[[swarmjs]]
+=== Swarm.JS
+
+The heavy lifting of the operation-based CRDT is done by
+http://swarmjs.github.io/[Swarm.js], a Javascript library created by
+https://github.com/gritzko[Victor Grishchenko]. On top of that base, Ritzy
+implements a rich text CRDT.
+
+Ritzy requires a NodeJS or io.js server running Swarm.js and bidirectionally
+connected to each editor client via WebSockets or a long-polling mechanism. The
+server is responsible for receiving changes from all editors and transmitting
+them back to other editors. A simple server implementation is provided as part
+of the Ritzy project.
+
+[[surface]]
+== JavaScript Surface and Layout Engine
+
+The
+https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Content_Editable[contentEditable]
+attribute used by most editors allows the editor to delegate the capture of user
+input and the display of the editor contents and selections to the browser. This
+is "easy" and performs very well, but is https://vimeo.com/76219173[limited] and
+https://medium.com/medium-eng/why-contenteditable-is-terrible-122d8a40e480[broken]
+by browser capabilities and incompatibilities in `contentEditable`
+implementations, and by the underlying HTML data model which is not suited for
+collaborative editing. Instead, Ritzy implements a custom surface and layout
+engine like Google Docs:
+
+[quote, Jeff Harris (Google Docs Product Manager),http://googledrive.blogspot.ca/2010/05/whats-different-about-new-google-docs.html]
+Let’s start by talking about the editing surface, which processes all user input
+and makes the application feel like a regular editor. To you, the new editor
+looks like a fairly normal text box. But from the browser’s perspective, it’s a
+webpage with JavaScript that responds to any user action by dynamically changing
+what to display on each line. For example, the cursor you see is actually a
+thin, 2 pixel-wide div element that we manually place on the screen. When you
+click somewhere, we find the x and y coordinates of your click and draw the
+cursor at that position. This lets us do basic things like slanting the cursor
+for italicized text, and it also allows more powerful capabilities like showing
+multiple collaborators’ cursors simultaneously, in the same document.
+
+[[surface_pros_cons]]
+=== Pros and Cons
+
+This approach is more flexible than `contentEditable`. The logic is consistent
+across browsers, and there are no browser-specific workarounds for the document
+model. The document model is only ever modified through explicit application
+action (rather than by the browser as happens with contentEditable), ensuring
+that the content of the internal document model is repeatable and consistent.
+
+The document model is not HTML -- it is completely independent of the editor
+surface. Therefore it should be easier to support applications that need to
+customize the editor surface with new controls and/or behavior. Examples of this
+would be inline spelling error notations or comments.
+
+The downside is that having a custom editor surface unmanaged by the browser
+requires significant complexity to do things the browser would normally provide
+for free, such as: cursor motion and positioning (even blinking the cursor!),
+dealing with accessibility concerns, non-left-to-right text orientations, user
+inputs that are not raised as application events by the browser, dealing
+correctly with touch-driven interfaces, and other such capabilities. While
+cursor motion and positioning is implemented in Ritzy, some of the rest may be
+impossible or at the very least, quite hard, to solve with this approach.
+
+[[surface_editor]]
+=== Editor Surface
+
+The editor uses Facebook's http://facebook.github.io/react/[React] to manage
+rendering for the editor surface. React is perfect for this purpose as most user
+input and selection operations alter the surface only slightly -- to insert or
+remove characters, to highlight selections, and to position the cursor. For each
+of these, React can instruct the browser to make the minimum number of required
+changes to the DOM that represents the editor surface. Since modifying the DOM
+is an expensive operation performance-wise, React is key to Ritzy's smooth
+performance. React's virtual DOM / state abstraction also makes code maintenance
+simpler.
+
+==== React Component Tree
+
+Ritzy is a series of React components. The hierarchy of the components is:
+
+* https://github.com/ritzyed/ritzy/blob/master/src/components/Editor.js[Editor]
+** https://github.com/ritzyed/ritzy/blob/master/src/components/EditorLine.js[EditorLine]
+(one per line in the state)
+*** https://github.com/ritzyed/ritzy/blob/master/src/components/EditorLineContent.js[EditorLineContent]
+*** https://github.com/ritzyed/ritzy/blob/master/src/components/SelectionOverlay.js[SelectionOverlay]
+** https://github.com/ritzyed/ritzy/blob/master/src/components/Cursor.js[Cursor]
+(one local cursor, and multiple remote cursors)
+** https://github.com/ritzyed/ritzy/blob/master/src/components/DebugEditor.js[DebugEditor] (optional)
+
+===== Flux Pattern
+
+Ritzy uses the Facebook flux pattern -- all state changes are made by the
+https://github.com/ritzyed/ritzy/blob/master/src/flux/EditorStore.js[EditorStore],
+and all actions that trigger state changes, such as arrow keys or clicks, or
+events from remote editors via Swarm.js, trigger an
+https://github.com/ritzyed/ritzy/blob/master/src/flux/EditorActions.js[EditorAction].
+
+The line state, cursor position, selection, and remote cursor positions and
+selections are all part of the React Editor state. This state is updated by the
+https://github.com/ritzyed/ritzy/blob/master/src/flux/EditorStore.js[EditorStore]
+as local events are received such as arrow keys or clicks, or events from remote
+editors via Swarm.js.
+
+The Editor component listens to state changes from the EditorStore, causing
+React to render the Editor component, which passes the required state subset to
+the various child components as props. Thus only the DOM changes necessary to
+reflect the new state are applied to the editor surface.
+
+[[surface_layout]]
+=== Layout
+
+Managing the layout in JavaScript requires knowledge of the x-y positions of
+individual characters, for example to position the cursor when the user clicks
+on text, or to wrap text within the editor's bounding box.
+
+For performance, Ritzy prefers using
+http://nodebox.github.io/opentype.js/[Opentype.js] to obtain the required text
+metrics from the underlying font, such as
+http://www.freetype.org/freetype2/docs/glyphs/glyphs-3.html[advance widths] for
+the glyphs that represent each character.
+
+When the browser/OS platform supports linear subpixel positioning and faithfully
+follows the font's instructions for it's text rendering, the font metrics are
+sufficient to calculate x-y positions. However, on some browsers on some
+platforms at some font sizes, for various complicated reasons the font metrics
+are ignored in favor of http://goo.gl/yf3M7[hinting or other mechanisms]. In
+these situations, the layout engine falls back to a slower but reliable
+mechanism using the canvas `measureText` function. In addition, the canvas
+`measureText` function is used to calculate the width of characters for which
+the glyph is not available from the loaded font file.
+
+To use the Opentype.js mechanism, all fonts displayed by Ritzy must be available
+as TrueType or OpenType font files. Note that Opentype.js does not
+https://github.com/nodebox/opentype.js/issues/43[currently support] WOFF font
+files, but usually TrueType or OpenType equivalents are available. In addition,
+the font is loaded into memory twice: by the browser and by Ritzy.
+
+See
+https://github.com/ritzyed/ritzy/blob/master/src/core/TextFontMetrics.js[TextFontMetrics.js]
+for details of the font metrics calculations.
