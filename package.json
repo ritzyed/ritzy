@@ -17,6 +17,7 @@
   "author": "Raman Gupta <rocketraman@gmail.com> (https://github.com/rocketraman/)",
   "files": [
     "dist/",
+    "docs/",
     "lib/"
   ],
   "main": "dist/ritzy.js",
@@ -62,6 +63,7 @@
     "gulp-cache": "^0.2.10",
     "gulp-changed": "^1.3.0",
     "gulp-csscomb": "^3.0.6",
+    "gulp-esdoc": "0.0.3",
     "gulp-gh-pages": "^0.5.2",
     "gulp-header": "^1.2.2",
     "gulp-if": "^1.2.5",
@@ -96,6 +98,6 @@
     "lintdev": "eslint -c .eslintdevrc gulpfile.js webpack.config.js",
     "testb": "karma start",
     "check-blacklisted": "blacklisted-gulp",
-    "prepublish": "gulp dist"
+    "prepublish": "gulp docs && gulp dist"
   }
 }
