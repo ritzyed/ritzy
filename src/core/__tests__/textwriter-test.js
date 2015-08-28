@@ -61,6 +61,15 @@ describe('text writer', () => {
     assert.equal(writeText(chunks), '\xA0')
   })
 
+  it('outputs newlines as a newline', () => {
+    let chunks = [
+      {text: 'Line 1.', attrs: {bold: true}},
+      {text: '\n', attrs: {}},
+      {text: 'Line 2.', attrs: {italic: true}}
+    ]
+    assert.equal(writeText(chunks), 'Line 1.\nLine 2.')
+  })
+
   it('outputs paragraph breaks as two newlines', () => {
     let chunks = [
       {text: 'Line 1.', attrs: {bold: true}},
