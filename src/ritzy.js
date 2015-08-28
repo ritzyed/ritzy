@@ -231,6 +231,10 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
     getPosition() {
       return EditorStore.getPosition()
     }
+
+    getRemoteCursors() {
+      return EditorStore.getRemoteCursors()
+    }
   }
 
   return new Ritzy(config, renderTarget)

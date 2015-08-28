@@ -29,6 +29,7 @@ class EditorStore {
   constructor() {
     this.exportPublicMethods({
       getPosition: () => this.getPosition(),
+      getRemoteCursors: () => this.getRemoteCursors(),
       getContents: () => this.getContents(),
       getContentsRich: () => this.getContentsRich(),
       getContentsHtml: () => this.getContentsHtml(),
@@ -150,6 +151,10 @@ class EditorStore {
       char: this.state.position,
       eolStart: this.state.positionEolStart
     }
+  }
+
+  getRemoteCursors() {
+    return Object.values(this.state.remoteCursors)
   }
 
   getContents() {
