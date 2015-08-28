@@ -28,6 +28,7 @@ const ACTION_ATTRIBUTES = 'attributes'
 class EditorStore {
   constructor() {
     this.exportPublicMethods({
+      getPosition: () => this.getPosition(),
       getContents: () => this.getContents(),
       getContentsRich: () => this.getContentsRich(),
       getContentsHtml: () => this.getContentsHtml(),
@@ -142,6 +143,13 @@ class EditorStore {
 
   revealRemoteCursorName(remoteCursor) {
     this._delayedRemoteCursorNameReveal(remoteCursor._id)
+  }
+
+  getPosition() {
+    return {
+      char: this.state.position,
+      eolStart: this.state.positionEolStart
+    }
   }
 
   getContents() {

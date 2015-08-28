@@ -227,6 +227,10 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
     getSelectionText() {
       return EditorStore.getSelectionText()
     }
+
+    getPosition() {
+      return EditorStore.getPosition()
+    }
   }
 
   return new Ritzy(config, renderTarget)
