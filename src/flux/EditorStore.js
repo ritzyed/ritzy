@@ -129,6 +129,11 @@ class EditorStore {
     if(this.config.eventEmitter.hasListeners('remote-cursor-add') && !existingCursor) {
       this.config.eventEmitter.emit('remote-cursor-add', remoteCursor)
     }
+    if(this.config.eventEmitter.hasListeners('remote-cursor-change-name') && existingCursor) {
+      if(remoteCursors[id].name !== remoteCursor.name) {
+        this.config.eventEmitter.emit('remote-cursor-change-name', remoteCursor, remoteCursors[id].name, remoteCursor.name)
+      }
+    }
     remoteCursors[id] = remoteCursor
     this.setState({remoteCursors: remoteCursors})
     this._delayedRemoteCursorNameReveal(id)
