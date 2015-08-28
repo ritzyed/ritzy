@@ -35,6 +35,13 @@ ritzy.on('focus-lost', function() {
   console.log('event: focus-lost')
 })
 
+ritzy.on('remote-cursor-add', function(remoteCursor) {
+  console.log('event: remote-cursor-add', remoteCursor)
+
+ritzy.on('remote-cursor-remove', function(remoteCursor) {
+  console.log('event: remote-cursor-remove', remoteCursor)
+})
+
 ritzy.on('text-insert', function(atPosition, value, attributes, newPosition) {
   console.log('event: text-insert atPosition=', atPosition, 'value=', value, 'attributes=', attributes, 'newPosition=', newPosition)
 })

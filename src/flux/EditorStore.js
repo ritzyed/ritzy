@@ -125,6 +125,10 @@ class EditorStore {
     if(!id) return
     // TODO use immutable data structure instead, need clone here to avoid mutating the existing state
     let remoteCursors = _.clone(this.state.remoteCursors)
+    let existingCursor = remoteCursors.hasOwnProperty(id)
+    if(this.config.eventEmitter.hasListeners('remote-cursor-add') && !existingCursor) {
+      this.config.eventEmitter.emit('remote-cursor-add', remoteCursor)
+    }
     remoteCursors[id] = remoteCursor
     this.setState({remoteCursors: remoteCursors})
     this._delayedRemoteCursorNameReveal(id)
@@ -137,6 +141,9 @@ class EditorStore {
     // TODO use immutable data structure instead, need clone here to avoid mutating the existing state
     let remoteCursors = _.clone(this.state.remoteCursors)
     if(id in remoteCursors) {
+      if(this.config.eventEmitter.hasListeners('remote-cursor-remove')) {
+        this.config.eventEmitter.emit('remote-cursor-remove', remoteCursor)
+      }
       delete remoteCursors[id]
       this.setState({remoteCursors: remoteCursors})
     }
