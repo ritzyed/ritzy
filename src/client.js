@@ -1,3 +1,7 @@
+/**
+ * client.js is not directly consumed by users of the Ritzy module – it is meant as an example and for development only.
+ * Consumers of this module should either import Ritzy (as shown below), or use the Editor React component directly.
+ */
 import 'babel/polyfill'
 import Ritzy from './ritzy'
 
@@ -19,6 +23,8 @@ const renderTarget = document.getElementById('content')
 
 let ritzy = new Ritzy(config, renderTarget)
 
+/*
+// for debugging, log all of the events raised by the browser
 ritzy.on('position-change', function(position) {
   console.log('event: position-change = ', position)
 })
@@ -53,8 +59,11 @@ ritzy.on('text-insert', function(atPosition, value, attributes, newPosition) {
 ritzy.on('text-delete', function(from, to, newPosition) {
   console.log('event: text-delete from=', from, 'to=', to, 'newPosition=', newPosition)
 })
+*/
 
 ritzy.load((err) => {
   document.getElementById('content').innerHTML = 'Oops, I couldn\'t load the editor:\n\n' + err
 })
 
+// for API accessibility in the console for debugging
+window.ritzy = ritzy
