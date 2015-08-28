@@ -53,6 +53,7 @@ class EditorStore {
       console.dir(_.clone(err.state)) // not sure why we need the clone here, err.state.error is updated if not
       console.groupEnd()
       this.registerEditorError(err.error)
+      this.emitChange()
       throw err.error
     })
 

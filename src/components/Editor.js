@@ -429,8 +429,8 @@ export default React.createClass({
     }
   },
 
-  _renderError(error) {
-    if(this.props.showErrorNotification && error) {
+  _renderError() {
+    if(this.props.showErrorNotification && this.state.error) {
       return (
         <div className="ritzy-error-notification">{ this.props.errorNotification }
           &nbsp; <button className="ritzy-error-notification-dismiss" onClick={this._dismissError}>x</button>
@@ -551,7 +551,7 @@ export default React.createClass({
 
     return (
       <div>
-        {this._renderError(this.state.error)}
+        {this._renderError()}
         <div className="ritzy-internal-text-content-wrapper text-content-wrapper"
           style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseUp={this._onMouseUp} onMouseMove={this._onMouseMove}>
           {this._renderEditorContents()}
