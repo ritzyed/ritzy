@@ -1,3 +1,7 @@
+/**
+ * This is the main entry point to the Ritzy editor. See client.js for an example of how it can be used. This
+ * is basically an API wrapper around the Editor react component, which can be used directly as well.
+ */
 import React from 'react/addons'
 import WebFont from 'webfontloader'
 import OpenType from 'opentype.js'
@@ -234,6 +238,43 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
 
     getRemoteCursors() {
       return EditorStore.getRemoteCursors()
+    }
+
+    // event methods
+    onPositionChange(cb) {
+      this.on('position-change', cb)
+    }
+
+    onSelectionChange(cb) {
+      this.on('selection-change', cb)
+    }
+
+    onFocusGained(cb) {
+      this.on('focus-gained', cb)
+    }
+
+    onFocusLost(cb) {
+      this.on('focus-lost', cb)
+    }
+
+    onRemoteCursorAdd(cb) {
+      this.on('remote-cursor-add', cb)
+    }
+
+    onRemoteCursorRemove(cb) {
+      this.on('remote-cursor-remove', cb)
+    }
+
+    onRemoteCursorChangeName(cb) {
+      this.on('remote-cursor-change-name', cb)
+    }
+
+    onTextInsert(cb) {
+      this.on('text-insert', cb)
+    }
+
+    onTextDelete(cb) {
+      this.on('text-delete', cb)
     }
   }
 

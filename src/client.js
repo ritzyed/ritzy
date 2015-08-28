@@ -25,38 +25,40 @@ let ritzy = new Ritzy(config, renderTarget)
 
 /*
 // for debugging, log all of the events raised by the browser
-ritzy.on('position-change', function(position) {
+// The event-emitter API can also be used directly e.g. ritzy.on('position-change', callback)
+ritzy.onPositionChange(function(position) {
   console.log('event: position-change = ', position)
 })
 
-ritzy.on('selection-change', function(selection) {
+ritzy.onSelectionChange(function(selection) {
   console.log('event: selection-change = ', selection)
 })
 
-ritzy.on('focus-gained', function() {
+ritzy.onFocusGained(function() {
   console.log('event: focus-gained')
 })
 
-ritzy.on('focus-lost', function() {
+ritzy.onFocusLost(function() {
   console.log('event: focus-lost')
 })
 
-ritzy.on('remote-cursor-add', function(remoteCursor) {
+ritzy.onRemoteCursorAdd(function(remoteCursor) {
   console.log('event: remote-cursor-add', remoteCursor)
+})
 
-ritzy.on('remote-cursor-remove', function(remoteCursor) {
+ritzy.onRemoteCursorRemove(function(remoteCursor) {
   console.log('event: remote-cursor-remove', remoteCursor)
 })
 
-ritzy.on('remote-cursor-change-name', function(remoteCursor, oldName, newName) {
+ritzy.onRemoteCursorChangeName(function(remoteCursor, oldName, newName) {
   console.log('event: remote-cursor-change-name', remoteCursor, oldName, newName)
 })
 
-ritzy.on('text-insert', function(atPosition, value, attributes, newPosition) {
+ritzy.onTextInsert(function(atPosition, value, attributes, newPosition) {
   console.log('event: text-insert atPosition=', atPosition, 'value=', value, 'attributes=', attributes, 'newPosition=', newPosition)
 })
 
-ritzy.on('text-delete', function(from, to, newPosition) {
+ritzy.onTextDelete(function(from, to, newPosition) {
   console.log('event: text-delete from=', from, 'to=', to, 'newPosition=', newPosition)
 })
 */
