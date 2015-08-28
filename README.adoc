@@ -17,7 +17,10 @@ collaborative editor for the web! Here is a demo:
 
 http://demo-ritzy.rhcloud.com/  (https://github.com/ritzyed/ritzy-demo[source])
 
-[1] IE10+ and evergreen browsers supported
+[1] IE10+ and evergreen browsers supported, perhaps earlier browsers will work
+too.
+
+Note that the code is alpha quality.
 
 === Longer Introduction
 
@@ -45,6 +48,36 @@ needed to build a word processor. It will be most useful for those developers
 who wish to add collaborative rich-text data entry fields to their browser
 applications. However, some layout capabilities are planned to be added over
 time, such as bulleted and numbered lists, styles, and other such features.
+
+===== Mobile Support
+
+Mobile is partially supported. On a Nexus 5 and Nexus 7 with a recent Chrome,
+the following seem to work:
+
+* basic text entry (though there are some quirks – for some reason the phone
+wants to capitalize every word and not enter spaces automatically),
+* cursor positioning, and
+* real-time view of other people's cursors, selections, and typing.
+
+Ritzy has not yet been tested on any iOS devices, but it is likely with some
+tweaking similar capabilities as noted above will be possible on any recent
+model.
+
+Selections do **not** work at all. It is possible that this is an intractable
+problem with the editor as it exists today, given how selections on mobile work.
+One possible solution is to take the same approach that Google appears to have
+taken with Docs – for editing, create a native component that talks the same
+underlying data exchange language for collaboration, but with native rendering
+of the editor and interaction with the user. There are no immediate plans to
+work on this.
+
+As an aside, similar integration could be done for native desktop editors.
+
+===== Production Readiness
+
+The code is alpha quality. Lots of real-world testing is needed. While the
+client side is pretty performant once the editor is loaded, lots of optimization
+work remains to be done, especially on the underlying CRDT data structures.
 
 [[about_surface]]
 === JavaScript Surface and Layout Engine
@@ -89,8 +122,10 @@ The downside is that having a custom editor surface unmanaged by the browser
 requires significant complexity to do things the browser would normally provide
 for free, such as: cursor motion and positioning (even blinking the cursor!),
 dealing with accessibility concerns, non-left-to-right text orientations, user
-inputs that are not raised as application events by the browser, and other such
-capabilities.
+inputs that are not raised as application events by the browser, dealing
+correctly with touch-driven interfaces, and other such capabilities. Some of
+these may be impossible or at the very least, extremely hard, to solve with this
+approach.
 
 [[about_collaboration]]
 === Real-time Character-by-character Collaborative Editing ===
@@ -174,7 +209,9 @@ sufficient to calculate x-y positions. However, on some browsers on some
 platforms at some font sizes, for various complicated reasons the font metrics
 are ignored in favor of http://goo.gl/yf3M7[hinting or other mechanisms]. In
 these situations, the layout engine falls back to a slower but reliable
-mechanism using the canvas `measureText` function.
+mechanism using the canvas `measureText` function. In addition, the canvas
+`measureText` function is used to calculate the width of characters for which
+the glyph is not available from the loaded font file.
 
 To use the Opentype.js mechanism, all fonts displayed by Ritzy must be available
 as TrueType or OpenType font files. Note that Opentype.js does not
@@ -215,6 +252,57 @@ too difficult to add this capability (see <<roadmap>>).
 Unlike other collaborative editing techniques such as OT and diff-match-patch,
 the causal trees approach is highly amenable to offline editing, therefore
 offline editing is intended to be a valid use case for Ritzy.
+
+[[data_model]]
+=== Data Model
+
+==== Native CRDT Characters
+
+The internal primary data model for the editor is the causal tree CRDT described
+above. See the
+https://github.com/ritzyed/ritzy/blob/master/docs/DESIGN.adoc[DESIGN] for more
+details.
+
+This data is accessible via the
+https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc[API].
+
+WARNING: This format is not final, and is subject to change in future versions.
+
+==== Import/Export
+
+Ritzy can import and export data in JSON, HTML, and text. See
+https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc#contents[API Content]
+and https://github.com/ritzyed/ritzy/blob/master/docs/API.adoc#selections[API
+Selection].
+
+===== Rich Text JSON
+
+Ritzy can also import and export a rich text JSON model. The JSON structure
+contains an array of text chunks with associated attributes. These attributes
+are currently boolean values for bold, italics, and so forth, but could in the
+future include other values such as style names.
+
+TIP: This format is "full fidelity" i.e. exported rich text data is guaranteed to be
+imported exactly. Here is an example:
+
+[source,javascript]
+----
+let content = [
+  { 'text': 'This is some ', 'attrs': null },
+  { 'text': 'bold', 'attrs': {'bold': true} },
+  { 'text': ' text.', 'attrs': null }
+]
+----
+
+===== HTML
+
+Ritzy can import and export HTML. This is used internally by the editor when
+copying/pasting rich text to external applications such as Word or Google Docs.
+
+===== Text
+
+Ritzy can import and export plain text. This is used internally by the editor
+when copying/pasting plain text to external applications such as text editors.
 
 [[integration]]
 == Ritzy Integration

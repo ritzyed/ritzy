@@ -122,7 +122,7 @@ var writeSection = function(section, sectionRef, sectionDescription) {
   })
 }
 
-process.stdout.write('= Ritzy Editor Client API\n\n')
+process.stdout.write('= Ritzy Editor Client API\n:sectanchors:\n\n')
 writeSection('Contents', 'contents', 'The content of the editor can be retrieved by one of the following methods:')
 writeSection('Selection', 'selection', 'The current selection can be retrieved by one of the following methods:')
 writeSection('Cursors', 'cursor', 'Information about local and remote cursors is available:')

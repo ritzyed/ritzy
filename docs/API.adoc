@@ -1,4 +1,5 @@
 = Ritzy Editor Client API
+:sectanchors:
 
 [[contents]]
 == Contents
@@ -224,4 +225,3 @@ Sets the editor internal vertical margin.
 Parameters:::
 * vertical The vertical (top-bottom) margins.
 ====
-
