@@ -35,6 +35,14 @@ ritzy.on('focus-lost', function() {
   console.log('event: focus-lost')
 })
 
+ritzy.on('text-insert', function(atPosition, value, attributes, newPosition) {
+  console.log('event: text-insert atPosition=', atPosition, 'value=', value, 'attributes=', attributes, 'newPosition=', newPosition)
+})
+
+ritzy.on('text-delete', function(from, to, newPosition) {
+  console.log('event: text-delete from=', from, 'to=', to, 'newPosition=', newPosition)
+})
+
 ritzy.load((err) => {
   document.getElementById('content').innerHTML = 'Oops, I couldn\'t load the editor:\n\n' + err
 })

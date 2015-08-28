@@ -443,6 +443,9 @@ class EditorStore {
       let position = this._relativeChar(this.state.position, -1)
       this.replica.rmChars(this.state.position)
       this._flow({ start: position, end: this.state.position, action: ACTION_DELETE})
+      if(this.config.eventEmitter.hasListeners('text-delete')) {
+        this.config.eventEmitter.emit('text-delete', position, this.state.position, position)
+      }
 
       let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
       this._setPosition(position, endOfLine)
@@ -456,6 +459,9 @@ class EditorStore {
       let next = this._relativeChar(this.state.position, 1, 'limit')
       this.replica.rmChars(next)
       this._flow({ start: this.state.position, end: next, action: ACTION_DELETE})
+      if(this.config.eventEmitter.hasListeners('text-delete')) {
+        this.config.eventEmitter.emit('text-delete', this.state.position, next, this.state.position)
+      }
 
       let endOfLine = lineContainingChar(this.state.lines, this.state.position).endOfLine
       this._setPosition(this.state.position, endOfLine)
@@ -482,6 +488,9 @@ class EditorStore {
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
       this._flow({ start: start, end: end, action: ACTION_DELETE})
+      if(this.config.eventEmitter.hasListeners('text-delete')) {
+        this.config.eventEmitter.emit('text-delete', start, end, start)
+      }
 
       let lineContainingStart = lineContainingChar(this.state.lines, start)
       let endOfLine = lineContainingStart ? lineContainingStart.endOfLine : true
@@ -513,6 +522,9 @@ class EditorStore {
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
       this._flow({ start: start, end: end, action: ACTION_DELETE})
+      if(this.config.eventEmitter.hasListeners('text-delete')) {
+        this.config.eventEmitter.emit('text-delete', start, end, start)
+      }
 
       let lineContainingStart = lineContainingChar(this.state.lines, start)
       let endOfLine = lineContainingStart ? lineContainingStart.endOfLine : true
@@ -620,6 +632,10 @@ class EditorStore {
     let newPositionEolStart = value.slice(-1) === '\n'
 
     if(reflow) this._flow({start: position, end: newPosition, action: ACTION_INSERT})
+
+    if(this.config.eventEmitter.hasListeners('text-insert')) {
+      this.config.eventEmitter.emit('text-insert', position, value, attributes, newPosition)
+    }
 
     this._setPosition(newPosition, newPositionEolStart)
     this.setState({activeAttributes: attributes})
@@ -1258,6 +1274,9 @@ class EditorStore {
     let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
     this.replica.rmChars(selectionChars)
     this._flow({ start: this.state.selectionLeftChar, end: this.state.selectionRightChar, action: ACTION_DELETE})
+    if(this.config.eventEmitter.hasListeners('text-delete')) {
+      this.config.eventEmitter.emit('text-delete', this.state.selectionLeftChar, this.state.selectionRightChar, position)
+    }
 
     let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
     this._setPosition(position, endOfLine)
