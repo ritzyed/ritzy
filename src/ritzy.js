@@ -3,6 +3,7 @@ import WebFont from 'webfontloader'
 import OpenType from 'opentype.js'
 
 import Editor from './components/Editor'
+import EditorStore from './flux/EditorStore'
 import { detectMinFontSize } from './core/dom'
 
 /*
@@ -193,6 +194,38 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
     setMarginVertical(vertical) {
       let margin = { horizontal: this.config.margin.horizontal, vertical: vertical }
       this.updateConfig('margin', margin)
+    }
+
+    getContents() {
+      return EditorStore.getContents()
+    }
+
+    getContentsRich() {
+      return EditorStore.getContentsRich()
+    }
+
+    getContentsHtml() {
+      return EditorStore.getContentsHtml()
+    }
+
+    getContentsText() {
+      return EditorStore.getContentsText()
+    }
+
+    getSelection() {
+      return EditorStore.getSelection()
+    }
+
+    getSelectionRich() {
+      return EditorStore.getSelectionRich()
+    }
+
+    getSelectionHtml() {
+      return EditorStore.getSelectionHtml()
+    }
+
+    getSelectionText() {
+      return EditorStore.getSelectionText()
     }
   }
 

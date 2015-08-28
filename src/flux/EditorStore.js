@@ -28,6 +28,10 @@ const ACTION_ATTRIBUTES = 'attributes'
 class EditorStore {
   constructor() {
     this.exportPublicMethods({
+      getContents: () => this.getContents(),
+      getContentsRich: () => this.getContentsRich(),
+      getContentsHtml: () => this.getContentsHtml(),
+      getContentsText: () => this.getContentsText(),
       getSelection: () => this.getSelection(),
       getSelectionRich: () => this.getSelectionRich(),
       getSelectionHtml: () => this.getSelectionHtml(),
@@ -138,6 +142,22 @@ class EditorStore {
 
   revealRemoteCursorName(remoteCursor) {
     this._delayedRemoteCursorNameReveal(remoteCursor._id)
+  }
+
+  getContents() {
+    return this.replica.getTextRange(BASE_CHAR)
+  }
+
+  getContentsRich() {
+    return this._getContentRich(this.getContents())
+  }
+
+  getContentsHtml() {
+    return writeHtml(this.getContentsRich())
+  }
+
+  getContentsText() {
+    return writeText(this.getContentsRich())
   }
 
   navigateLeft() {
@@ -1017,12 +1037,8 @@ class EditorStore {
       || (this._lastLine().isEof() && charEq(this.state.position, this._lastLine().start))
   }
 
-  _getSelectionRich() {
-    let selectionChunks = []
-
-    if(!this.state.selectionActive) {
-      return selectionChunks
-    }
+  _getContentRich(chars) {
+    let contentChunks = []
 
     let currentChunk = {
       chars: [],
@@ -1038,12 +1054,13 @@ class EditorStore {
           this.attributes = c.attributes
         }
         // push newlines as separate chunks for ease of parsing paragraphs and breaks from chunks
-        if(c.char === '\n') {
+        let isNewline = c.char === '\n'
+        if(isNewline) {
           // previous chunk
           this.pushChunk()
         }
         this.chars.push(c.char)
-        if(c.char === '\n') {
+        if(isNewline) {
           // newline chunk
           this.pushChunk()
         }
@@ -1051,7 +1068,7 @@ class EditorStore {
 
       pushChunk() {
         if(this.chars.length > 0) {
-          selectionChunks.push({
+          contentChunks.push({
             text: this.chars.join(''),
             attrs: this.attributes
           })
@@ -1067,16 +1084,22 @@ class EditorStore {
       currentChunk.pushChar(c, this)
     }
 
-    let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
-    let contentIterator = selectionChars[Symbol.iterator]()
+    let contentIterator = chars[Symbol.iterator]()
     let e
     while(!(e = contentIterator.next()).done) {
       processChar(e.value)
     }
     // last chunk
-    currentChunk.pushChunk()
+    if(currentChunk.chars.length > 0) currentChunk.pushChunk()
 
-    return selectionChunks
+    return contentChunks
+  }
+
+  _getSelectionRich() {
+    let selectionChars = this.state.selectionActive ?
+      this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar) :
+      []
+    return this._getContentRich(selectionChars)
   }
 
   _modifySelection(toChar, positionEolStart, resetUpDown) {
