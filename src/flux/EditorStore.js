@@ -28,6 +28,12 @@ const ACTION_ATTRIBUTES = 'attributes'
 class EditorStore {
   constructor() {
     this.exportPublicMethods({
+      getPosition: () => this.getPosition(),
+      getRemoteCursors: () => this.getRemoteCursors(),
+      getContents: () => this.getContents(),
+      getContentsRich: () => this.getContentsRich(),
+      getContentsHtml: () => this.getContentsHtml(),
+      getContentsText: () => this.getContentsText(),
       getSelection: () => this.getSelection(),
       getSelectionRich: () => this.getSelectionRich(),
       getSelectionHtml: () => this.getSelectionHtml(),
@@ -74,6 +80,12 @@ class EditorStore {
     this.replica = replica
 
     this.setState({focus: config.initialFocus})
+
+    if(this.cursorModel && this.cursorModel.name !== config.userName) {
+      setTimeout(() => {
+        this.cursorModel.set({name: config.userName})
+      }, 0)
+    }
   }
 
   initializeCursorModel({cursorSet, cursorModel}) {
@@ -95,10 +107,16 @@ class EditorStore {
   focusInput() {
     this._delayedCursorBlink(0)
     this.setState({focus: true})
+    this.config.eventEmitter.emit('focus-gained')
   }
 
   inputFocusLost() {
     this.setState({focus: false})
+    this.config.eventEmitter.emit('focus-lost')
+  }
+
+  reflow() {
+    this._flow()
   }
 
   setRemoteCursorPosition(remoteCursor) {
@@ -107,6 +125,15 @@ class EditorStore {
     if(!id) return
     // TODO use immutable data structure instead, need clone here to avoid mutating the existing state
     let remoteCursors = _.clone(this.state.remoteCursors)
+    let existingCursor = remoteCursors.hasOwnProperty(id)
+    if(this.config.eventEmitter.hasListeners('remote-cursor-add') && !existingCursor) {
+      this.config.eventEmitter.emit('remote-cursor-add', remoteCursor)
+    }
+    if(this.config.eventEmitter.hasListeners('remote-cursor-change-name') && existingCursor) {
+      if(remoteCursors[id].name !== remoteCursor.name) {
+        this.config.eventEmitter.emit('remote-cursor-change-name', remoteCursor, remoteCursors[id].name, remoteCursor.name)
+      }
+    }
     remoteCursors[id] = remoteCursor
     this.setState({remoteCursors: remoteCursors})
     this._delayedRemoteCursorNameReveal(id)
@@ -119,6 +146,9 @@ class EditorStore {
     // TODO use immutable data structure instead, need clone here to avoid mutating the existing state
     let remoteCursors = _.clone(this.state.remoteCursors)
     if(id in remoteCursors) {
+      if(this.config.eventEmitter.hasListeners('remote-cursor-remove')) {
+        this.config.eventEmitter.emit('remote-cursor-remove', remoteCursor)
+      }
       delete remoteCursors[id]
       this.setState({remoteCursors: remoteCursors})
     }
@@ -126,6 +156,33 @@ class EditorStore {
 
   revealRemoteCursorName(remoteCursor) {
     this._delayedRemoteCursorNameReveal(remoteCursor._id)
+  }
+
+  getPosition() {
+    return {
+      char: this.state.position,
+      eolStart: this.state.positionEolStart
+    }
+  }
+
+  getRemoteCursors() {
+    return Object.values(this.state.remoteCursors)
+  }
+
+  getContents() {
+    return this.replica.getTextRange(BASE_CHAR)
+  }
+
+  getContentsRich() {
+    return this._getContentRich(this.getContents())
+  }
+
+  getContentsHtml() {
+    return writeHtml(this.getContentsRich())
+  }
+
+  getContentsText() {
+    return writeText(this.getContentsRich())
   }
 
   navigateLeft() {
@@ -398,6 +455,9 @@ class EditorStore {
       let position = this._relativeChar(this.state.position, -1)
       this.replica.rmChars(this.state.position)
       this._flow({ start: position, end: this.state.position, action: ACTION_DELETE})
+      if(this.config.eventEmitter.hasListeners('text-delete')) {
+        this.config.eventEmitter.emit('text-delete', position, this.state.position, position)
+      }
 
       let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
       this._setPosition(position, endOfLine)
@@ -411,6 +471,9 @@ class EditorStore {
       let next = this._relativeChar(this.state.position, 1, 'limit')
       this.replica.rmChars(next)
       this._flow({ start: this.state.position, end: next, action: ACTION_DELETE})
+      if(this.config.eventEmitter.hasListeners('text-delete')) {
+        this.config.eventEmitter.emit('text-delete', this.state.position, next, this.state.position)
+      }
 
       let endOfLine = lineContainingChar(this.state.lines, this.state.position).endOfLine
       this._setPosition(this.state.position, endOfLine)
@@ -437,6 +500,9 @@ class EditorStore {
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
       this._flow({ start: start, end: end, action: ACTION_DELETE})
+      if(this.config.eventEmitter.hasListeners('text-delete')) {
+        this.config.eventEmitter.emit('text-delete', start, end, start)
+      }
 
       let lineContainingStart = lineContainingChar(this.state.lines, start)
       let endOfLine = lineContainingStart ? lineContainingStart.endOfLine : true
@@ -468,6 +534,9 @@ class EditorStore {
       let wordChars = this.replica.getTextRange(start, end)
       this.replica.rmChars(wordChars)
       this._flow({ start: start, end: end, action: ACTION_DELETE})
+      if(this.config.eventEmitter.hasListeners('text-delete')) {
+        this.config.eventEmitter.emit('text-delete', start, end, start)
+      }
 
       let lineContainingStart = lineContainingChar(this.state.lines, start)
       let endOfLine = lineContainingStart ? lineContainingStart.endOfLine : true
@@ -575,6 +644,10 @@ class EditorStore {
     let newPositionEolStart = value.slice(-1) === '\n'
 
     if(reflow) this._flow({start: position, end: newPosition, action: ACTION_INSERT})
+
+    if(this.config.eventEmitter.hasListeners('text-insert')) {
+      this.config.eventEmitter.emit('text-insert', position, value, attributes, newPosition)
+    }
 
     this._setPosition(newPosition, newPositionEolStart)
     this.setState({activeAttributes: attributes})
@@ -953,6 +1026,10 @@ class EditorStore {
 
     this._delayedCursorBlink()
     this._setRemoteCursorModel()
+
+    if(this.config.eventEmitter.hasListeners('position-change')) {
+      this.config.eventEmitter.emit('position-change', this.getPosition())
+    }
   }
 
   _resetPosition() {
@@ -1005,12 +1082,8 @@ class EditorStore {
       || (this._lastLine().isEof() && charEq(this.state.position, this._lastLine().start))
   }
 
-  _getSelectionRich() {
-    let selectionChunks = []
-
-    if(!this.state.selectionActive) {
-      return selectionChunks
-    }
+  _getContentRich(chars) {
+    let contentChunks = []
 
     let currentChunk = {
       chars: [],
@@ -1026,12 +1099,13 @@ class EditorStore {
           this.attributes = c.attributes
         }
         // push newlines as separate chunks for ease of parsing paragraphs and breaks from chunks
-        if(c.char === '\n') {
+        let isNewline = c.char === '\n'
+        if(isNewline) {
           // previous chunk
           this.pushChunk()
         }
         this.chars.push(c.char)
-        if(c.char === '\n') {
+        if(isNewline) {
           // newline chunk
           this.pushChunk()
         }
@@ -1039,7 +1113,7 @@ class EditorStore {
 
       pushChunk() {
         if(this.chars.length > 0) {
-          selectionChunks.push({
+          contentChunks.push({
             text: this.chars.join(''),
             attrs: this.attributes
           })
@@ -1055,16 +1129,22 @@ class EditorStore {
       currentChunk.pushChar(c, this)
     }
 
-    let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
-    let contentIterator = selectionChars[Symbol.iterator]()
+    let contentIterator = chars[Symbol.iterator]()
     let e
     while(!(e = contentIterator.next()).done) {
       processChar(e.value)
     }
     // last chunk
-    currentChunk.pushChunk()
+    if(currentChunk.chars.length > 0) currentChunk.pushChunk()
 
-    return selectionChunks
+    return contentChunks
+  }
+
+  _getSelectionRich() {
+    let selectionChars = this.state.selectionActive ?
+      this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar) :
+      []
+    return this._getContentRich(selectionChars)
   }
 
   _modifySelection(toChar, positionEolStart, resetUpDown) {
@@ -1073,6 +1153,12 @@ class EditorStore {
 
     if(this.cursorMotionTimeout) {
       clearTimeout(this.cursorMotionTimeout)
+    }
+
+    let previousSelection = {
+      selectionActive: this.state.selectionActive,
+      selectionLeftChar: this.state.selectionLeftChar,
+      selectionRightChar: this.state.selectionRightChar
     }
 
     this.setState((previousState) => {
@@ -1131,6 +1217,14 @@ class EditorStore {
     if(resetUpDown) {
       this.upDownAdvanceX = null
       this.upDownPositionEolStart = null
+    }
+    let hasSelectionListeners = this.config.eventEmitter.hasListeners('selection-change')
+    if(previousSelection.selectionActive && !this.state.selectionActive && hasSelectionListeners) {
+      this.config.eventEmitter.emit('selection-change', null)
+    } else if (this.state.selectionActive && hasSelectionListeners
+      && (!charEq(previousSelection.selectionLeftChar, this.state.selectionLeftChar)
+        || !charEq(previousSelection.selectionRightChar, this.state.selectionRightChar))) {
+      this.config.eventEmitter.emit('selection-change', { left: this.state.selectionLeftChar, right: this.state.selectionRightChar })
     }
     this._setRemoteCursorModel()
   }
@@ -1192,6 +1286,9 @@ class EditorStore {
     let selectionChars = this.replica.getTextRange(this.state.selectionLeftChar, this.state.selectionRightChar)
     this.replica.rmChars(selectionChars)
     this._flow({ start: this.state.selectionLeftChar, end: this.state.selectionRightChar, action: ACTION_DELETE})
+    if(this.config.eventEmitter.hasListeners('text-delete')) {
+      this.config.eventEmitter.emit('text-delete', this.state.selectionLeftChar, this.state.selectionRightChar, position)
+    }
 
     let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
     this._setPosition(position, endOfLine)

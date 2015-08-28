@@ -267,6 +267,23 @@ gulp.task('dist', ['clean:dist', 'dist:dev', 'dist:min'], function(cb) {
     .pipe(gulp.dest(paths.dist))
 })
 
+gulp.task('docs', function() {
+  var tests = ['-testb?\\.js$']
+  gulp.src('src')
+    .pipe($.esdoc({
+      title: 'Ritzy: Collaborative web-based rich text editor',
+      destination: paths.dist + '/docs',
+      excludes: tests,
+      access: ['public', 'protected', 'private'],
+      test: {
+        type: 'mocha',
+        source: 'src/',
+        includes: tests
+      }/*,
+      unexportIdentifier: true*/
+    }))
+})
+
 // Deploy to GitHub Pages
 gulp.task('deploy', function() {
   // Remove temp folder

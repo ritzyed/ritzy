@@ -27,6 +27,7 @@ const T = React.PropTypes
 export default React.createClass({
   propTypes: {
     id: T.string.isRequired,
+    eventEmitter: T.object.isRequired,
     fonts: T.shape({
       regular: T.object,
       bold: T.object,
@@ -37,8 +38,10 @@ export default React.createClass({
     minFontSize: T.number.isRequired,
     unitsPerEm: T.number.isRequired,
     width: T.number.isRequired,
-    marginH: T.number.isRequired,
-    marginV: T.number.isRequired,
+    margin: T.shape({
+      horizontal: T.number,
+      vertical: T.number
+    }).isRequired,
     userId: T.string.isRequired,
     userName: T.string,
     cursorColorSpace: T.arrayOf(T.string), // TODO allow it to be a function as well
@@ -94,6 +97,10 @@ export default React.createClass({
   componentWillReceiveProps(nextProps) {
     TextFontMetrics.setConfig(this.props)
     EditorActions.initialize(nextProps, this.replica)
+
+    if(this.props.fontSize !== nextProps.fontSize || this.props.width !== nextProps.width) {
+      EditorActions.reflow()
+    }
   },
 
   componentDidMount() {
@@ -141,8 +148,8 @@ export default React.createClass({
       && this.props.minFontSize === nextProps.minFontSize
       && this.props.unitsPerEm === nextProps.unitsPerEm
       && this.props.width === nextProps.width
-      && this.props.marginH === nextProps.marginH
-      && this.props.marginV === nextProps.marginV
+      && this.props.margin.horizontal === nextProps.margin.horizontal
+      && this.props.margin.vertical === nextProps.margin.vertical
       && this.props.userId === nextProps.userId
       && this.props.userName === nextProps.userName
       && this.props.debugButtons === nextProps.debugButtons
@@ -393,8 +400,8 @@ export default React.createClass({
       return {
         position: position,
         positionEolStart: positionEolStart,
-        left: this.props.marginH,
-        top: this.props.marginV
+        left: this.props.margin.horizontal,
+        top: this.props.margin.vertical
       }
     }
 
@@ -417,8 +424,8 @@ export default React.createClass({
     return {
       position: position,
       positionEolStart: positionEolStart,
-      left: this.props.marginH + cursorAdvanceX,
-      top: this.props.marginV + previousLineHeights
+      left: this.props.margin.horizontal + cursorAdvanceX,
+      top: this.props.margin.vertical + previousLineHeights
     }
   },
 
@@ -539,7 +546,7 @@ export default React.createClass({
     //console.trace('render')
     let wrapperStyle = {
       width: this.props.width,
-      padding: `${this.props.marginV}px ${this.props.marginH}px`
+      padding: `${this.props.margin.vertical}px ${this.props.margin.horizontal}px`
     }
 
     return (

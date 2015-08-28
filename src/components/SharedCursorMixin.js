@@ -110,6 +110,10 @@ export default {
     return this.cursorSet.list().filter(c => c._id && c._id !== this.cursorId)
   },
 
+  onUserNameChange(name) {
+    this.cursorModel.set({name: name})
+  },
+
   _internalModelFromSwarmModel(swarmModel, color) {
     let internalModel = extractInternal(swarmModel)
     internalModel.color = color

@@ -28,6 +28,10 @@ class EditorActions {
     this.dispatch()
   }
 
+  reflow() {
+    this.dispatch()
+  }
+
   setRemoteCursorPosition(remoteCursor) {
     this.dispatch(remoteCursor)
   }
