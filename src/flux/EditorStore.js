@@ -998,6 +998,10 @@ class EditorStore {
 
     this._delayedCursorBlink()
     this._setRemoteCursorModel()
+
+    if(this.config.eventEmitter.hasListeners('position-change')) {
+      this.config.eventEmitter.emit('position-change', this.getPosition())
+    }
   }
 
   _resetPosition() {
@@ -1123,6 +1127,12 @@ class EditorStore {
       clearTimeout(this.cursorMotionTimeout)
     }
 
+    let previousSelection = {
+      selectionActive: this.state.selectionActive,
+      selectionLeftChar: this.state.selectionLeftChar,
+      selectionRightChar: this.state.selectionRightChar
+    }
+
     this.setState((previousState) => {
       if(previousState.selectionActive) {
         if(charEq(previousState.selectionAnchorChar, previousState.selectionLeftChar)) {
@@ -1179,6 +1189,14 @@ class EditorStore {
     if(resetUpDown) {
       this.upDownAdvanceX = null
       this.upDownPositionEolStart = null
+    }
+    let hasSelectionListeners = this.config.eventEmitter.hasListeners('selection-change')
+    if(previousSelection.selectionActive && !this.state.selectionActive && hasSelectionListeners) {
+      this.config.eventEmitter.emit('selection-change', null)
+    } else if (this.state.selectionActive && hasSelectionListeners
+      && (!charEq(previousSelection.selectionLeftChar, this.state.selectionLeftChar)
+        || !charEq(previousSelection.selectionRightChar, this.state.selectionRightChar))) {
+      this.config.eventEmitter.emit('selection-change', { left: this.state.selectionLeftChar, right: this.state.selectionRightChar })
     }
     this._setRemoteCursorModel()
   }

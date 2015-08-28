@@ -19,6 +19,14 @@ const renderTarget = document.getElementById('content')
 
 let ritzy = new Ritzy(config, renderTarget)
 
+ritzy.on('position-change', function(position) {
+  console.log('event: position-change = ', position)
+})
+
+ritzy.on('selection-change', function(selection) {
+  console.log('event: selection-change = ', selection)
+})
+
 ritzy.on('focus-gained', function() {
   console.log('event: focus-gained')
 })
