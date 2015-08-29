@@ -43,7 +43,7 @@ than character count offsets.
 Imagine our editor contents consist of the following text, cursor, and
 associated (simplified) id of each character:
 
-image:images/char_ids.svg[Editor IDs]
+image:images/char_ids.png?raw=true[Editor IDs]
 
 In this example, rather than the local cursor being described as "at position
 with offset 2", the cursor is instead "at position '360Zq'".
