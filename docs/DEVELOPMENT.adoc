@@ -106,6 +106,28 @@ Specify the task before other arguments: e.g.
 
  gulp build --verbose
 
+[[debug]]
+=== Debug
+
+The client is best debugged via browser developer tools.
+
+The server can be debugged and profiled using
+https://github.com/node-inspector/node-inspector[node-inspector].
+
+ npm install -g node-inspector
+ ./nodew node-inspector
+
+Then start the server in debug mode (or for a running server send the server
+process a
+https://github.com/node-inspector/node-inspector#2-enable-debug-mode-in-your-node-process[USR1
+signal]):
+
+ gulp serve --debug
+
+or
+
+ gulp serve --debugbrk
+
 [[redis]]
 === Redis
 

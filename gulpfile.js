@@ -10,18 +10,24 @@ var runSequence = require('run-sequence')
 var webpack = require('webpack')
 var options = require('minimist')(process.argv.slice(2), {
   alias: {
-    debug: 'D',
-    verbose: 'V'
+    debug: 'd',
+    debugbrk: 'D',
+    verbose: 'V',
+    profile: 'p'
   },
-  boolean: ['debug', 'verbose'],
+  boolean: ['debug', 'debugbrk', 'verbose', 'profile'],
   default: {
     debug: false,
-    verbose: false
+    debugbrk: false,
+    verbose: false,
+    profile: false
   }
 })
 
 $.util.log('[args]', '   debug = ' + options.debug)
+$.util.log('[args]', 'debugbrk = ' + options.debugbrk)
 $.util.log('[args]', ' verbose = ' + options.verbose)
+$.util.log('[args]', ' profile = ' + options.profile)
 
 // https://github.com/ai/autoprefixer
 options.autoprefixer = [
@@ -180,7 +186,18 @@ gulp.task('serve', ['build:watch'], function(cb) {
   var nodeArgs = {}
   if(options.debug) {
     $.util.log('[node]', 'Node.js debug port set to 5858.')
-    nodeArgs.execArgv = ['--debug-brk=5858']
+    if(!nodeArgs.execArgv) nodeArgs.execArgv = []
+    nodeArgs.execArgv.push('--debug=5858')
+  } else if(options.debugbrk) {
+    $.util.log('[node]', 'Node.js debug break port set to 5858.')
+    if (!nodeArgs.execArgv) nodeArgs.execArgv = []
+    nodeArgs.execArgv.push('--debug-brk=5858')
+  }
+  if(options.profile) {
+    $.util.log('[node]', 'Node.js v8 profiling activated. Check for v8.log.')
+    if(!nodeArgs.execArgv) nodeArgs.execArgv = []
+    nodeArgs.execArgv.push('--prof')
+    nodeArgs.execArgv.push('--log-timer-events')
   }
 
   var server = (function startup() {
