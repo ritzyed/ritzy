@@ -94,7 +94,8 @@ Parameters:::
 
 ====
 https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L373[Ritzy.onSelectionChange]::
-Register a callback that executes when the selection changes.
+Register a callback that executes when the selection changes. This event will also be raised when an active
+selection is destroyed -- the selection parameter in the callback will be null in this case.
 
 Parameters:::
 * cb Callback with the following parameters:

@@ -1010,6 +1010,7 @@ class EditorStore {
     //console.debug('position', position, 'positionEolStart', positionEolStart, 'resetUpDown', resetUpDown)
 
     let currentPosition = this.state.position
+    let selectionWasActive = this.state.selectionActive
 
     this.setState({
       position: position,
@@ -1031,6 +1032,9 @@ class EditorStore {
 
     if(this.config.eventEmitter.hasListeners('position-change')) {
       this.config.eventEmitter.emit('position-change', this.getPosition())
+    }
+    if(selectionWasActive && this.config.eventEmitter.hasListeners('selection-change')) {
+      this.config.eventEmitter.emit('selection-change', null)
     }
   }
 
@@ -1224,7 +1228,8 @@ class EditorStore {
     if(previousSelection.selectionActive && !this.state.selectionActive && hasSelectionListeners) {
       this.config.eventEmitter.emit('selection-change', null)
     } else if (this.state.selectionActive && hasSelectionListeners
-      && (!charEq(previousSelection.selectionLeftChar, this.state.selectionLeftChar)
+      && (previousSelection.selectionActive !== this.state.selectionActive
+        || !charEq(previousSelection.selectionLeftChar, this.state.selectionLeftChar)
         || !charEq(previousSelection.selectionRightChar, this.state.selectionRightChar))) {
       this.config.eventEmitter.emit('selection-change', { left: this.state.selectionLeftChar, right: this.state.selectionRightChar })
     }
