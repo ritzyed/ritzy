@@ -7,7 +7,7 @@ export function extractInternal(swarmModel) {
 
 export default Model.extend('Cursor', {
   defaults: {
-    name: '',
+    name: null,
     state: {
       position: null,
       positionEolStart: false,

@@ -44,6 +44,7 @@ export default class SwarmServer {
 
     let cursorSetMoribund = {}
     let cursors = cursorSet.list()
+    //console.log('cursors', cursors.reduce((arr, c) => { arr.push({_id: c._id, name: c.name, state: c.state, ms: c.ms}); return arr }, []))
     for (let s of cursors) {
       let spec = s.spec()
       if (spec.type() !== 'Cursor') {
@@ -54,7 +55,7 @@ export default class SwarmServer {
     }
     //console.log('cursorSet:', cursorSet._id, 'cursors:', cursorSetMoribund)
     // cursors live for 10 minutes after last use and then disappear (recreated by client if user resumes editing)
-    let ancient = Date.now() - 60 * 60 * 1000
+    let ancient = Date.now() - 10 * 60 * 1000
     for (let id in cursorSetMoribund) {
       if(!cursorSetMoribund.hasOwnProperty(id)) continue
       let ts = cursorSetMoribund[id]
