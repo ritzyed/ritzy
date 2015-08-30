@@ -550,7 +550,7 @@ export default React.createClass({
     }
 
     return (
-      <div>
+      <div style={{boxSizing: 'content-box'}}>
         {this._renderError()}
         <div className="ritzy-internal-text-content-wrapper text-content-wrapper"
           style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseUp={this._onMouseUp} onMouseMove={this._onMouseMove}>
