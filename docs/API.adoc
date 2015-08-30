@@ -34,26 +34,25 @@ Returns the contents of the editor as plain text.
 The current selection can be retrieved by one of the following methods:
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L301[Ritzy.getSelection]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L300[Ritzy.getSelection]::
 Returns the contents of the current selection as an array of Char objects. The Char object is from the
 underlying CRDT data store.
-Returns the contents of the current selection in the underlying CRDT data storage format. The left char
-of the selection is exclusive and the right char is inclusive.
+Returns the contents of the current selection in the underlying CRDT data storage format.
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L311[Ritzy.getSelectionRich]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L310[Ritzy.getSelectionRich]::
 Returns the contents of the current selection in a rich text JSON format representing the rich text chunks
 and the associated attributes.
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L320[Ritzy.getSelectionHtml]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L319[Ritzy.getSelectionHtml]::
 Returns the contents of the current selection as HTML.
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L329[Ritzy.getSelectionText]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L328[Ritzy.getSelectionText]::
 Returns the contents of the current selection as plain text.
 ====
 
@@ -63,7 +62,7 @@ Returns the contents of the current selection as plain text.
 Information about local and remote cursors is available:
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L343[Ritzy.getPosition]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L342[Ritzy.getPosition]::
 Returns the current position of the local cursor. The position is a character at which the cursor is placed
 (the point just after the character), and an eolStart attribute. The eolStart attribute is when the position is
 at the character at the end of a line (will generally be space if it is a soft break, and a newline if it is a
@@ -73,7 +72,7 @@ the *same* character position.
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L353[Ritzy.getRemoteCursors]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L352[Ritzy.getRemoteCursors]::
 Gets all remote cursors currently active in the document. Each remote cursor has attributes such as name
 ('name'), the last update time ('ms'), and the remote position of the cursor.
 ====
@@ -84,8 +83,10 @@ Gets all remote cursors currently active in the document. Each remote cursor has
 The following methods can be used to register listeners for events:
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L363[Ritzy.onPositionChange]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L365[Ritzy.onPositionChange]::
 Register a callback that executes when the cursor position changes.
+
+The underlying event emitter event name is 'position-change'.
 
 Parameters:::
 * cb Callback with the following parameters:
@@ -93,9 +94,11 @@ Parameters:::
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L373[Ritzy.onSelectionChange]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L379[Ritzy.onSelectionChange]::
 Register a callback that executes when the selection changes. This event will also be raised when an active
 selection is destroyed -- the selection parameter in the callback will be null in this case.
+
+The underlying event emitter event name is 'selection-change'.
 
 Parameters:::
 * cb Callback with the following parameters:
@@ -103,24 +106,30 @@ Parameters:::
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L382[Ritzy.onFocusGained]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L391[Ritzy.onFocusGained]::
 Register a callback that executes when the editor gains focus.
 
+The underlying event emitter event name is 'focus-gained'.
+
 Parameters:::
 * cb Callback with no parameters.
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L391[Ritzy.onFocusLost]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L403[Ritzy.onFocusLost]::
 Register a callback that executes when the editor loses focus (blur).
 
+The underlying event emitter event name is 'focus-lost'.
+
 Parameters:::
 * cb Callback with no parameters.
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L401[Ritzy.onRemoteCursorAdd]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L416[Ritzy.onRemoteCursorAdd]::
 Register a callback that executes when a remote cursor is added.
+
+The underlying event emitter event name is 'remote-cursor-add'.
 
 Parameters:::
 * cb Callback with the following parameters:
@@ -128,8 +137,10 @@ Parameters:::
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L411[Ritzy.onRemoteCursorRemove]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L429[Ritzy.onRemoteCursorRemove]::
 Register a callback that executes when a remote cursor is removed.
+
+The underlying event emitter event name is 'remote-cursor-remove'.
 
 Parameters:::
 * cb Callback with the following parameters:
@@ -137,8 +148,10 @@ Parameters:::
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L423[Ritzy.onRemoteCursorChangeName]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L444[Ritzy.onRemoteCursorChangeName]::
 Register a callback that executes when the name associated with a remote cursor has changed.
+
+The underlying event emitter event name is 'remote-cursor-change-name'.
 
 Parameters:::
 * cb Callback with the following parameters:
@@ -148,8 +161,10 @@ Parameters:::
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L436[Ritzy.onTextInsert]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L460[Ritzy.onTextInsert]::
 Register a callback that executes when text is inserted into the editor.
+
+The underlying event emitter event name is 'text-insert'.
 
 Parameters:::
 * cb Callback with the following parameters:
@@ -160,8 +175,10 @@ Parameters:::
 ====
 
 ====
-https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L448[Ritzy.onTextDelete]::
+https://github.com/ritzyed/ritzy/blob/master/src/ritzy.js#L475[Ritzy.onTextDelete]::
 Register a callback that executes when text is deleted from the editor.
+
+The underlying event emitter event name is 'text-delete'.
 
 Parameters:::
 * cb Callback with the following parameters:
@@ -226,3 +243,4 @@ Sets the editor internal vertical margin.
 Parameters:::
 * vertical The vertical (top-bottom) margins.
 ====
+

@@ -293,8 +293,7 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
     /**
      * Returns the contents of the current selection as an array of Char objects. The Char object is from the
      * underlying CRDT data store.
-     * Returns the contents of the current selection in the underlying CRDT data storage format. The left char
-     * of the selection is exclusive and the right char is inclusive.
+     * Returns the contents of the current selection in the underlying CRDT data storage format.
      * @apidoc Selection
      * @returns Array[Char]
      */
@@ -356,6 +355,9 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
 
     /**
      * Register a callback that executes when the cursor position changes.
+     *
+     * The underlying event emitter event name is 'position-change'.
+     *
      * @apidoc Events
      * @param cb Callback with the following parameters:
      *   ** position - The new position.
@@ -365,7 +367,11 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
     }
 
     /**
-     * Register a callback that executes when the selection changes.
+     * Register a callback that executes when the selection changes. This event will also be raised when an active
+     * selection is destroyed -- the selection parameter in the callback will be null in this case.
+     *
+     * The underlying event emitter event name is 'selection-change'.
+     *
      * @apidoc Events
      * @param cb Callback with the following parameters:
      *   ** selection - The new selection in native CRDT format. The left char of the selection is exclusive and the right char is inclusive.
@@ -376,6 +382,9 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
 
     /**
      * Register a callback that executes when the editor gains focus.
+     *
+     * The underlying event emitter event name is 'focus-gained'.
+     *
      * @apidoc Events
      * @param cb Callback with no parameters.
      */
@@ -385,6 +394,9 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
 
     /**
      * Register a callback that executes when the editor loses focus (blur).
+     *
+     * The underlying event emitter event name is 'focus-lost'.
+     *
      * @apidoc Events
      * @param cb Callback with no parameters.
      */
@@ -394,6 +406,9 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
 
     /**
      * Register a callback that executes when a remote cursor is added.
+     *
+     * The underlying event emitter event name is 'remote-cursor-add'.
+     *
      * @apidoc Events
      * @param cb Callback with the following parameters:
      *   ** remoteCursor - The remote cursor that was added.
@@ -404,6 +419,9 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
 
     /**
      * Register a callback that executes when a remote cursor is removed.
+     *
+     * The underlying event emitter event name is 'remote-cursor-remove'.
+     *
      * @apidoc Events
      * @param cb Callback with the following parameters:
      *   ** remoteCursor - The remote cursor that was removed.
@@ -414,6 +432,9 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
 
     /**
      * Register a callback that executes when the name associated with a remote cursor has changed.
+     *
+     * The underlying event emitter event name is 'remote-cursor-change-name'.
+     *
      * @apidoc Events
      * @param cb Callback with the following parameters:
      *   ** remoteCursor - The remote cursor with the changed name.
@@ -426,6 +447,9 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
 
     /**
      * Register a callback that executes when text is inserted into the editor.
+     *
+     * The underlying event emitter event name is 'text-insert'.
+     *
      * @apidoc Events
      * @param cb Callback with the following parameters:
      *   ** atPosition - The char position at which the insert occurred.
@@ -439,6 +463,9 @@ export default function RitzyFactory(config, renderTarget, eventEmitter) {
 
     /**
      * Register a callback that executes when text is deleted from the editor.
+     *
+     * The underlying event emitter event name is 'text-delete'.
+     *
      * @apidoc Events
      * @param cb Callback with the following parameters:
      *   ** from - The char position from which text was deleted (exclusive).
