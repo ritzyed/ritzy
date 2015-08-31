@@ -74,7 +74,7 @@ class TextData {
     }
     previousChar.deletedIds.add(deletedChar.id)
     if(deletedChar.deletedIds) {
-      pushSet(previousChar.deletedIds, deletedChar.deletedIds)
+      pushSet(deletedChar.deletedIds, previousChar.deletedIds)
     }
   }
 

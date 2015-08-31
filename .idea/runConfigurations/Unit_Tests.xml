@@ -6,7 +6,7 @@
     <envs />
     <ui>bdd</ui>
     <extra-mocha-options>--compilers js:compiler.js ./src/**/*-test.js</extra-mocha-options>
-    <test-directory>.</test-directory>
+    <test-directory>$PROJECT_DIR$/docs</test-directory>
     <recursive>false</recursive>
     <method />
   </configuration>

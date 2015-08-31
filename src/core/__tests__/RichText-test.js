@@ -77,20 +77,27 @@ describe('RichText TextData', () => {
     assert.strictEqual(textData.len(), 4)  // includes initial id
     assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', null, null))
 
-    textData.deleteChar(2)
-    assert.strictEqual(textData.text(), '13')
+    // need to compare non-null Sets manually (see https://github.com/chaijs/chai/issues/394)
+    // the real comparisons are set to fail with empty arrays so that the test can be updated when chai supports Sets
+
+    textData.deleteChar(3)
+    assert.strictEqual(textData.text(), '12')
     assert.strictEqual(textData.len(), 3)  // includes initial id
-    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', ['00002+test'], null))
+    assert.deepEqual(textData.getChar(2), new Char(charIds[1], '2', new Set([]), null)) // should fail
+    assert.deepEqual([...textData.getChar(2).deletedIds], ['00003+test'])
+    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', null, null))
 
     textData.deleteChar(2)
     assert.strictEqual(textData.text(), '1')
     assert.strictEqual(textData.len(), 2)  // includes initial id
-    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', ['00002+test', '00003+test'], null))
+    assert.deepEqual(textData.getChar(1), new Char(charIds[0], '1', [], null)) // should fail
+    assert.deepEqual([...textData.getChar(1).deletedIds], ['00002+test', '00003+test'])
 
     textData.deleteChar(1)
     assert.strictEqual(textData.text(), '')
     assert.strictEqual(textData.len(), 1)  // includes initial id
-    assert.deepEqual(textData.getChar(0), new Char(BASE_ID, '', ['00001+test', '00002+test', '00003+test'], null))
+    assert.deepEqual(textData.getChar(0), new Char(BASE_ID, '', [], null)) // should fail
+    assert.deepEqual([...textData.getChar(0).deletedIds], ['00001+test', '00002+test', '00003+test'])
   })
 })
 
@@ -380,7 +387,10 @@ describe('RichText', () => {
     rm[charOfB.id] = true
     text.remove(rm)
 
-    assert.deepEqual(text.getCharAt(1).deletedIds, new Set([charOfB.id]))
+    // need to compare Set as array (see https://github.com/chaijs/chai/issues/394)
+    // this is set to fail when Chai is fixed so that it can be updated
+    assert.deepEqual(text.getCharAt(1).deletedIds, new Set([])) // should fail
+    assert.deepEqual([...text.getCharAt(1).deletedIds], [charOfB.id])
   })
 
   it('determines whether chars are equal', () => {
