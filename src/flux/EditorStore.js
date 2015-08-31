@@ -103,6 +103,23 @@ class EditorStore {
   replicaUpdated() {
     // TODO can we determine what changed and do a more focused flow via the modifications parameter?
     this._flow()
+
+    // update local position and selection if any, and remote selections if any
+    if(this.state.selectionActive) {
+      this._updateSelection(this.state, updatedState => {
+        this.setState(updatedState)
+        // remotes update our selection model locally to avoid temporary flashing, but send it anyway
+        this._setRemoteCursorModel()
+      })
+    } else {
+      let possiblePosition = this._relativeChar(this.state.position, 0)
+      if(!charEq(this.state.position, possiblePosition)) {
+        this.setState({
+          position: possiblePosition
+        })
+        this._setRemoteCursorModel()
+      }
+    }
   }
 
   focusInput() {
@@ -463,6 +480,7 @@ class EditorStore {
 
       let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
       this._setPosition(position, endOfLine)
+      this._updateRemoteCursorSelectionsLocally()
     }
   }
 
@@ -479,6 +497,7 @@ class EditorStore {
 
       let endOfLine = lineContainingChar(this.state.lines, this.state.position).endOfLine
       this._setPosition(this.state.position, endOfLine)
+      this._updateRemoteCursorSelectionsLocally()
     }
   }
 
@@ -509,6 +528,7 @@ class EditorStore {
       let lineContainingStart = lineContainingChar(this.state.lines, start)
       let endOfLine = lineContainingStart ? lineContainingStart.endOfLine : true
       this._setPosition(start, endOfLine)
+      this._updateRemoteCursorSelectionsLocally()
     }
   }
 
@@ -543,6 +563,7 @@ class EditorStore {
       let lineContainingStart = lineContainingChar(this.state.lines, start)
       let endOfLine = lineContainingStart ? lineContainingStart.endOfLine : true
       this._setPosition(start, endOfLine)
+      this._updateRemoteCursorSelectionsLocally()
     }
   }
 
@@ -653,6 +674,7 @@ class EditorStore {
 
     this._setPosition(newPosition, newPositionEolStart)
     this.setState({activeAttributes: attributes})
+    this._updateRemoteCursorSelectionsLocally()
 
     // return the new position so that multiple insertChars calls can be made in sequence
     return newPosition
@@ -1236,6 +1258,48 @@ class EditorStore {
     this._setRemoteCursorModel()
   }
 
+  _updateSelection(state, onUpdate) {
+    let possibleSelectionLeftChar = this._relativeChar(state.selectionLeftChar, 0)
+    let possibleSelectionRightChar = this._relativeChar(state.selectionRightChar, 0)
+
+    if(!charEq(state.selectionLeftChar, possibleSelectionLeftChar)
+      || !charEq(state.selectionRightChar, possibleSelectionRightChar)) {
+
+      let possiblePosition = this._relativeChar(state.position, 0)
+      let updatedState
+      if(charEq(possibleSelectionLeftChar, possibleSelectionRightChar)) {
+        // our entire selection was deleted by a remote
+        updatedState = {
+          selectionActive: false,
+          position: possiblePosition
+        }
+      } else {
+        updatedState = {
+          selectionLeftChar: possibleSelectionLeftChar,
+          selectionRightChar: possibleSelectionRightChar,
+          position: possiblePosition
+        }
+        if(state.hasOwnProperty('selectionAnchorChar')) {
+          updatedState.selectionAnchorChar = this._relativeChar(state.selectionAnchorChar, 0)
+        }
+      }
+      onUpdate(updatedState)
+    }
+  }
+
+  _updateRemoteCursorSelectionsLocally() {
+    Object.values(this.state.remoteCursors).filter(c => c.state.selectionActive).forEach(remoteCursor => {
+      this._updateSelection(remoteCursor.state, updatedState => {
+        // we are updating the remote state here directly, a bit messy but we'll get the real update from the remote shortly
+        let newState= _.merge(_.clone(remoteCursor.state), updatedState)
+        this.setState(state => {
+          state.remoteCursors[remoteCursor._id].state = newState
+          return state
+        })
+      })
+    })
+  }
+
   _charPositionRelativeToIndex(charIndex, textChars) {
     if(charIndex === 0) {
       return this._relativeChar(textChars[0], -1)
@@ -1299,6 +1363,7 @@ class EditorStore {
 
     let endOfLine = lineContainingChar(this.state.lines, position).endOfLine
     this._setPosition(position, endOfLine)
+    this._updateRemoteCursorSelectionsLocally()
   }
 
   _navigateLeftRight(charCount) {

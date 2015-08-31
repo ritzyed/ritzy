@@ -380,7 +380,9 @@ export default React.createClass({
     let computedSelection = localSelection ?
       this._computeSelection(index, lineHeight, localSelection.selection, localSelection.lines) :
       null
-    let computedRemoteSelections = remoteSelections.map(s => this._computeSelection(index, lineHeight, s.selection, s.lines, s.color))
+    let computedRemoteSelections = remoteSelections
+      .filter(s => s)
+      .map(s => this._computeSelection(index, lineHeight, s.selection, s.lines, s.color))
       .filter(s => s)
 
     return (
