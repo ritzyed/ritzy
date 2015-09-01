@@ -161,6 +161,10 @@ class TextData {
  * This provides some limited support to applications that wish to convert CRDT ops to/from operational transform
  * ops. This support is not currently used by Ritzy and may be removed in the future.
  *
+ * 5) A bug in concurrent insertion: the `insert` op was modifying the `ins` object by reference, causing the
+ * incorrect information to be transmitted to peers. The insert op needs to remain the same for proper application
+ * on other peers.
+ *
  * Note that for non-basic multilingual plane (BMP) characters (rare!) using string.length could be wrong in
  * Javascript. See https://mathiasbynens.be/notes/javascript-encoding.
  */
@@ -178,32 +182,33 @@ let Text = Syncable.extend('Text', {
       let seqi = Spec.base2int(seq)
       let genTs
       let insertKeys = ins ? Object.keys(ins) : []
-      for (let i = 0; i < this.data.len(); i++) {
+      let matchedInsKeys = []
+      for (let i = 0; i < this.data.len() && matchedInsKeys.length < insertKeys.length; i++) {
         for(let j = 0; j < insertKeys.length; j++) {
           let insKey = insertKeys[j]
           if (this.data.matches(i, insKey)) {
+            matchedInsKeys.push(insKey)
             let str = ins[insKey].value
             let attrs = ins[insKey].attributes
-            let k = i + 1
-            while (k < this.data.len() && this.data.getChar(k).id > vt.body) {
-              k++
+            let insertionIndex = i + 1
+            // check for concurrent edits
+            while (insertionIndex < this.data.len() && this.data.getChar(insertionIndex).id > vt.body) {
+              insertionIndex++
             }
-            if (k > i + 1) { // concurrent edits
-              let newid = this.data.getChar(k - 1).id
-              ins[newid] = ins[insKey]
-              delete ins[insKey]
-            } else {
-              for (let l = 0; l < str.length; l++) {
-                genTs = ts + (seqi ? Spec.int2base(seqi++, 2) : '') + '+' + vt.ext
-                this.data.insertChar(i + l + 1, str.charAt(l), genTs, attrs)
-                if (!seqi) {
-                  seqi = 1 // FIXME repeat ids, double insert
-                }
+            for (let k = 0; k < str.length; k++) {
+              genTs = ts + (seqi ? Spec.int2base(seqi++, 2) : '') + '+' + vt.ext
+              this.data.insertChar(insertionIndex + k, str.charAt(k), genTs, attrs)
+              if (!seqi) {
+                seqi = 1 // FIXME repeat ids, double insert
               }
-              i += str.length
             }
+            i = str.length + insertionIndex - 1
           }
         }
+      }
+      if(matchedInsKeys.length < insertKeys.length) {
+        console.warn('Insert op does not match any tree content, ignoring. Failed ops=',
+          _.difference(insertKeys, matchedInsKeys))
       }
       if (genTs) {
         this._host.clock.checkTimestamp(genTs)

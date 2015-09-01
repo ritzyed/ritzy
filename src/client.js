@@ -16,7 +16,7 @@ const config = {
   // userId: ...,
   // userName: ...,
   //renderOptimizations: false,
-  debugButtons: true
+  debugEditor: true
 }
 
 const renderTarget = document.getElementById('content')
