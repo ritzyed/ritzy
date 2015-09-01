@@ -16,14 +16,21 @@ export default React.createClass({
     setRenderOptimizations: T.func
   },
 
+  getInitialState() {
+    return {
+      autotypeText: ''
+    }
+  },
+
   componentWillReceiveProps(nextProps) {
     this.edState = nextProps.editorState
     this.replica = nextProps.replica
   },
 
-  shouldComponentUpdate() {
-    // consists only of buttons, we never need a re-render
-    return false
+  shouldComponentUpdate(nextProps, nextState) {
+    return this.state.autotypeSeconds !== nextState.autotypeSeconds
+      || this.state.autotypeMinutes !== nextState.autotypeMinutes
+      || this.state.autotypeText !== nextState.autotypeText
   },
 
   _dumpState() {
@@ -35,6 +42,8 @@ export default React.createClass({
   _dumpReplica() {
     let text = this.replica.getTextRange(BASE_CHAR)
     console.debug('Current replica text: [' + text.map(c => c.char).join('') + ']')
+    console.debug('BASE_CHAR:')
+    console.dir(this.replica.getCharAt(0))
     console.debug('Current replica contents:')
     console.dir(text)
     EditorActions.focusInput()
@@ -160,6 +169,60 @@ export default React.createClass({
     this.props.setRenderOptimizations(false)
   },
 
+  _scheduleAutotype() {
+    function at(minutes, seconds, cb) {
+      (function loop() {
+        let now = new Date()
+        if (now.getMinutes() === minutes) {
+          if(now.getSeconds() >= seconds) {
+            cb()
+          } else {
+            let delay = 1000 - (new Date() % 1000)
+            setTimeout(loop, delay)
+          }
+        } else {
+          let delay = 60000 - (new Date() % 60000)
+          setTimeout(loop, delay)
+        }
+      })()
+    }
+
+    let text = this.state.autotypeText.split('')
+    if(text.length === 0 || !this.state.autotypeMinutes || !this.state.autotypeSeconds) {
+      console.debug('No autotype, invalid input.')
+      return
+    }
+    console.debug(`Scheduling autotype of chars [${text}] @ ${this.state.autotypeMinutes} minutes, ${this.state.autotypeSeconds} seconds.`)
+    at(this.state.autotypeMinutes, this.state.autotypeSeconds, () => {
+      // if there is any debug logging it will be grouped
+      logInGroup(`Autotyping text ${text}`, () => {
+        // auto-type one char at a time for the hardest concurrency test possible
+        for(let i = 0; i < text.length; i++) {
+          EditorActions.insertChars(text[i])
+        }
+      })
+    })
+    EditorActions.focusInput()
+  },
+
+  _onChangeAutotypeText(e) {
+    this.setState({autotypeText: e.target.value})
+  },
+
+  _onChangeAutotypeMinutes(e) {
+    let value = parseInt(e.target.value)
+    if(!Number.isNaN(value)) {
+      this.setState({autotypeMinutes: parseInt(e.target.value)})
+    }
+  },
+
+  _onChangeAutotypeSeconds(e) {
+    let value = parseInt(e.target.value)
+    if(!Number.isNaN(value)) {
+      this.setState({autotypeSeconds: parseInt(e.target.value)})
+    }
+  },
+
   render() {
     return (
       <div style={{position: 'relative', zIndex: 100, paddingTop: 30}}>
@@ -178,6 +241,11 @@ export default React.createClass({
         <span>Action:&nbsp;</span>
         <button onClick={this._togglePositionEolStart}>Toggle Position EOL Start</button>&nbsp;
         <button onClick={this._testError}>Raise an Error</button><br/>
+        <span>Autotype:&nbsp;</span>
+          <input type='text' value={this.state.autotypeText} size='30' onChange={this._onChangeAutotypeText}/><span>&nbsp;@&nbsp;</span>
+          <input type='text' value={this.state.autotypeMinutes} size='3' onChange={this._onChangeAutotypeMinutes}/><span>:</span>
+          <input type='text' value={this.state.autotypeSeconds} size='3' onChange={this._onChangeAutotypeSeconds}/><span>&nbsp;(min:sec)&nbsp;</span>
+          <button onClick={this._scheduleAutotype}>Schedule It!</button><br/>
         <span>Render Optimizations:&nbsp;</span>
         <button onClick={this._renderOptimizationsEnable}>Enable</button>&nbsp;
         <button onClick={this._renderOptimizationsDisable}>Disable</button><br/>
