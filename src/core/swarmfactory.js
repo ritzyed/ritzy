@@ -11,7 +11,9 @@ let SwarmFactory = function SwarmFactory(Swarm) {
 
   let env = Swarm.env
   env.debug = false
-  env.log = function css_log(spec, value, replica, host) { } // eslint-disable-line camelcase, no-unused-vars
+  env.log = (spec, value, source, host) => { // no-unused-vars
+    //console.log('spec=', spec, 'value=', value, 'source=', source, 'host=', host)
+  }
 
   return Swarm
 }
