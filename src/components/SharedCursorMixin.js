@@ -16,11 +16,9 @@ export default {
 
   onCursorSetInitialize(spec, value, source) {   // eslint-disable-line no-unused-vars
     let Swarm = this.swarmClient.Swarm
-
+    this.cursorSet = source
     this.cursorModel = new Swarm.CursorModel(this.cursorId)
-    this.cursorModel.set({
-      name: this.props.userName
-    })
+    this.cursorModel.on('.init', this.onCursorModelInit)
 
     source.addObject(this.cursorModel)
     // if we lose connection to the server and then gain it again, add the cursor model to the cursor set again
@@ -29,13 +27,10 @@ export default {
     })
     this.swarmClient.addUnloadHook(() => {
       clearInterval(this.cursorSetVerificationInterval)
-      source.removeObject(this.cursorModel)
       Object.keys(this.trackedCursors).forEach(cursorId => this.unSubscribeRemoteCursor(this.trackedCursors[cursorId]))
       source.off('.init', this.onCursorSetInitialize)
       source.off('.change', this.onCursorSetChange)
     })
-
-    EditorActions.initializeCursorModel(source, this.cursorModel)
 
     // setup the initial remote cursors
     this._foreignCursorSet(source).forEach(remoteCursorModel => {
@@ -72,6 +67,18 @@ export default {
         }
       }
     })
+  },
+
+  onCursorModelInit(spec, value, source) {   // eslint-disable-line no-unused-vars
+    this.swarmClient.addUnloadHook(() => {
+      source.off('.init', this.onCursorModelInit)
+    })
+
+    this.swarmClient.addUnloadHook(() => {
+      this.cursorSet.removeObject(this.cursorModel)
+    })
+
+    EditorActions.onCursorModelUpdate(this._cursorModelSet)
   },
 
   subscribeRemoteCursor(remoteCursorModel) {
@@ -132,5 +139,32 @@ export default {
     let internalModel = extractInternal(swarmModel)
     internalModel.color = color
     return internalModel
+  },
+
+  _cursorModelSet(updatedModel) {
+    if(this.cursorModel._lstn.length < 2) {
+      console.warn('The cursor model seems to have lost its connection to the server (Swarm.js bug?). ' +
+        'Attempting to recreate it. If you can reproduce this reliably, please report your repro recipe to ' +
+        'https://github.com/ritzyed/ritzy/issues.')
+      // no need to set the updated model here, the latest will be set by the store on the .init
+      this._reinitCursorModel()
+      return
+    }
+
+    // do the remote work at the end of the event queue to avoid UI latency
+    setTimeout(() => {
+      // add the cursor model back into the set if it is not there (reaped due to idleness?)
+      if (this.cursorSet.list().findIndex(e => e._id === this.cursorModel._id) < 0) {
+        this.cursorSet.addObject(this.cursorModel)
+      }
+      this.cursorModel.set(updatedModel)
+    }, 0)
+  },
+
+  _reinitCursorModel() {
+    this.cursorSet.removeObject(this.cursorModel)
+
+    this.cursorModel = new Swarm.CursorModel(this.cursorId)
+    this.cursorModel.on('.init', this.onCursorModelInit)
   }
 }

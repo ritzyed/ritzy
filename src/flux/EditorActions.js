@@ -8,8 +8,8 @@ class EditorActions {
     this.dispatch({config, replica})
   }
 
-  initializeCursorModel(cursorSet, cursorModel) {
-    this.dispatch({cursorSet, cursorModel})
+  onCursorModelUpdate(cursorModelUpdate) {
+    this.dispatch(cursorModelUpdate)
   }
 
   replicaInitialized() {

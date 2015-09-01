@@ -82,17 +82,17 @@ class EditorStore {
 
     this.setState({focus: config.initialFocus})
 
-    if(this.cursorModel && this.cursorModel.name !== config.userName) {
-      setTimeout(() => {
-        this.cursorModel.set({name: config.userName})
-      }, 0)
+    // store re-initialized with new config, reset the cursor model name
+    // don't bother checking if it is different, remotes will just get the same model again
+    if(this.cursorModelUpdate) {
+      this._setRemoteCursorModelName()
     }
   }
 
-  initializeCursorModel({cursorSet, cursorModel}) {
-    this.cursorSet = cursorSet
-    this.cursorModel = cursorModel
-    this._setRemoteCursorModel()
+  onCursorModelUpdate(cursorModelUpdate) {
+    this.cursorModelUpdate = cursorModelUpdate
+    this._setRemoteCursorModelName()
+    this._setRemoteCursorModelState()
   }
 
   replicaInitialized() {
@@ -109,7 +109,7 @@ class EditorStore {
       this._updateSelection(this.state, updatedState => {
         this.setState(updatedState)
         // remotes update our selection model locally to avoid temporary flashing, but send it anyway
-        this._setRemoteCursorModel()
+        this._setRemoteCursorModelState()
       })
     } else {
       let possiblePosition = this._relativeChar(this.state.position, 0)
@@ -117,7 +117,7 @@ class EditorStore {
         this.setState({
           position: possiblePosition
         })
-        this._setRemoteCursorModel()
+        this._setRemoteCursorModelState()
       }
     }
   }
@@ -982,8 +982,18 @@ class EditorStore {
     }
   }
 
-  _setRemoteCursorModel() {
-    if(!this.cursorModel) return
+  _setRemoteCursorModelName() {
+    if(!this.cursorModelUpdate) return
+
+    let updatedModel = {
+      name: this.config.userName,
+      ms: Date.now()
+    }
+    this.cursorModelUpdate(updatedModel)
+  }
+
+  _setRemoteCursorModelState() {
+    if(!this.cursorModelUpdate) return
 
     let updatedModel = {
       state: {
@@ -996,14 +1006,7 @@ class EditorStore {
       ms: Date.now()
     }
 
-    // do the remote work at the end of the event queue to avoid UI latency
-    setTimeout(() => {
-      // add the cursor model back into the set if it is not there (reaped due to idleness?)
-      if (this.cursorSet.list().findIndex(e => e._id === this.cursorModel._id) < 0) {
-        this.cursorSet.addObject(this.cursorModel)
-      }
-      this.cursorModel.set(updatedModel)
-    }, 0)
+    this.cursorModelUpdate(updatedModel)
   }
 
   /**
@@ -1040,7 +1043,7 @@ class EditorStore {
       selectionActive: false
     })
 
-    if(!charEq(position, currentPosition)) {
+    if(!charEq(position, currentPosition) || selectionWasActive) {
       this.setState({ activeAttributes: position.attributes })
     }
 
@@ -1050,7 +1053,7 @@ class EditorStore {
     }
 
     this._delayedCursorBlink()
-    this._setRemoteCursorModel()
+    this._setRemoteCursorModelState()
 
     if(this.config.eventEmitter.hasListeners('position-change')) {
       this.config.eventEmitter.emit('position-change', this.getPosition())
@@ -1255,7 +1258,7 @@ class EditorStore {
         || !charEq(previousSelection.selectionRightChar, this.state.selectionRightChar))) {
       this.config.eventEmitter.emit('selection-change', { left: this.state.selectionLeftChar, right: this.state.selectionRightChar })
     }
-    this._setRemoteCursorModel()
+    this._setRemoteCursorModelState()
   }
 
   _updateSelection(state, onUpdate) {
