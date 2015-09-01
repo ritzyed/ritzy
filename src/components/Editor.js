@@ -48,7 +48,7 @@ export default React.createClass({
     initialFocus: T.bool,
     wsPort: T.number,
     renderOptimizations: T.bool,
-    debugButtons: T.bool,
+    debugEditor: T.bool,
     showErrorNotification: T.bool,
     errorNotification: T.string
   },
@@ -77,7 +77,7 @@ export default React.createClass({
         'rgb(129, 74, 25)'    // brown
       ],
       renderOptimizations: true,
-      debugButtons: false,
+      debugEditor: false,
       showErrorNotification: true,
       errorNotification: 'There was an unexpected error. You may need to refresh the page.'
     }
@@ -152,7 +152,7 @@ export default React.createClass({
       && this.props.margin.vertical === nextProps.margin.vertical
       && this.props.userId === nextProps.userId
       && this.props.userName === nextProps.userName
-      && this.props.debugButtons === nextProps.debugButtons
+      && this.props.debugEditor === nextProps.debugEditor
 
     return !propsEqual
   },
@@ -535,8 +535,8 @@ export default React.createClass({
     }
   },
 
-  _renderDebugButtons() {
-    if(!this.props.debugButtons) {
+  _renderDebugEditor() {
+    if(!this.props.debugEditor) {
       return null
     }
     return (
@@ -558,7 +558,7 @@ export default React.createClass({
           style={wrapperStyle} onMouseDown={this._onMouseDown} onMouseUp={this._onMouseUp} onMouseMove={this._onMouseMove}>
           {this._renderEditorContents()}
         </div>
-        {this._renderDebugButtons()}
+        {this._renderDebugEditor()}
       </div>
     )
   }
