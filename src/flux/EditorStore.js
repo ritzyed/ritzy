@@ -1643,21 +1643,6 @@ class EditorStore {
       positionEolStart: positionEolStart
     }
   }
-
-  _attributesForSelection() {
-    // activeAttributes are set by the common selection attributes
-    let selection = this.getSelection()
-    let attributes = selection.length > 0 ? selection[0].copyOfAttributes() : {}
-    if(attributes && selection.length > 1) {
-      selection.slice(1).forEach(char => {
-        let charAttrs = char.attributes
-        Object.keys(attributes).forEach(attr => {
-          if(attributes[attr] && !charAttrs[attr]) delete attributes[attr]
-        })
-      })
-    }
-    return attributes
-  }
 }
 
 export default alt.createStore(EditorStore)
